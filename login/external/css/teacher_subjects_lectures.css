@@ -1,0 +1,302 @@
+/** utilities **/
+
+.spacer-10{
+    margin: 10px;
+}
+
+.fs-small{
+    font-size:small;
+}
+
+.mt-10{
+    margin-top: 10px;
+}
+
+.c-white{
+    color: white;
+}
+
+
+html {
+    animation: myAnim 1s ease 0s 1 normal forwards;
+}
+
+@keyframes myAnim {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+
+* {
+    font-family: 'Poppins';
+
+}
+
+a{
+    color: white !important;
+    text-decoration: none;
+}
+
+.small-logo {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 100%;
+
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
+    background-color: white;
+    border-radius: 100%;
+    margin-top: 10px;
+}
+
+.navbar{
+    border-bottom: 1px solid white !important;
+}
+
+.whole-container {
+    background-color: #709775;
+  
+}
+
+.sidebar {
+    color: white !important;
+    border-right: 1px solid white;
+    background-color: #415D43;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.space-sm {
+    margin: 10px;
+}
+
+.navigation-links {
+    color: white !important;
+    display: block;
+    align-items: last baseline !important;
+    text-align: left !important;
+    margin-top: 20px;
+}
+
+.bold{
+    font-weight: bolder;
+}
+
+.iconics{
+    margin-right: 12px;
+    font-size: 24px;
+}
+
+.actual-content{
+    padding: 10px;
+    background-color: white;
+}
+
+.info-container{
+    background-color: gainsboro;
+    color: black !important;
+    border-radius: 5%;
+    margin: 10px;
+    padding: 10px;
+}
+
+.info-container:hover{
+    border: 1px solid lightskyblue;
+}
+
+.qa-link{
+    margin-bottom: 5px;
+    background-color:#709775;
+    color: white;
+    border-radius: 5px;
+    padding: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+
+.small-picture{
+    width: 100px;
+    height: 100px;
+}
+
+.nav-ham-link{
+    color: black !important;
+}
+
+.message{
+    display: inline-block !important;
+    background-color: #415D43;
+    color: white !important;
+    padding: 10px;
+    border-radius: 25px;
+    width: 90%;
+}
+
+.receiver{
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.grey{
+    color: gray !important;
+}
+
+.msg:hover{
+    background-color: lightgray;
+}
+
+.unread{
+    background-color: gainsboro;
+}
+
+.subject{
+    width: 80%;
+    margin: 0 auto; 
+    text-align: center;
+    padding: 25px;
+    background-color: #415D43;
+    border-radius: 15px; 
+    border: 1px solid white;
+    color: white;
+    box-sizing: border-box;
+}
+
+.btn-csms{
+    background-color: #709775;
+    color: white;
+}
+
+.btn-csms-outlined{
+    background-color: white;
+ 
+    color: #415D43;
+}
+
+.btn-csms-outlined:hover{
+    border: 1px solid white;
+}
+
+
+td{
+    border: 1px solid black;
+}
+
+.grey-bg{
+    background-color: gray;
+    color: white;
+}
+
+.inputter{
+    padding: none !important;
+    margin: none !important;
+    width: 70%;
+}
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.grade{
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+.class-container{
+    margin: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 1px solid #415D43;
+    background-color: #709775;
+    border-radius: 10px;
+    height: 50vh;
+    color: white;
+}
+
+.bordered{
+    background-color: #415D43;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid white;
+    color: white;
+}
+
+.wide-btn{
+    width: 100%;
+}
+
+.bordered-none{
+    background-color: white;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #415D43;
+}
+
+.teacher-container{
+    margin-bottom: 20px;
+}
+
+.teacher-container-individual{
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-csms-1{
+    background-color: white;
+    border: 1px solid #709775;
+}
+
+.btn-csms-1:hover{
+    background-color: #709775;
+    color: white;
+    border: 1px solid white;
+}
+
+.teacher-container-individual:hover{
+    margin-bottom: 20px;
+    background-color: #709775;
+    color: white;
+}
+
+
+.student-container-individual{
+    margin-bottom: 10px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.student-container-individual:hover{
+    background-color: #709775;
+    color: white;
+}
+
+.file-container{
+    border: 1px solid #415D43;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+
+.btn-csms-outline{
+    border: 1px solid white;
+    color: white !important;
+}

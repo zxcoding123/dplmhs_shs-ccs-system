@@ -1,0 +1,132 @@
+html{
+    animation: myAnim 1s ease 0s 1 normal forwards;
+}
+
+@keyframes myAnim {
+	0% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 1;
+	}
+}
+
+* {
+    font-family: 'Poppins';
+}
+
+
+nav {
+    background-color: #415D43;
+    color: white;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 100%;
+}
+
+.nav-link-span {
+    color: white !important;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.icon {
+    color: black;
+    font-size: 32px;
+}
+
+body {
+    background-color: green;
+}
+
+.login-container {
+    height: fit-content;
+    background-color: white;
+}
+
+.actual-login-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
+    height: fit-content;
+    padding: 20px;
+}
+
+.paragraph-text {
+    font-size: 20px;
+}
+
+.header-text {
+    font-weight: bolder;
+}
+
+.big-logo {
+    height: 150px;
+    width: 150px;
+    background-color: white;
+    border-radius: 100%;
+    margin: 15px;
+}
+
+.small-logo {
+    height: 75px;
+    width: 75px;
+    background-color: white;
+    border-radius: 100%;
+    margin: 15px;
+}
+
+.bold{
+    font-weight: bolder;
+}
+
+
+.login-container-with-input{
+    width: 50%;
+}
+
+.button-linkers{
+    margin-top: 20px !important;
+    margin: 0px auto;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    width: 28%;
+}
+
+.login-btn{
+    margin-top: 20px;
+    background-color: green;
+    outline: none;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    width: 100%;
+    text-align: center;
+    transition: background-color 0.1s ease;
+}
+
+
+.login-btn:hover{
+    background-color: #5b8b5e;
+}
+
+.gb{
+    color: black !important;
+    text-decoration: none;
+}
+
+.gb:hover{
+    text-decoration:underline;
+}
+
+.gb-link{
+    color: #415D43
+}

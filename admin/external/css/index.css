@@ -1,0 +1,94 @@
+html{
+    animation: myAnim 1s ease 0s 1 normal forwards;
+}
+
+@keyframes myAnim {
+	0% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 1;
+	}
+}
+
+* {
+    font-family: 'Poppins';
+}
+
+
+nav {
+    background-color: #415D43;
+    color: white;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 100%;
+}
+
+.nav-link-span {
+    color: white !important;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.icon {
+    color: black;
+    font-size: 32px;
+}
+
+body {
+    background-color: #415D43;
+}
+
+.main-container {
+    height: 100vh;
+    background-image: url('../img/background.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+.paragraph-text {
+    font-size: 20px;
+}
+
+.header-text {
+    font-weight: bolder;
+}
+
+.big-logo {
+    height: 250px;
+    width: 250px;
+    background-color: white;
+    border-radius: 100%;
+    margin: 15px;
+}
+
+.link-container {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+}
+
+.navigation-link{
+    color: white;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.navigation-link:hover{
+    transform: scale(110%);
+}
+
+.bold{
+    font-weight: bolder;
+}
+

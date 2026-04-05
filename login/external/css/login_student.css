@@ -1,0 +1,207 @@
+html{
+    animation: myAnim 1s ease 0s 1 normal forwards;
+}
+
+@keyframes myAnim {
+	0% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 1;
+	}
+}
+
+* {
+    font-family: 'Poppins';
+}
+
+
+nav {
+    background-color: #10177a;
+    color: white;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 100%;
+}
+
+.nav-link-span {
+    color: white !important;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.icon {
+    color: black;
+    font-size: 32px;
+}
+
+
+
+.login-container {
+
+    background-color: white;
+}
+
+.actual-login-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
+  
+}
+
+.paragraph-text {
+    font-size: 20px;
+}
+
+.header-text {
+    font-weight: bolder;
+}
+
+.big-logo {
+    height: 150px;
+    width: 150px;
+    background-color: white;
+    border-radius: 100%;
+    margin: 15px;
+}
+
+.small-logo {
+    height: 75px;
+    width: 75px;
+    background-color: white;
+    border-radius: 100%;
+    margin: 15px;
+}
+
+.bold{
+    font-weight: bolder;
+}
+
+
+
+.button-linkers{
+ 
+    margin: 0px auto;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+
+}
+
+.login-btn{
+    margin-top: 20px;
+    background-color: #121ba3;
+    outline: none;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    width: 100%;
+    text-align: center;
+    transition: background-color 0.1s ease;
+}
+
+
+.login-btn:hover{
+    background-color: #10177a;
+}
+
+
+.gb{
+    color: black !important;
+    text-decoration: none;
+}
+
+.gb:hover{
+    text-decoration:underline;
+}
+
+.gb-link{
+    color: #415D43
+}
+
+/* 1. Base look ─ clean, only a thin bottom line */
+.input-control{
+    border: none;                 /* remove all sides…  */
+    border-bottom: 1px solid #000;/* …then draw the one we want        */
+    border-radius: 0;             /* no rounded corners                 */
+    width: 100%;
+    background: transparent;      /* blends with any bg                 */
+    padding-left: 0;              /* flush with the label               */
+    box-shadow: none;             /* kill Bootstrap’s inset shadow      */
+}
+
+/* 2. Focus state ─ keep the line, just change its colour/weight */
+.input-control:focus{
+    outline: none;                /* remove default outline             */
+    box-shadow: none;             /* remove the blue Bootstrap glow     */
+    border-bottom: 2px solid #0d6efd; /* thicker + brand colour highlight */
+}
+
+/* 3. Button inside the input‑group: match the look */
+.input-group .btn-outline-secondary{
+    border: none;
+    border-bottom: 1px solid #000;
+    border-radius: 0;
+}
+.input-group .btn-outline-secondary:focus{
+    box-shadow: none;
+    border-bottom: 2px solid #0d6efd;
+}
+
+/* —— animated toggle switch —— */
+.form-switch .toggle-switch{
+    /* remove native checkbox style */
+    appearance: none;
+    width: 42px;
+    height: 22px;
+    background: #bbb;
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    transition: background .3s ease;
+}
+.form-switch .toggle-switch::before{
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .3s ease;
+}
+.form-switch .toggle-switch:checked{
+    background: #0d6efd;      /* Bootstrap primary */
+}
+.form-switch .toggle-switch:checked::before{
+    transform: translateX(20px);   /* slide the knob */
+}
+
+/* —— subtle feedback on the password field —— */
+#password{
+    transition: border-bottom-color .3s ease;
+}
+#password.password-visible{
+    border-bottom: 2px solid #0d6efd;
+}
+
+.selector{
+      border: none;                 /* remove all sides…  */
+    border-bottom: 1px solid #000;/* …then draw the one we want        */
+    border-radius: 0;             /* no rounded corners                 */
+    width: 100%;
+    background: transparent;      /* blends with any bg                 */
+    padding-left: 0;              /* flush with the label               */
+    box-shadow: none;             /* kill Bootstrap’s inset shadow      */
+}
+
+input{
+    padding: 3px !important;
+}
