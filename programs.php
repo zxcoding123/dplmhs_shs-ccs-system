@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Our Programs - CCS | Ateneo de Naga University</title>
+    <title>Our Programs - CCS | Aurelius University</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <style>
         :root {
-            --main-color: #293891;
+            --main-color: #061E4E;
             --accent-color: #c2a74d;
             --highlight: #e92b2d;
             --white: #ffffff;
@@ -313,9 +313,9 @@
 
     <header>
         <h6>
-            <img src="external/img/ADNU_Logo.png" class="logo">
+            <img src="external/img/AU_Logo.png" class="logo">
             <span class="header-text">
-                &nbsp; Ateneo de Naga University - College of Computer Studies
+                &nbsp; Aurelius University - College of Computer Studies
             </span>
         </h6>
 
@@ -416,7 +416,7 @@
     </section>
 
     <footer>
-        <p>&copy; 2025 College of Computer Studies, Ateneo de Naga University</p>
+        <p>&copy; 2025 College of Computer Studies, Aurelius University</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

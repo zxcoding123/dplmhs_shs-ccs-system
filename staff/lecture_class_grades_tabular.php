@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
@@ -13,7 +13,7 @@ include('processes/server/conn.php');
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>AdNU - CCS | Student Management System</title>
+    <title>AU - CCS | Student Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="css/app.css" rel="stylesheet">
@@ -91,16 +91,16 @@ include('processes/server/conn.php');
                                     class="container text-center d-flex align-items-center justify-content-center my-3">
                                     <div class="row w-100 d-flex align-items-center justify-content-center">
                                         <div class="col-2 d-flex justify-content-center">
-                                            <img src="../external/img/ADNU_CCS_Logo.png"
+                                            <img src="../external/img/AU_CCS_Logo.png"
                                                 class="img-fluid small-logo">
                                         </div>
                                         <div class="col-8 text-center">
-                                            <h5 class="bold mb-1">Ateneo de Naga University</h5>
+                                            <h5 class="bold mb-1">Aurelius University</h5>
                                             <h5 class="mb-1">College of Computing Studies</h5>
                                             <h5>Naga City</h5>
                                         </div>
                                         <div class="col-2 d-flex justify-content-center">
-                                            <img src="../external/img/ADNU_CCS_Logo.png"
+                                            <img src="../external/img/AU_CCS_Logo.png"
                                                 class="img-fluid small-logo">
                                         </div>
                                     </div>

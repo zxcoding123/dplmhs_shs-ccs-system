@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -39,14 +39,14 @@ function sendActivationEmail($email, $name, $token)
     
                 <!-- Text -->
                 <div style='font-size: 24px; color: #2c3e50; font-weight: bold; text-align: center;'>
-                    Ateneo de Naga University <br> Student Management System
+                    Aurelius University <br> Student Management System
                 </div>
     
       
     
             <!-- Main Content -->
             <h1 style='font-size: 24px; color: #2c3e50;'>Hello, $name!</h1>
-            <p style='font-size: 18px; color: #34495e;'>Thank you for registering with the <strong>AdNU - Student Management System</strong>.</p>
+            <p style='font-size: 18px; color: #34495e;'>Thank you for registering with the <strong>AU - Student Management System</strong>.</p>
             <p style='font-size: 18px; color: #34495e;'>Please click the link below to activate your account and complete your registration process:</p>
             <p style='font-size: 18px;'>
 
@@ -54,7 +54,7 @@ function sendActivationEmail($email, $name, $token)
             </p>
     
             <hr style='border: 1px solid #ddd; width: 80%; margin: 20px auto;'>
-            <p style='font-size: 16px; color: #7f8c8d;'>If you have any issues, feel free to contact us at <a href='mailto:support@adnu.edu.ph' style='color: #2980b9;'>support@adnu.edu.ph</a></p>
+            <p style='font-size: 16px; color: #7f8c8d;'>If you have any issues, feel free to contact us at <a href='mailto:support@AU.edu.ph' style='color: #2980b9;'>support@AU.edu.ph</a></p>
     
             <div style='font-size: 14px; color: #7f8c8d;'>Best regards,<br>The ADDU Student Management System Team</div>
         </div>";

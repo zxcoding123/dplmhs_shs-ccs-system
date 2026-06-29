@@ -1,4 +1,4 @@
-<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+﻿<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 
 <nav id="sidebar" class="sidebar js-sidebar">
     <div class="sidebar-content js-simplebar">
@@ -11,8 +11,8 @@
             $stmt->execute([':user_id' => $_SESSION['user_id']]);
             $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $profilePicture = !empty($student['picture']) ? $student['picture'] : 'ADNU_Logo.png';
-            $path = "ADNU_CCS_Logo.png" . $profilePicture;
+            $profilePicture = !empty($student['picture']) ? $student['picture'] : 'AU_Logo.png';
+            $path = "AU_CCS_Logo.png" . $profilePicture;
             ?>
 
             <img src="../uploads/profile_pictures/<?php echo $profilePicture; ?>" class="img-fluid logo" alt="Profile Picture">

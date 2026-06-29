@@ -18,14 +18,14 @@ html{
 
 
 nav {
-    background-color: #10177a;
+    background-color: #061E4E;
     color: white;
 }
 
 .logo {
-    width: 50px;
+    width: 100%;
     height: 50px;
-    background-color: white;
+    background-color: transparent;
     border-radius: 100%;
 }
 

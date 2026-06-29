@@ -1,5 +1,16 @@
 <?php
-if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'ADMIN_NOT_LOGGED_IN') {
+if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'TOO_MANY_ATTEMPTS') {
+    echo "
+    <script>
+        Swal.fire({
+            title: 'Too many failed attempts!',
+            text: 'Your account has been temporarily locked. Please wait 5 minutes before trying again.',
+            icon: 'warning'
+        });
+    </script>
+    ";
+    unset($_SESSION['STATUS']);
+} elseif (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'ADMIN_NOT_LOGGED_IN') {
     echo "
     <script>
         Swal.fire({

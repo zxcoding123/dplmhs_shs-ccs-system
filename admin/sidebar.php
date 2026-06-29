@@ -1,4 +1,4 @@
-<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+﻿<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 
 <nav id="sidebar" class="sidebar js-sidebar" style="background-color: orange !important;">
     <div class="sidebar-content js-simplebar">
@@ -6,7 +6,7 @@
             <p class="text-light time" id="currentTime"> </p>
         </div>
         <a class="sidebar-brand text-center" href="index.php">
-            <img src="external/img/ADNU_Logo.png" class="img-fluid logo">
+            <img src="external/img/AU_Logo.png" class="img-fluid logo">
             <h1 class="align-middle text-light bold">Welcome, Admin!</h1>
         </a>
 

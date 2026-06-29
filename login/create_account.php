@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 
 ?>
@@ -9,7 +9,7 @@ session_start();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ADNU - CCS | Student Management System</title>
+    <title>AU - CCS | Student Management System</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -36,7 +36,7 @@ session_start();
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid d-flex">
             <a class="navbar-brand" href="../index.php">
-                <img src="external/img/ADNU_Logo.png" class="img-fluid logo">
+                <img src="external/img/AU_Logo.png" class="img-fluid logo">
             </a>
             <div class="mx-auto"> Student Management System
             </div>
@@ -89,10 +89,10 @@ session_start();
                                         <small><a href="index.php" class="gb text-center"><i class="bi bi-arrow-left-circle-fill"></i> Go back</a></small>
                                     </div>
                                     <div class="d-flex justify-content-center align-items-center flex-row mt-3">
-                                        <img src="external/img/ADNU_Logo.png" class="img-fluid big-logo me-2" alt="ADNU Logo">
-                                        <img src="external/img/ADNU_CCS_Logo.png" class="img-fluid big-logo" alt="CCS Logo">
+                                        <img src="external/img/AU_Logo.png" class="img-fluid big-logo me-2" alt="AU Logo">
+                                        <!-- <img src="external/img/AU_CCS_Logo.png" class="img-fluid big-logo" alt="CCS Logo"> -->
                                     </div>
-                                    <h3 class="text-center bold">Welcome to AdNU - CCS</h3>
+                                    <h3 class="text-center bold">Welcome to AU - CCS</h3>
                                     <p class="text-center text-muted">Create your account by filling out the form below</p>
                                     <form action="processes/register.php" method="POST" id="registrationForm">
                                         <!-- Name -->

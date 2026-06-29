@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once '../app/auth_bootstrap.php';
 
@@ -18,7 +18,7 @@ $stmt->execute();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ADNU - CCS | Student Management System</title>
+    <title>AU - CCS | Student Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -39,7 +39,7 @@ $stmt->execute();
         <div class="container-fluid">
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="external/img/ADNU_Logo.png" alt="ADNU Logo" class="img-fluid" style="max-height:50px;">
+                <img src="external/img/AU_Logo.png" alt="AU Logo" class="img-fluid" style="max-height:50px;">
             </a>
 
             <!-- Mobile toggle button -->
@@ -71,11 +71,11 @@ $stmt->execute();
                     </div>
 
                     <div class="d-flex justify-content-center align-items-center mb-3 gap-2 flex-wrap">
-                        <img src="external/img/ADNU_Logo.png" class="img-fluid" style="max-width:100px;" alt="ADNU Logo">
-                        <img src="external/img/ADNU_CCS_Logo.png" class="img-fluid" style="max-width:100px;" alt="CCS Logo">
+                        <img src="external/img/AU_Logo.png" class="img-fluid" style="max-width:100px;" alt="AU Logo">
+                        <!-- <img src="external/img/AU_CCS_Logo.png" class="img-fluid" style="max-width:100px;" alt="CCS Logo"> -->
                     </div>
 
-                    <h3 class="text-center fw-bold mb-2">Welcome to AdNU - CCS</h3>
+                    <h3 class="text-center fw-bold mb-2">Welcome to AU - CCS</h3>
                     <p class="text-center text-muted mb-4">Login your account by filling out the form below</p>
 
                     <form action="processes/login.php" method="POST" class="login-container-with-input">
@@ -107,7 +107,7 @@ $stmt->execute();
             <!-- Right Column: Image -->
             <div class="col-lg d-none d-lg-flex justify-content-center align-items-center">
                 <div data-aos="fade-left">
-                    <img src="external/img/login.png" class="img-fluid rounded" alt="ADNU Login Banner">
+                    <img src="external/img/login.png" class="img-fluid rounded" alt="AU Login Banner">
                 </div>
             </div>
         </div>

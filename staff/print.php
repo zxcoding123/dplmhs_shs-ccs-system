@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include('processes/server/conn.php');
 ?>
 
@@ -10,7 +10,7 @@ include('processes/server/conn.php');
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdNU - CCS | Student Management System</title>
+    <title>AU - CCS | Student Management System</title>
     <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -99,17 +99,17 @@ if ($class_id) {
         <div class="header text-center">
             <div class="row">
                 <div class="col-sm-3">
-                    <img src="external/img/ADNU_Logo.png" class="img-fluid logo">
+                    <img src="external/img/AU_Logo.png" class="img-fluid logo">
 
                 </div>
                 <div class="col">
                     <h3 class="mt-10 bold">Repblic of the Philippines</h3>
-                    <h3 class="mt-10 bold">Ateneo de Naga University</h3>
+                    <h3 class="mt-10 bold">Aurelius University</h3>
                     <h3 class="mt-10 bold">College of Computing Studies</h3>
-                    <p>Ateneo de Naga University, Ateneo Avenue, Naga City, 4400 Philippines</p>
+                    <p>Aurelius University, Ateneo Avenue, Naga City, 4400 Philippines</p>
                 </div>
                 <div class="col-sm-3">
-                    <img src="external/img/ADNU_CCS_Logo.png" class="img-fluid logo">
+                    <img src="external/img/AU_CCS_Logo.png" class="img-fluid logo">
                 </div>
             </div>
 

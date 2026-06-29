@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = 'TEACHER_NOT_LOGGED_IN';
@@ -28,7 +28,7 @@ if (!$student) {
                 style="width: 200px; height: 200px; object-fit: cover;"
                 alt="Student Photo">
         <?php else: ?>
-            <img src="../external/img/ADNU_Logo.png"
+            <img src="../external/img/AU_Logo.png"
                 class="img-fluid rounded-circle mb-3"
                 style="width: 200px; height: 200px; object-fit: cover;"
                 alt="Default Photo">

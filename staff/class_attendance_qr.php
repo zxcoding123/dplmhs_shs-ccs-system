@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 date_default_timezone_set('Asia/Manila'); // Set the timezone for the script
 require('../vendor/phpqrcode/qrlib.php');
@@ -88,8 +88,8 @@ $stmt->execute();
                 <a class="sidebar-toggle js-sidebar-toggle">
                     <i class="hamburger align-self-center"></i>
                 </a>
-                <img src="external/img/ADNU_Logo.png" class="logo-small">
-                <span class="text-white"><b>AdNU</b> - Student Management System </span>
+                <img src="external/img/AU_Logo.png" class="logo-small">
+                <span class="text-white"><b>AU</b> - Student Management System </span>
                 <div class="navbar-collapse collapse">
                     <?php include('top-bar.php') ?>
                 </div>

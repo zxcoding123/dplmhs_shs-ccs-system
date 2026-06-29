@@ -93,13 +93,26 @@ class AuthService
     }
 
     /**
-     * Find user by email
+     * Find user by email — checks users table first, falls back to admin table
      */
     private function findUser(string $email): ?array
     {
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $user = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if (!$user) {
+            $stmt = $this->pdo->prepare("SELECT * FROM admin WHERE email = ? LIMIT 1");
+            $stmt->execute([$email]);
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($admin) {
+                $admin['role']   = 'admin';
+                $admin['status'] = 'active';
+                $user = $admin;
+            }
+        }
+
+        return $user;
     }
 
     /**
@@ -128,6 +141,25 @@ class AuthService
         $_SESSION['email'] = $user['email'];
         $_SESSION['user_type'] = $user['role'];
         $_SESSION['name'] = $user['fullName'] ?? trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+
+        // Legacy session keys — admin/staff/student pages still check their own key names
+        if ($user['role'] === 'admin') {
+            $_SESSION['admin_id'] = $user['id'];
+        } elseif ($user['role'] === 'staff') {
+            $stmt = $this->pdo->prepare("SELECT id FROM staff_accounts WHERE user_id = ?");
+            $stmt->execute([$user['id']]);
+            $row = $stmt->fetch();
+            if ($row) {
+                $_SESSION['teacher_id'] = $row['id'];
+            }
+        } elseif ($user['role'] === 'student') {
+            $stmt = $this->pdo->prepare("SELECT id FROM students WHERE user_id = ?");
+            $stmt->execute([$user['id']]);
+            $row = $stmt->fetch();
+            if ($row) {
+                $_SESSION['student_id'] = $row['id'];
+            }
+        }
 
         // Update last login
         $stmt = $this->pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");

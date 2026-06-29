@@ -1,4 +1,4 @@
-<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+﻿<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 
 <nav id="sidebar" class="sidebar js-sidebar">
     <div class="sidebar-content js-simplebar">
@@ -6,7 +6,7 @@
             <p class="text-light time" id="currentTime"> </p>
         </div>
         <div class="sidebar-brand text-center" href="index.html">
-            <img src="external/img/ADNU_Logo.png" class="img-fluid logo">
+            <img src="external/img/AU_Logo.png" class="img-fluid logo">
             <?php
             // Start the session to access the teacher's session ID
 

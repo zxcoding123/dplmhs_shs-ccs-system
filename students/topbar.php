@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 $userId = $_SESSION['user_id'] ?? null;
 $query = "SELECT * FROM messages WHERE status = 'unread' AND receiver_id = :user_id ORDER BY id DESC";
@@ -35,8 +35,8 @@ if ($userId) {
 	<a class="sidebar-toggle js-sidebar-toggle">
 		<i class="hamburger align-self-center"></i>
 	</a>
-	<img src="external/img/ADNU_Logo.png" class="logo-small">
-	<span class="text-white"><b>AdNU</b> - Student Management System </span>
+	<img src="external/img/AU_Logo.png" class="logo-small">
+	<span class="text-white"><b>AU</b> - Student Management System </span>
 	<div class="navbar-collapse collapse">
 		<ul class="navbar-nav navbar-align">
 			<li class="nav-item dropdown">

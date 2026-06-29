@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 include('login/processes/conn.php');
 $pdo = Database::getConnection();
@@ -16,7 +16,7 @@ $pdo = Database::getConnection();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>College of Computer Studies - ADNU</title>
+    <title>College of Computer Studies - AU</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Add this inside <head> -->
@@ -26,7 +26,7 @@ $pdo = Database::getConnection();
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <style>
         :root {
-            --main-color: #293891;
+            --main-color: #061E4E;
             --accent-color: #c2a74d;
             --white: #ffffff;
             --highlight: #e92b2d;
@@ -157,7 +157,7 @@ $pdo = Database::getConnection();
 
         .hero {
             background-image: url('external/img/Kanto-TDRI-DMOC-4.webp');
-            background-color: #293891;
+            background-color: #061E4E;
             background-repeat: no-repeat;
             background-size: cover;
             background-blend-mode: multiply;
@@ -242,7 +242,7 @@ $pdo = Database::getConnection();
         }
 
         .navy-card {
-            background-color: #293891 !important;
+            background-color: #061E4E !important;
             color: white !important;
         }
 
@@ -256,7 +256,7 @@ $pdo = Database::getConnection();
         }
 
         .dean-announcement {
-            background-color: #293891 !important;
+            background-color: #061E4E !important;
             color: white !important;
             padding: 10px;
         }
@@ -326,9 +326,9 @@ $pdo = Database::getConnection();
 <body>
     <header>
         <h6>
-            <img src="external/img/ADNU_Logo.png" class="logo">
+            <img src="external/img/AU_Logo.png" class="logo">
             <span class="header-text">
-                &nbsp; Ateneo de Naga University - College of Computer Studies
+                &nbsp; Aurelius University - College of Computer Studies
             </span>
         </h6>
 
@@ -350,10 +350,10 @@ $pdo = Database::getConnection();
 
     <section>
         <div class="hero">
-            <img src="external/img/ADNU_Logo.png" class="img-fluid">
+            <img src="external/img/AU_Logo.png" class="img-fluid" style="width: auto; height: 500px;">
             <br>
             <h2><b>Innovating the Future</b></h2>
-            <p>Welcome to the College of Computer Studies at Ateneo de Naga University — where technology meets Jesuit excellence.</p>
+            <p>Welcome to the College of Computer Studies at Aurelius University — where technology meets Jesuit excellence.</p>
             <a href=" programs.php" class="btn btn-cta">Explore Programs</a>
         </div>
     </section>
@@ -366,7 +366,7 @@ $pdo = Database::getConnection();
                 <div data-aos="fade-up">
                     <div class="content">
                         <h3><b>ACADEMIC EXCELLENCE</b></h3>
-                        <p>ADNU is the only Autonomous university in Bicol, offering pre-school, grade school, junior high school, senior high school, college, graduate school, and law school.</p>
+                        <p>AU is the only Autonomous university in Bicol, offering pre-school, grade school, junior high school, senior high school, college, graduate school, and law school.</p>
                     </div>
                 </div>
             </div>
@@ -383,7 +383,7 @@ $pdo = Database::getConnection();
                 <div data-aos="fade-up">
                     <div class="content">
                         <h3><b>VALUES FORMATION</b></h3>
-                        <p>ADNU offers programs for personal and spiritual growth. Numerous annual retreats and alternative programs are open to the Ateneo community members and alumni.</p>
+                        <p>AU offers programs for personal and spiritual growth. Numerous annual retreats and alternative programs are open to the Ateneo community members and alumni.</p>
                     </div>
                 </div>
             </div>
@@ -627,12 +627,12 @@ $pdo = Database::getConnection();
                     <p data-aos="fade-up" data-aos-delay="100">
                         <i class="bi bi-building me-2 text-primary"></i>
                         <strong>College of Computer Studies</strong><br>
-                        Ateneo de Naga University<br>
+                        Aurelius University<br>
                         Bagumbayan Sur, Naga City, Philippines
                     </p>
                     <p data-aos="fade-up" data-aos-delay="200">
                         <i class="bi bi-envelope-fill me-2 text-primary"></i>
-                        <strong>Email:</strong> <a href="mailto:ccs@adnu.edu.ph">ccs@adnu.edu.ph</a>
+                        <strong>Email:</strong> <a href="mailto:ccs@AU.edu.ph">ccs@AU.edu.ph</a>
                     </p>
                     <p data-aos="fade-up" data-aos-delay="300">
                         <i class="bi bi-telephone-fill me-2 text-primary"></i>
@@ -656,7 +656,7 @@ $pdo = Database::getConnection();
         </div>
     </section>
     <footer>
-        <p>&copy; 2025 Ateneo de Naga University - CCS. All rights reserved.</p>
+        <p>&copy; 2025 Aurelius University - CCS. All rights reserved.</p>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
