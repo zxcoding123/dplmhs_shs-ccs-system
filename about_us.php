@@ -9,6 +9,7 @@ include('processes/server/alert_system.php');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ADDU - CCS | About Us</title>
+    <?php include(__DIR__ . '/includes/favicon-links.php'); ?>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
@@ -19,9 +20,6 @@ include('processes/server/alert_system.php');
 
     <!-- Custom CSS -->
     <link href="external/css/index.css" rel="stylesheet">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="external/img/favicon-32x32.png">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,6 +122,10 @@ include('processes/server/alert_system.php');
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+
+<!-- Floating Chat Widget -->
+<?php include(__DIR__ . '/includes/floating-chat-widget.php'); ?>
+
 </body>
 
 </html>

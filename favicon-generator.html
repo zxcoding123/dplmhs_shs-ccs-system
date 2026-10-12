@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favicon PNG Generator - AU CCS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #061E4E 0%, #10177a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #061E4E;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .preview-section {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .preview-title {
+            color: #333;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .preview-group {
+            display: inline-flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preview-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preview-box {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-16x16 .preview-box {
+            width: 60px;
+            height: 60px;
+        }
+
+        .preview-16x16 img {
+            width: 16px;
+            height: 16px;
+        }
+
+        .preview-32x32 .preview-box {
+            width: 80px;
+            height: 80px;
+        }
+
+        .preview-32x32 img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .preview-180x180 .preview-box {
+            width: 120px;
+            height: 120px;
+        }
+
+        .preview-180x180 img {
+            width: 180px;
+            height: 180px;
+            display: none;
+        }
+
+        .preview-180x180 .preview-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .size-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .conversion-section {
+            background: #f0f7ff;
+            border: 2px solid #c2a74d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .conversion-title {
+            color: #061E4E;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .size-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .size-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .size-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .size-option label {
+            flex: 1;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .size-option .description {
+            color: #999;
+            font-size: 0.85rem;
+            margin-left: 28px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #061E4E;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: #0a2a6b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(6, 30, 78, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #c2a74d;
+            color: #061E4E;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: #d4b860;
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            background: #f9f9f9;
+            border-left: 4px solid #c2a74d;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #061E4E;
+        }
+
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .preview-group {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Favicon PNG Generator</h1>
+        <p class="subtitle">Convert SVG favicon to PNG for browser compatibility</p>
+
+        <div class="preview-section">
+            <div class="preview-title">Preview of Favicon Sizes</div>
+            <div class="preview-group">
+                <div class="preview-item preview-16x16">
+                    <div class="preview-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                            <rect width="64" height="64" fill="#061E4E" rx="8"/>
+                            <g transform="translate(32, 18)">
+                                <path d="M -16 -2 L 0 -8 L 16 -2 Z" fill="#c2a74d" stroke="#ffffff" stroke-width="1.5"/>
+                                <rect x="-18" y="-2" width="36" height="4" fill="#c2a74d" stroke="#ffffff" stroke-width="1.5"/>
+                                <line x1="0" y1="2" x2="0" y2="12" stroke="#e92b2d" stroke-width="2"/>
+                                <circle cx="0" cy="14" r="2" fill="#e92b2d"/>
+                            </g>
+                            <g transform="translate(32, 38)">
+                                <rect x="-12" y="-10" width="24" height="16" fill="#ffffff" stroke="#c2a74d" stroke-width="1.5" rx="1"/>
+                                <text x="-8" y="-2" font-family="monospace" font-size="6" fill="#061E4E" font-weight="bold">&lt;</text>
+                                <text x="2" y="-2" font-family="monospace" font-size="6" fill="#061E4E" font-weight="bold">/&gt;</text>
+                                <rect x="-2" y="6" width="4" height="3" fill="#c2a74d"/>
+                                <rect x="-8" y="9" width="16" height="2" fill="#c2a74d" rx="1"/>
+                            </g>
+                            <circle cx="32" cy="32" r="30" fill="none" stroke="#c2a74d" stroke-width="1.5" opacity="0.6"/>
+                        </svg>
+                    </div>
+                    <span class="size-label">16×16px</span>
+                </div>
+
+                <div class="preview-item preview-32x32">
+                    <div class="preview-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32">
+                            <rect width="64" height="64" fill="#061E4E" rx="8"/>
+                            <g transform="translate(32, 18)">
+                                <path d="M -16 -2 L 0 -8 L 16 -2 Z" fill="#c2a74d" stroke="#ffffff" stroke-width="1.5"/>
+                                <rect x="-18" y="-2" width="36" height="4" fill="#c2a74d" stroke="#ffffff" stroke-width="1.5"/>
+                                <line x1="0" y1="2" x2="0" y2="12" stroke="#e92b2d" stroke-width="2"/>
+                                <circle cx="0" cy="14" r="2" fill="#e92b2d"/>
+                            </g>
+                            <g transform="translate(32, 38)">
+                                <rect x="-12" y="-10" width="24" height="16" fill="#ffffff" stroke="#c2a74d" stroke-width="1.5" rx="1"/>
+                                <text x="-8" y="-2" font-family="monospace" font-size="6" fill="#061E4E" font-weight="bold">&lt;</text>
+                                <text x="2" y="-2" font-family="monospace" font-size="6" fill="#061E4E" font-weight="bold">/&gt;</text>
+                                <rect x="-2" y="6" width="4" height="3" fill="#c2a74d"/>
+                                <rect x="-8" y="9" width="16" height="2" fill="#c2a74d" rx="1"/>
+                            </g>
+                            <circle cx="32" cy="32" r="30" fill="none" stroke="#c2a74d" stroke-width="1.5" opacity="0.6"/>
+                        </svg>
+                    </div>
+                    <span class="size-label">32×32px</span>
+                </div>
+
+                <div class="preview-item preview-180x180">
+                    <div class="preview-box">🎓💻</div>
+                    <span class="size-label">180×180px (Apple)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="conversion-section">
+            <div class="conversion-title">📥 Select Sizes to Generate</div>
+            <div class="size-options">
+                <div class="size-option">
+                    <input type="checkbox" id="size16" checked>
+                    <label for="size16"><strong>favicon-16x16.png</strong></label>
+                </div>
+                <div class="description">Browser tab favicon (small screens)</div>
+
+                <div class="size-option">
+                    <input type="checkbox" id="size32" checked>
+                    <label for="size32"><strong>favicon-32x32.png</strong></label>
+                </div>
+                <div class="description">Browser tab favicon (standard)</div>
+
+                <div class="size-option">
+                    <input type="checkbox" id="size180" checked>
+                    <label for="size180"><strong>apple-touch-icon.png</strong></label>
+                </div>
+                <div class="description">Apple device home screen icon</div>
+            </div>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            ✅ PNG generated successfully! Click download to save.
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="generatePNG()">🎨 Generate PNG Files</button>
+            <button class="btn-secondary" onclick="downloadInstructions()">📋 Download Instructions</button>
+        </div>
+
+        <div class="info-box">
+            <strong>💡 Note:</strong> This tool generates PNG versions from the SVG favicon.
+            After generating, download the files and place them in the root directory of your CSMS system.
+            Make sure to clear your browser cache after uploading the PNG files.
+        </div>
+    </div>
+
+    <script>
+        async function generatePNG() {
+            const sizes = [
+                { id: 'size16', size: 16, name: 'favicon-16x16.png' },
+                { id: 'size32', size: 32, name: 'favicon-32x32.png' },
+                { id: 'size180', size: 180, name: 'apple-touch-icon.png' }
+            ];
+
+            const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+                <rect width="64" height="64" fill="#061E4E" rx="8"/>
+                <g transform="translate(32, 18)">
+                    <path d="M -16 -2 L 0 -8 L 16 -2 Z" fill="#c2a74d" stroke="#ffffff" stroke-width="1.5"/>
+                    <rect x="-18" y="-2" width="36" height="4" fill="#c2a74d" stroke="#ffffff" stroke-width="1.5"/>
+                    <line x1="0" y1="2" x2="0" y2="12" stroke="#e92b2d" stroke-width="2"/>
+                    <circle cx="0" cy="14" r="2" fill="#e92b2d"/>
+                </g>
+                <g transform="translate(32, 38)">
+                    <rect x="-12" y="-10" width="24" height="16" fill="#ffffff" stroke="#c2a74d" stroke-width="1.5" rx="1"/>
+                    <text x="-8" y="-2" font-family="monospace" font-size="6" fill="#061E4E" font-weight="bold">&lt;</text>
+                    <text x="2" y="-2" font-family="monospace" font-size="6" fill="#061E4E" font-weight="bold">/&gt;</text>
+                    <rect x="-2" y="6" width="4" height="3" fill="#c2a74d"/>
+                    <rect x="-8" y="9" width="16" height="2" fill="#c2a74d" rx="1"/>
+                </g>
+                <circle cx="32" cy="32" r="30" fill="none" stroke="#c2a74d" stroke-width="1.5" opacity="0.6"/>
+            </svg>`;
+
+            for (const config of sizes) {
+                if (document.getElementById(config.id).checked) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = config.size;
+                    canvas.height = config.size;
+                    const ctx = canvas.getContext('2d');
+
+                    const img = new Image();
+                    img.onload = function() {
+                        ctx.drawImage(img, 0, 0, config.size, config.size);
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/png');
+                        link.download = config.name;
+                        link.click();
+                    };
+                    img.src = 'data:image/svg+xml;base64,' + btoa(svgString);
+                }
+            }
+
+            document.getElementById('successMessage').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('successMessage').classList.remove('show');
+            }, 4000);
+        }
+
+        function downloadInstructions() {
+            alert('Instructions:\n\n1. Click "Generate PNG Files" to download the PNG versions\n2. Place the downloaded files in your CSMS root directory\n3. Clear browser cache (Ctrl+Shift+Del)\n4. Refresh the page to see the new favicon\n\nFor detailed information, see FAVICON_SETUP.md');
+        }
+    </script>
+</body>
+</html>

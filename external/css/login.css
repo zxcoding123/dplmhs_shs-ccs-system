@@ -130,3 +130,164 @@ body {
 .gb-link{
     color: #415D43
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    nav {
+        padding: 0.5rem;
+    }
+
+    .logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .nav-link-span {
+        margin-right: 10px;
+        font-size: 0.9rem;
+    }
+
+    .icon {
+        font-size: 28px;
+    }
+
+    .big-logo {
+        height: 120px;
+        width: 120px;
+        margin: 10px;
+    }
+
+    .small-logo {
+        height: 60px;
+        width: 60px;
+        margin: 10px;
+    }
+
+    .login-container-with-input {
+        width: 90%;
+    }
+
+    .button-linkers {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .paragraph-text {
+        font-size: 16px;
+    }
+
+    .login-btn {
+        padding: 12px;
+        font-size: 0.95rem;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-container, .actual-login-container {
+        height: auto;
+        min-height: 100vh;
+        padding: 1rem 0;
+    }
+
+    nav {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .logo {
+        width: 35px;
+        height: 35px;
+    }
+
+    .nav-link-span {
+        margin-right: 8px;
+        font-size: 0.8rem;
+    }
+
+    .big-logo {
+        height: 100px;
+        width: 100px;
+        margin: 8px;
+    }
+
+    .small-logo {
+        height: 50px;
+        width: 50px;
+        margin: 8px;
+    }
+
+    .paragraph-text {
+        font-size: 14px;
+    }
+
+    .header-text {
+        font-size: 0.9rem;
+    }
+
+    .login-container-with-input {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    .button-linkers {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0 1rem;
+    }
+
+    .login-btn {
+        padding: 12px 8px;
+        font-size: 0.85rem;
+        min-height: 44px;
+        width: 100%;
+    }
+
+    form {
+        width: 100%;
+    }
+
+    form input, form select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .login-container, .actual-login-container {
+        height: auto;
+        min-height: auto;
+    }
+
+    .big-logo {
+        height: 80px;
+        width: 80px;
+    }
+
+    .small-logo {
+        height: 50px;
+        width: 50px;
+    }
+
+    .paragraph-text {
+        font-size: 14px;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    button, .login-btn, a {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    input, select {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+}

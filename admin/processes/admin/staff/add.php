@@ -24,13 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // Check if email already exists in the database
+        // Check if email already exists in the database (staff_accounts or the shared users table)
         $checkEmailSql = "SELECT * FROM staff_accounts WHERE email = :email";
         $checkStmt = $pdo->prepare($checkEmailSql);
         $checkStmt->bindParam(':email', $email);
         $checkStmt->execute();
 
         if ($checkStmt->rowCount() > 0) {
+            $_SESSION['STATUS'] = "STAFF_EMAIL_EXISTS";
+            header('Location: ../../../teacher_management.php');
+            exit;
+        }
+
+        $checkUserEmailSql = "SELECT id FROM users WHERE email = :email";
+        $checkUserEmailStmt = $pdo->prepare($checkUserEmailSql);
+        $checkUserEmailStmt->bindParam(':email', $email);
+        $checkUserEmailStmt->execute();
+
+        if ($checkUserEmailStmt->rowCount() > 0) {
             $_SESSION['STATUS'] = "STAFF_EMAIL_EXISTS";
             header('Location: ../../../teacher_management.php');
             exit;
@@ -50,17 +61,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Hash the password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        $pdo->beginTransaction();
+
+        // Create the shared login record in `users` first, so the staff member can sign in
+        // through the main login page (AuthService authenticates against `users`, not staff_accounts).
+        $userSql = "INSERT INTO users (email, password, role, status, date_created) VALUES (:email, :password, 'staff', 'inactive', NOW())";
+        $userStmt = $pdo->prepare($userSql);
+        $userStmt->bindParam(':email', $email);
+        $userStmt->bindParam(':password', $hashed_password);
+        $userStmt->execute();
+
+        $userId = $pdo->lastInsertId();
+
         // SQL query to insert a new staff account
-        $sql = "INSERT INTO staff_accounts (first_name, middle_name, last_name, fullName, department, email, password, phone_number, gender) 
-                VALUES (:first_name, :middle_name, :last_name, :fullName, :department, :email, :password, :phone_number, :gender)";
+        $sql = "INSERT INTO staff_accounts (user_id, first_name, middle_name, last_name, fullName, department, email, password, phone_number, gender)
+                VALUES (:user_id, :first_name, :middle_name, :last_name, :fullName, :department, :email, :password, :phone_number, :gender)";
 
         // Prepare statement
         $stmt = $pdo->prepare($sql);
 
-        // Hash the password
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
         // Bind parameters
+        $stmt->bindParam(':user_id', $userId);
         $stmt->bindParam(':first_name', $firstName);
         $stmt->bindParam(':middle_name', $middleName);
         $stmt->bindParam(':last_name', $lastName);
@@ -96,22 +120,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute();
                 } else {
                     // Optionally, handle if the teacher is already assigned to the class
+                    $pdo->rollBack();
                     $_SESSION['STATUS'] = "TEACHER_ALREADY_ASSIGNED_TO_CLASS";
                     header('Location: ../../../teacher_management.php');
                     exit;
                 }
             }
 
+            $pdo->commit();
+
             $_SESSION['STATUS'] = "STAFF_ADDED_SUCCESSFULLY";
             header('Location: ../../../teacher_management.php');
             exit();
 
         } else {
+            $pdo->rollBack();
             $_SESSION['STATUS'] = "STAFF_ADDED_ERROR";
             header('Location: ../../../teacher_management.php');
             exit();
         }
     } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         $_SESSION['STATUS'] = "STAFF_ADDED_ERROR";
         // Optionally, log or display errors during development
         // echo "Error: " . $e->getMessage();

@@ -38,6 +38,19 @@ if (isset($_GET['id'])) {
             exit();
         }
 
+        // Check the shared users table too, since its email column is unique across all roles
+        $checkUserEmailSql = "SELECT u.id FROM users u JOIN staff_accounts sa ON sa.user_id = u.id WHERE u.email = :email AND sa.id != :id";
+        $checkUserEmailStmt = $pdo->prepare($checkUserEmailSql);
+        $checkUserEmailStmt->bindParam(':email', $email);
+        $checkUserEmailStmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $checkUserEmailStmt->execute();
+
+        if ($checkUserEmailStmt->rowCount() > 0) {
+            $_SESSION['STATUS'] = "STAFF_EMAIL_EXISTS";
+            header('Location: ../../../teacher_management.php');
+            exit();
+        }
+
         // Check if the combination of first_name, middle_name, and last_name already exists
         $checkNameSql = "SELECT * FROM staff_accounts WHERE first_name = :first_name AND middle_name = :middle_name AND last_name = :last_name AND id != :id";
         $checkNameStmt = $pdo->prepare($checkNameSql);
@@ -52,6 +65,8 @@ if (isset($_GET['id'])) {
             header('Location: ../../../teacher_management.php');
             exit;
         }
+
+        $pdo->beginTransaction();
 
         // Step 2: Prepare the SQL update statement for staff_accounts
         $sql = "UPDATE staff_accounts SET first_name = :first_name, middle_name = :middle_name, last_name = :last_name, fullName = :full_name, email = :email, department = :department, gender = :gender, phone_number = :phone_number" . ($password ? ", password = :password" : "") . " WHERE id = :id";
@@ -76,6 +91,16 @@ if (isset($_GET['id'])) {
         }
 
         if ($stmt->execute()) {
+
+            // Keep the shared users record (used for login) in sync with the staff account
+            $userSql = "UPDATE users SET email = :email" . ($password ? ", password = :password" : "") . " WHERE id = (SELECT user_id FROM staff_accounts WHERE id = :id)";
+            $userStmt = $pdo->prepare($userSql);
+            $userStmt->bindParam(':email', $email);
+            $userStmt->bindParam(':id', $id, PDO::PARAM_INT);
+            if ($password) {
+                $userStmt->bindParam(':password', $password);
+            }
+            $userStmt->execute();
             // Step 4: If 'None' is selected, clear the class advising for the teacher
             if (in_array("None", $classAdvising)) {
                 // Delete all current class advising assignments for this teacher
@@ -113,16 +138,22 @@ if (isset($_GET['id'])) {
                 }
             }
 
+            $pdo->commit();
+
             $_SESSION['STATUS'] = "STAFF_ACCOUNT_UPDATED";
             header('Location: ../../../teacher_management.php');
             exit();
         } else {
+            $pdo->rollBack();
             $_SESSION['STATUS'] = "STAFF_ACCOUNT_FAIL_UPDATE_A";
             header('Location: ../../../teacher_management.php');
             exit();
         }
 
     } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         file_put_contents('error_log.txt', $e->getMessage() . "\n", FILE_APPEND);
         $_SESSION['STATUS'] = "STAFF_ACCOUNT_FAIL_UPDATE_B";
         header('Location: ../../../teacher_management.php');

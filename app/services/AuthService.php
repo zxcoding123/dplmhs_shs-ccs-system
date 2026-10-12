@@ -133,37 +133,73 @@ class AuthService
     }
 
     /**
-     * Set session variables
+     * Set session variables.
+     *
+     * IMPORTANT: throughout the rest of the app (chat/messaging, attendance,
+     * class enrollment, announcements, notifications, profile pictures, ...)
+     * $_SESSION['user_id'] is treated as the id WITHIN THE ROLE TABLE, not
+     * the central users.id:
+     *   - admin   -> admin.id
+     *   - staff   -> staff_accounts.id
+     *   - student -> students.student_id (the business student number,
+     *                NOT students.id, the row's own auto-increment key)
+     * $user here is whatever findUser() returned, which is normally a
+     * `users` table row ($user['id'] === users.id), but can also be the
+     * admin table row directly (findUser()'s fallback branch when the email
+     * isn't in `users` at all) — detectable because only that branch has a
+     * 'fullName' key, since the users table has no such column.
      */
     private function setSession(array $user): void
     {
-        $_SESSION['user_id'] = $user['id'];
         $_SESSION['email'] = $user['email'];
         $_SESSION['user_type'] = $user['role'];
-        $_SESSION['name'] = $user['fullName'] ?? trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
 
-        // Legacy session keys — admin/staff/student pages still check their own key names
+        $roleTableId = null;
+        $fullName = null;
+        $usersTableId = null;
+
         if ($user['role'] === 'admin') {
-            $_SESSION['admin_id'] = $user['id'];
+            if (array_key_exists('fullName', $user)) {
+                // findUser()'s admin-table fallback: $user IS the admin row already.
+                $roleTableId = $user['id'];
+                $fullName = $user['fullName'];
+                $usersTableId = $user['user_id'] ?? null;
+            } else {
+                $stmt = $this->pdo->prepare("SELECT id, fullName FROM admin WHERE user_id = ?");
+                $stmt->execute([$user['id']]);
+                $row = $stmt->fetch();
+                $roleTableId = $row['id'] ?? null;
+                $fullName = $row['fullName'] ?? null;
+                $usersTableId = $user['id'];
+            }
+            $_SESSION['admin_id'] = $roleTableId;
         } elseif ($user['role'] === 'staff') {
-            $stmt = $this->pdo->prepare("SELECT id FROM staff_accounts WHERE user_id = ?");
+            $stmt = $this->pdo->prepare("SELECT id, fullName FROM staff_accounts WHERE user_id = ?");
             $stmt->execute([$user['id']]);
             $row = $stmt->fetch();
-            if ($row) {
-                $_SESSION['teacher_id'] = $row['id'];
-            }
+            $roleTableId = $row['id'] ?? null;
+            $fullName = $row['fullName'] ?? null;
+            $usersTableId = $user['id'];
+            $_SESSION['teacher_id'] = $roleTableId;
         } elseif ($user['role'] === 'student') {
-            $stmt = $this->pdo->prepare("SELECT id FROM students WHERE user_id = ?");
+            $stmt = $this->pdo->prepare("SELECT student_id, first_name, middle_name, last_name FROM students WHERE user_id = ?");
             $stmt->execute([$user['id']]);
             $row = $stmt->fetch();
-            if ($row) {
-                $_SESSION['student_id'] = $row['id'];
-            }
+            $roleTableId = $row['student_id'] ?? null;
+            $fullName = $row ? trim($row['first_name'] . ' ' . $row['middle_name'] . ' ' . $row['last_name']) : null;
+            $usersTableId = $user['id'];
+            $_SESSION['student_id'] = $roleTableId;
         }
 
-        // Update last login
-        $stmt = $this->pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-        $stmt->execute([$user['id']]);
+        $_SESSION['user_id'] = $roleTableId;
+        $_SESSION['name'] = $fullName;
+
+        // Update last login (only when we actually have a users.id to key on —
+        // the admin fallback branch may not have a matching users row).
+        if ($usersTableId) {
+            $stmt = $this->pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+            $stmt->execute([$usersTableId]);
+        }
     }
 
     /**

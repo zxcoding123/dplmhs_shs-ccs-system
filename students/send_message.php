@@ -22,12 +22,22 @@ $receiver_id = $_POST['receiver_id'];
 $receiver_type = $_POST['receiver_type'];
 $message = trim($_POST['message']);
 
-// Function to fetch user's full name based on type
+// Function to fetch user's full name based on type.
+// NOTE: students are identified throughout the chat system (session,
+// search_users.php, the messages table) by their `student_id` business
+// number, NOT the students.id row primary key, and the students table has
+// no fullName column (only first_name/middle_name/last_name).
 function getUserFullName($pdo, $user_id, $user_type) {
-    $tables = ["admin" => "admin", "student" => "students", "staff" => "staff_accounts"];
-    if (!isset($tables[$user_type])) return null;
+    if ($user_type === 'admin') {
+        $stmt = $pdo->prepare("SELECT fullName FROM admin WHERE id = ?");
+    } elseif ($user_type === 'staff') {
+        $stmt = $pdo->prepare("SELECT fullName FROM staff_accounts WHERE id = ?");
+    } elseif ($user_type === 'student') {
+        $stmt = $pdo->prepare("SELECT CONCAT(first_name, ' ', middle_name, ' ', last_name) AS fullName FROM students WHERE student_id = ?");
+    } else {
+        return null;
+    }
 
-    $stmt = $pdo->prepare("SELECT fullName FROM " . $tables[$user_type] . " WHERE id = ?");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -38,8 +48,15 @@ function getUserFullName($pdo, $user_id, $user_type) {
 $sender_name = getUserFullName($pdo, $sender_id, $sender_type);
 $receiver_name = getUserFullName($pdo, $receiver_id, $receiver_type);
 
-if (!$sender_name || !$receiver_name) {
-    echo json_encode(["success" => false, "error" => "User not found"]);
+if (!$sender_name) {
+    echo json_encode(["success" => false, "error" => "Your account could not be found. Please log in again.", "code" => "sender_not_found"]);
+    exit;
+}
+
+if (!$receiver_name) {
+    // Most commonly this happens when replying to an old conversation
+    // whose recipient account has since been deleted.
+    echo json_encode(["success" => false, "error" => "This contact's account no longer exists. Start a new conversation instead.", "code" => "receiver_not_found"]);
     exit;
 }
 

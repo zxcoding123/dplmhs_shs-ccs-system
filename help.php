@@ -9,6 +9,7 @@ include('processes/server/alert_system.php');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ADDU - CCS | Help Center</title>
+    <?php include(__DIR__ . '/includes/favicon-links.php'); ?>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -107,6 +108,10 @@ include('processes/server/alert_system.php');
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Floating Chat Widget -->
+<?php include(__DIR__ . '/includes/floating-chat-widget.php'); ?>
+
 </body>
 
 </html>

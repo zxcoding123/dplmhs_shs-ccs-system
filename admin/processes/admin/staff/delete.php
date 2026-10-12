@@ -8,8 +8,8 @@ if (isset($_GET['id'])) {
     echo $id;
 
     try {
-        // Get the fullName from staff_accounts using the provided id
-        $sql = "SELECT fullName FROM staff_accounts WHERE id = :id";
+        // Get the fullName and linked user_id from staff_accounts using the provided id
+        $sql = "SELECT fullName, user_id FROM staff_accounts WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -17,6 +17,7 @@ if (isset($_GET['id'])) {
 
         if ($staff) {
             $fullName = $staff['fullName'];
+            $userId = $staff['user_id'];
 
             echo $fullName;
 
@@ -40,10 +41,11 @@ if (isset($_GET['id'])) {
             $updateStmt->bindParam(':fullName', $fullName, PDO::PARAM_STR);
             $updateStmt->execute();
 
-            // Now delete from staff_accounts
-            $deleteSql = "DELETE FROM staff_accounts WHERE id = :id";
+            // Delete the shared users login record; staff_accounts is removed automatically
+            // via its ON DELETE CASCADE foreign key to users.id
+            $deleteSql = "DELETE FROM users WHERE id = :user_id";
             $deleteStmt = $pdo->prepare($deleteSql);
-            $deleteStmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $deleteStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             if ($deleteStmt->execute()) {
                 $_SESSION['STATUS'] = "STAFF_DELETE_SUCCESS";
                 header('Location: ../../../teacher_management.php');

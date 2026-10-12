@@ -17,6 +17,10 @@ $pdo = Database::getConnection();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>College of Computer Studies - AU</title>
+    <?php
+    $favicon_base_path = './';
+    include('includes/favicon-links.php');
+    ?>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Add this inside <head> -->
@@ -319,6 +323,240 @@ $pdo = Database::getConnection();
         .login-btn:hover {
             background-color: var(--highlight);
             color: var(--white);
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 0.5rem 1rem;
+            }
+
+            header h6 {
+                margin: 0;
+                display: flex;
+                align-items: center;
+            }
+
+            .logo {
+                width: 35px;
+                height: 35px;
+            }
+
+            nav {
+                gap: 0.75rem;
+            }
+
+            .nav-link {
+                font-size: 0.9rem;
+                padding: 3px 0;
+            }
+
+            .hero {
+                padding: 2rem 1rem;
+                height: auto;
+                min-height: 80vh;
+            }
+
+            .hero img {
+                width: 100% !important;
+                max-width: 300px;
+                height: auto;
+            }
+
+            .hero h2 {
+                font-size: 1.75rem;
+                margin-bottom: 15px;
+            }
+
+            .hero p {
+                font-size: 1rem;
+                max-width: 100%;
+            }
+
+            .btn-cta {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+
+            .content {
+                padding: 2rem 1rem;
+            }
+
+            .col {
+                margin-bottom: 1rem;
+            }
+
+            .feature-box {
+                margin: 0 0.5rem;
+                padding: 1rem;
+            }
+
+            .carousel-section {
+                padding: 1.5rem 0.5rem;
+            }
+
+            .newsletter {
+                padding: 2rem 1rem;
+            }
+
+            .newsletter input[type="email"] {
+                width: 100% !important;
+                max-width: none;
+                margin-top: 1rem;
+            }
+
+            .newsletter input[type="submit"] {
+                width: 100%;
+                max-width: none;
+                margin-top: 0.5rem;
+            }
+
+            iframe {
+                height: 200px;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .feature-box h5 {
+                font-size: 1rem;
+            }
+
+            .display-4 {
+                font-size: 2rem !important;
+            }
+
+            .display-5 {
+                font-size: 1.5rem !important;
+            }
+
+            .lead {
+                font-size: 1rem;
+            }
+
+            .announcement-card img {
+                height: 150px !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            header {
+                padding: 0.5rem 0.75rem;
+            }
+
+            .logo {
+                width: 30px;
+                height: 30px;
+            }
+
+            header h6 {
+                font-size: 0.8rem;
+            }
+
+            .header-text {
+                font-size: 0.75rem;
+                display: none;
+            }
+
+            .login-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .hero {
+                padding: 1.5rem 0.75rem;
+                min-height: 70vh;
+            }
+
+            .hero img {
+                width: 80% !important;
+                max-width: 200px;
+            }
+
+            .hero h2 {
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
+
+            .hero p {
+                font-size: 0.9rem;
+            }
+
+            .btn-cta {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .content {
+                padding: 1.5rem 0.75rem;
+            }
+
+            h3 {
+                font-size: 1.1rem;
+            }
+
+            p {
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }
+
+            .feature-box {
+                margin: 0;
+                padding: 0.75rem;
+                border-left: 3px solid var(--accent-color);
+            }
+
+            .bi {
+                font-size: 1.5rem !important;
+            }
+
+            .display-4 {
+                font-size: 1.5rem !important;
+            }
+
+            .display-5 {
+                font-size: 1.2rem !important;
+            }
+
+            .container {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+
+            .row {
+                margin-left: -0.25rem;
+                margin-right: -0.25rem;
+            }
+
+            .col {
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            button, .btn, .login-btn, a.nav-link {
+                min-height: 44px;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+            }
+        }
+
+        /* Landscape orientation adjustments */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .hero {
+                height: auto;
+                min-height: 100%;
+                padding: 1rem;
+            }
+
+            header {
+                padding: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -669,6 +907,9 @@ $pdo = Database::getConnection();
             menu.classList.toggle('open');
         });
     </script>
+
+    <!-- Floating Chat Widget -->
+    <?php include(__DIR__ . '/includes/floating-chat-widget.php'); ?>
 </body>
 
 </html>
