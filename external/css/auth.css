@@ -1,0 +1,410 @@
+/* =========================================================
+   Aurelius University – CCS: login and registration pages
+   Builds on the tokens defined in site.css.
+   ========================================================= */
+
+body.au-auth {
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--au-paper);
+}
+
+.au-auth-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    min-height: 100vh;
+}
+
+/* ---------- Brand panel ---------- */
+.au-auth-brand {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.5rem 3rem;
+    color: rgba(255, 255, 255, 0.85);
+    background-color: var(--au-navy);
+    background-image:
+        linear-gradient(160deg, rgba(3, 18, 47, 0.95) 0%, rgba(6, 30, 78, 0.86) 55%, rgba(6, 30, 78, 0.7) 100%),
+        url('../img/Kanto-TDRI-DMOC-4.webp');
+    background-size: cover;
+    background-position: center;
+    border-right: 4px solid var(--au-gold);
+    overflow: hidden;
+}
+
+.au-auth-brand .au-brand {
+    margin: 0;
+}
+
+.au-auth-brand-body {
+    max-width: 440px;
+}
+
+.au-auth-crest {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: 1.75rem;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.4));
+}
+
+.au-auth-brand h1 {
+    color: var(--au-white);
+    font-size: clamp(1.9rem, 3vw, 2.6rem);
+    margin-bottom: 1rem;
+}
+
+.au-auth-brand h1 em {
+    color: var(--au-gold-light);
+}
+
+.au-auth-brand p {
+    font-size: 1.05rem;
+    margin-bottom: 1.75rem;
+}
+
+.au-auth-points {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.au-auth-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+}
+
+.au-auth-points i {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(194, 167, 77, 0.18);
+    color: var(--au-gold-light);
+}
+
+.au-auth-brand-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(194, 167, 77, 0.35);
+}
+
+.au-auth-brand-foot a {
+    color: var(--au-gold-light);
+    text-decoration: none;
+}
+
+.au-auth-brand-foot a:hover {
+    color: var(--au-white);
+}
+
+.au-auth-motto {
+    font-family: var(--au-serif);
+    font-style: italic;
+    color: var(--au-gold-light);
+}
+
+/* ---------- Form panel ---------- */
+.au-auth-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 1.5rem 2rem;
+}
+
+.au-auth-topnav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.92rem;
+}
+
+.au-auth-topnav a {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.au-auth-mobile-brand {
+    display: none;
+}
+
+.au-auth-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0;
+}
+
+.au-auth-card {
+    width: 100%;
+    max-width: 460px;
+}
+
+.au-auth-card.is-wide {
+    max-width: 640px;
+}
+
+.au-auth-card h2 {
+    font-size: clamp(1.7rem, 3vw, 2.15rem);
+    margin-bottom: 0.35rem;
+}
+
+.au-auth-card .au-lead {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+.au-auth-panel {
+    background-color: var(--au-white);
+    border: 1px solid var(--au-line);
+    border-top: 3px solid var(--au-gold);
+    border-radius: var(--au-radius);
+    box-shadow: var(--au-shadow);
+    padding: 2rem;
+}
+
+.au-auth .form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--au-navy);
+    margin-bottom: 0.35rem;
+}
+
+.au-auth .form-label .optional {
+    font-weight: 400;
+    color: var(--au-muted);
+}
+
+.au-auth .form-control,
+.au-auth .form-select {
+    border-color: #d8d3c4;
+    border-radius: var(--au-radius);
+    padding: 0.65rem 0.85rem;
+    font-size: 1rem;
+}
+
+.au-auth .form-control:focus,
+.au-auth .form-select:focus {
+    border-color: var(--au-gold);
+    box-shadow: 0 0 0 0.2rem rgba(194, 167, 77, 0.25);
+}
+
+.au-auth .input-group-text {
+    background-color: var(--au-paper);
+    border-color: #d8d3c4;
+    color: var(--au-navy-soft);
+}
+
+.au-auth .input-group .btn-toggle-pw {
+    border: 1px solid #d8d3c4;
+    border-left: 0;
+    background-color: var(--au-white);
+    color: var(--au-muted);
+}
+
+.au-auth .input-group .btn-toggle-pw:hover {
+    color: var(--au-navy);
+}
+
+.au-auth .input-group:focus-within .input-group-text,
+.au-auth .input-group:focus-within .btn-toggle-pw {
+    border-color: var(--au-gold);
+}
+
+.au-auth .form-check-input:checked {
+    background-color: var(--au-navy);
+    border-color: var(--au-navy);
+}
+
+.au-auth .btn-submit {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+.au-auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.75rem 0 1.25rem;
+    color: var(--au-muted);
+    font-size: 0.85rem;
+}
+
+.au-auth-divider::before,
+.au-auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: var(--au-line);
+}
+
+.au-auth-note {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: var(--au-radius);
+    background-color: var(--au-paper);
+    border-left: 3px solid var(--au-gold);
+    font-size: 0.9rem;
+    color: var(--au-muted);
+}
+
+.au-auth-note i {
+    color: var(--au-gold);
+    font-size: 1.1rem;
+}
+
+.au-fieldset-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--au-sans);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--au-crimson);
+    margin: 0 0 1rem;
+}
+
+.au-fieldset-title span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--au-navy);
+    color: var(--au-gold-light);
+    font-size: 0.75rem;
+    letter-spacing: 0;
+}
+
+.au-fieldset + .au-fieldset {
+    margin-top: 1.75rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--au-line);
+}
+
+/* Password strength */
+.au-strength {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 0.5rem;
+}
+
+.au-strength span {
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--au-line);
+    transition: background-color 0.2s ease;
+}
+
+.au-strength[data-score="1"] span:nth-child(-n+1) { background-color: #c0392b; }
+.au-strength[data-score="2"] span:nth-child(-n+2) { background-color: #e67e22; }
+.au-strength[data-score="3"] span:nth-child(-n+3) { background-color: #c2a74d; }
+.au-strength[data-score="4"] span:nth-child(-n+4) { background-color: #2d6a4f; }
+
+.au-field-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--au-muted);
+}
+
+.au-field-hint.is-ok { color: #2d6a4f; }
+.au-field-hint.is-bad { color: var(--au-crimson); }
+
+.au-auth-legal {
+    font-size: 0.8rem;
+    color: var(--au-muted);
+    text-align: center;
+}
+
+/* Reset modal */
+.au-auth .modal-content {
+    border: 0;
+    border-top: 3px solid var(--au-gold);
+    border-radius: var(--au-radius);
+}
+
+.au-auth .modal-title {
+    font-family: var(--au-serif);
+    color: var(--au-navy);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 991.98px) {
+    .au-auth-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .au-auth-brand {
+        display: none;
+    }
+
+    .au-auth-main {
+        padding: 0;
+    }
+
+    .au-auth-topnav {
+        background-color: var(--au-navy);
+        border-bottom: 3px solid var(--au-gold);
+        padding: 0.75rem 1rem;
+    }
+
+    .au-auth-topnav a {
+        color: var(--au-gold-light);
+    }
+
+    .au-auth-topnav .au-auth-hide-mobile {
+        display: none;
+    }
+
+    .au-auth-mobile-brand {
+        display: flex;
+    }
+
+    .au-auth-mobile-brand img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .au-auth-mobile-brand .au-brand-university {
+        font-size: 0.95rem;
+    }
+
+    .au-auth-mobile-brand .au-brand-college {
+        font-size: 0.62rem;
+    }
+
+    .au-auth-center {
+        padding: 2rem 1rem 2.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .au-auth-panel {
+        padding: 1.4rem;
+    }
+
+    .au-auth-mobile-brand .au-brand-text {
+        display: none;
+    }
+}

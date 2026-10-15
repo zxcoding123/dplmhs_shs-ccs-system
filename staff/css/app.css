@@ -1,3 +1,6 @@
+/* Aurelius University portal theme (shared by admin, staff and students) */
+@import url("../../external/css/portal.css");
+
 :root,
 [data-bs-theme=light] {
     --bs-blue: #3b7ddd;

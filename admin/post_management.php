@@ -444,7 +444,7 @@ include('processes/server/conn.php');
 
         if ($row['featured_image']) {
             echo '<div class="mb-2">
-            <img src="uploads/posts/' . htmlspecialchars($row['featured_image']) . '" class="img-thumbnail" style="max-height: 150px;">
+            <img src="../uploads/posts/' . htmlspecialchars(rawurlencode($row['featured_image'])) . '" class="img-thumbnail" style="max-height: 150px;">
             <div class="form-check mt-2">
                 <input class="form-check-input" type="checkbox" name="remove_image" id="removeImage' . $row['id'] . '">
                 <label class="form-check-label" for="removeImage' . $row['id'] . '">

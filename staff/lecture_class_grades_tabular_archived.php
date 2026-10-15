@@ -97,7 +97,7 @@ include('processes/server/conn.php');
                                         </div>
                                         <div class="col-8 text-center">
                                            <h5 class="bold mb-1">Aurelius University</h5>
-                                            <h5 class="mb-1">College of Computing Studies</h5>
+                                            <h5 class="mb-1">College of Computer Studies</h5>
                                             <h5>Naga City</h5>
                                         </div>
                                         <div class="col-2 d-flex justify-content-center">

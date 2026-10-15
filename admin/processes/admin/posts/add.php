@@ -22,21 +22,16 @@ if (empty($title) || empty($content) || empty($category)) {
     die('Missing required fields.');
 }
 
-// Handle image upload
-$uploadPath = '../../../../uploads/posts/';
-$uploadedImage = null;
+// Handle image upload (only real JPG/PNG/GIF/WebP images are accepted)
+require_once __DIR__ . '/../../../../includes/gallery-store.php';
+$imageToBeUplaoded = null;
 
 if (!empty($_FILES['featured_image']['name'])) {
-    $image = $_FILES['featured_image'];
-    $imageName = basename($image['name']);
-    $targetFile = $uploadPath . time() . '_' . $imageName;
-    $imageToBeUplaoded =  time() . '_' . $imageName;
-
-    if (move_uploaded_file($image['tmp_name'], $targetFile)) {
-        $uploadedImage = str_replace('../../../', '', $targetFile); // Save relative path
-    } else {
-        die('Image upload failed.');
+    $result = au_store_uploaded_image($_FILES['featured_image'], __DIR__ . '/../../../../uploads/posts/', 'post_');
+    if (isset($result['error'])) {
+        die('Image upload failed: ' . htmlspecialchars($result['error']));
     }
+    $imageToBeUplaoded = $result['file'];
 }
 
 // Insert into database (PDO example)

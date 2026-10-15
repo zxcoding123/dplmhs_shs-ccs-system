@@ -1,0 +1,450 @@
+/* =========================================================
+   Aurelius University – CCS portal theme (admin, staff, students)
+
+   Imported at the top of each role's css/app.css. Rules are prefixed with
+   "html body" so they win over the compiled AdminKit styles and the
+   per-page <style> blocks without editing every page.
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+:root {
+    --au-navy: #061E4E;
+    --au-navy-deep: #03122f;
+    --au-navy-soft: #0d2c6b;
+    --au-gold: #c2a74d;
+    --au-gold-light: #e3d29a;
+    --au-crimson: #a3191b;
+    --au-ink: #1f2430;
+    --au-muted: #5d6475;
+    --au-paper: #f6f4ee;
+    --au-line: #e6e1d3;
+    --au-serif: 'Playfair Display', Georgia, serif;
+    --au-sans: 'Source Sans 3', 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+html body {
+    font-family: var(--au-sans);
+    color: var(--au-ink);
+    background-color: var(--au-paper);
+}
+
+html body .wrapper,
+html body .main {
+    background-color: var(--au-paper);
+}
+
+/* ---------- Sidebar ---------- */
+html body .sidebar,
+html body .sidebar-content,
+html body .simplebar-content {
+    background-color: var(--au-navy) !important;
+}
+
+html body .sidebar {
+    border-right: 3px solid var(--au-gold);
+}
+
+html body .sidebar-content {
+    background-image: linear-gradient(180deg, var(--au-navy-deep) 0%, var(--au-navy) 38%) !important;
+}
+
+html body .au-portal-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 1.25rem 1.25rem 1rem;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(194, 167, 77, 0.3);
+}
+
+html body .au-portal-brand img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+html body .au-portal-brand span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+html body .au-portal-brand strong {
+    font-family: var(--au-serif);
+    color: #fff;
+    font-size: 1.02rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+html body .au-portal-brand small {
+    color: var(--au-gold-light);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+}
+
+html body .au-portal-user {
+    padding: 1.25rem 1.25rem 1rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html body .au-portal-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #fff;
+    border: 3px solid var(--au-gold);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+html body .au-portal-name {
+    font-family: var(--au-sans);
+    color: #fff !important;
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin: 0.75rem 0 0.15rem;
+    line-height: 1.3;
+}
+
+html body .au-portal-role {
+    display: inline-block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--au-navy);
+    background-color: var(--au-gold);
+    border-radius: 2px;
+    padding: 0.15rem 0.5rem;
+}
+
+html body .au-portal-clock,
+html body .sidebar .time {
+    display: block;
+    margin: 0.65rem 0 0 !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+html body .au-portal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+}
+
+html body .sidebar .au-portal-actions .btn,
+html body .sidebar .btn-csms {
+    background-color: transparent !important;
+    border: 1px solid rgba(194, 167, 77, 0.6) !important;
+    color: var(--au-gold-light) !important;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 3px;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+html body .sidebar .au-portal-actions .btn:hover,
+html body .sidebar .btn-csms:hover {
+    background-color: var(--au-gold) !important;
+    border-color: var(--au-gold) !important;
+    color: var(--au-navy) !important;
+}
+
+html body .sidebar-header {
+    color: var(--au-gold-light) !important;
+    opacity: 0.8;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 1.25rem 1.5rem 0.4rem;
+}
+
+html body .sidebar-link,
+html body a.sidebar-link {
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    border-left: 3px solid transparent;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.93rem;
+}
+
+html body .sidebar-link i,
+html body a.sidebar-link i,
+html body .sidebar-link svg {
+    color: rgba(227, 210, 154, 0.75) !important;
+    width: 1.1rem;
+    text-align: center;
+}
+
+html body .sidebar-link:hover,
+html body a.sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+}
+
+html body .sidebar-item.active > .sidebar-link,
+html body .sidebar-item.active .sidebar-link:hover {
+    background-color: rgba(194, 167, 77, 0.16) !important;
+    border-left-color: var(--au-gold) !important;
+    color: #fff !important;
+}
+
+html body .sidebar-item.active > .sidebar-link i,
+html body .sidebar-item.active > .sidebar-link svg {
+    color: var(--au-gold) !important;
+}
+
+html body .sidebar hr {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    margin: 0.5rem 1.25rem;
+}
+
+html body .au-portal-foot {
+    padding: 1rem 1.25rem 1.4rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+html body .au-portal-foot a {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+html body .au-portal-foot a:hover {
+    color: var(--au-gold-light);
+}
+
+html body .au-portal-foot a i {
+    width: 1.1rem;
+    margin-right: 0.5rem;
+    color: var(--au-gold);
+}
+
+/* ---------- Top navbar ---------- */
+html body .navbar-bg {
+    background-color: var(--au-navy) !important;
+    border-bottom: 3px solid var(--au-gold);
+    box-shadow: 0 2px 10px rgba(3, 18, 47, 0.18);
+}
+
+html body .navbar-bg > span,
+html body .navbar-bg .text-white {
+    color: #fff !important;
+    font-family: var(--au-serif);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+}
+
+html body .navbar-bg > span b,
+html body .navbar-bg .text-white b {
+    color: var(--au-gold-light);
+}
+
+html body .logo-small {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 0 !important;
+    object-fit: contain;
+    margin-right: 0.65rem;
+}
+
+html body .hamburger,
+html body .hamburger::before,
+html body .hamburger::after {
+    background: var(--au-gold-light) !important;
+}
+
+html body .navbar-bg .nav-icon,
+html body .navbar-bg .nav-icon svg,
+html body .navbar-bg .nav-link,
+html body .navbar-bg .nav-link span {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html body .navbar-bg .nav-icon:hover svg {
+    color: var(--au-gold-light) !important;
+}
+
+html body .navbar .indicator {
+    background-color: var(--au-crimson);
+    border: 2px solid var(--au-navy);
+}
+
+html body .dropdown-menu {
+    border: 1px solid var(--au-line);
+    border-top: 3px solid var(--au-gold);
+    box-shadow: 0 10px 30px rgba(6, 30, 78, 0.15);
+}
+
+html body .dropdown-menu-header {
+    font-weight: 700;
+    color: var(--au-navy);
+}
+
+/* ---------- Content ---------- */
+html body .content {
+    background-color: var(--au-paper);
+}
+
+html body .content h1,
+html body .content h2,
+html body .content h3,
+html body .content .h3 {
+    font-family: var(--au-serif);
+    color: var(--au-navy);
+    font-weight: 700;
+}
+
+html body .card {
+    border: 1px solid var(--au-line);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(6, 30, 78, 0.06);
+}
+
+html body .content > .container-fluid > .card,
+html body .content > .container-fluid > .row > .col-12 > .card {
+    border-top: 3px solid var(--au-gold);
+}
+
+html body .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid var(--au-line);
+}
+
+html body .card-title {
+    color: var(--au-navy);
+    font-weight: 700;
+}
+
+html body .nav-ham-link {
+    color: var(--au-navy-soft) !important;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+html body .nav-ham-link:hover {
+    color: var(--au-crimson) !important;
+}
+
+html body .content a:not(.btn):not(.dropdown-item):not(.nav-link) {
+    color: var(--au-navy-soft);
+}
+
+/* Buttons */
+html body .btn-csms,
+html body .btn-primary {
+    background-color: var(--au-navy) !important;
+    border: 1px solid var(--au-navy) !important;
+    color: #fff !important;
+}
+
+html body .btn-csms:hover,
+html body .btn-csms:focus,
+html body .btn-primary:hover,
+html body .btn-primary:focus {
+    background-color: var(--au-navy-soft) !important;
+    border-color: var(--au-navy-soft) !important;
+    color: #fff !important;
+}
+
+html body .btn-outline-primary {
+    color: var(--au-navy);
+    border-color: var(--au-navy);
+}
+
+html body .btn-outline-primary:hover {
+    background-color: var(--au-navy);
+    color: #fff;
+}
+
+html body .text-primary {
+    color: var(--au-navy-soft) !important;
+}
+
+html body .bg-primary {
+    background-color: var(--au-navy) !important;
+}
+
+html body .form-control:focus,
+html body .form-select:focus {
+    border-color: var(--au-gold);
+    box-shadow: 0 0 0 0.2rem rgba(194, 167, 77, 0.25);
+}
+
+html body .form-check-input:checked {
+    background-color: var(--au-navy);
+    border-color: var(--au-navy);
+}
+
+/* Tables (including DataTables) */
+html body table.dataTable thead th,
+html body .table thead th,
+html body .responsive-table th {
+    background-color: var(--au-navy) !important;
+    color: #fff !important;
+    border-color: var(--au-navy-soft) !important;
+    font-weight: 600;
+}
+
+html body table.dataTable tfoot th {
+    background-color: var(--au-paper);
+    color: var(--au-navy);
+}
+
+html body .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+html body .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--au-navy) !important;
+    border-color: var(--au-navy) !important;
+    color: #fff !important;
+}
+
+html body .page-item.active .page-link {
+    background-color: var(--au-navy);
+    border-color: var(--au-navy);
+}
+
+html body .page-link {
+    color: var(--au-navy);
+}
+
+/* Modals */
+html body .modal-content {
+    border: 0;
+    border-top: 3px solid var(--au-gold);
+    border-radius: 6px;
+}
+
+html body .modal-title {
+    font-family: var(--au-serif);
+    color: var(--au-navy);
+}
+
+html body .nav-tabs .nav-link.active {
+    color: var(--au-navy);
+    border-top: 2px solid var(--au-gold);
+}
+
+/* Portal footer line */
+html body .au-portal-copyright {
+    padding: 1rem 1.5rem 1.25rem;
+    color: var(--au-muted);
+    font-size: 0.8rem;
+    text-align: center;
+}

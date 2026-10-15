@@ -1,347 +1,286 @@
-﻿<?php
+<?php
 session_start();
 
+$auth_heading = 'Begin your journey at <em>CCS</em>';
+$auth_text = 'Create your student account to access your classes, attendance, grades and College announcements in one place.';
+$auth_points = [
+    ['bi-person-check', 'Register with your personal and academic details'],
+    ['bi-envelope-check', 'Activate your account from the email we send you'],
+    ['bi-box-arrow-in-right', 'Sign in and join your classes'],
+];
 ?>
-
 <!doctype html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AU - CCS | Student Management System</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-    <link href="external/css/login_student.css" rel="stylesheet">
-
-    <link rel="icon" type="image/png" sizes="32x32" href="external/img/favicon-32x32.png">
-
+    <title>Create an Account | College of Computer Studies – Aurelius University</title>
+    <meta name="theme-color" content="#061E4E">
+    <?php
+    $favicon_base_path = '../';
+    include(__DIR__ . '/../includes/favicon-links.php');
+    ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="../external/css/site.css" rel="stylesheet">
+    <link href="../external/css/auth.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-
 </head>
 
-<header>
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid d-flex">
-            <a class="navbar-brand" href="../index.php">
-                <img src="external/img/AU_Logo.png" class="img-fluid logo">
-            </a>
-            <div class="mx-auto"> Student Management System
-            </div>
+<body class="au-site au-auth">
+    <div class="au-auth-shell">
+        <?php include __DIR__ . '/../includes/auth-brand.php'; ?>
 
-        </div>
-    </nav>
-</header>
+        <main class="au-auth-main">
+            <nav class="au-auth-topnav" aria-label="Page">
+                <a class="au-brand au-auth-mobile-brand" href="../index.php">
+                    <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
+                    <span class="au-brand-text">
+                        <span class="au-brand-university">Aurelius University</span>
+                        <span class="au-brand-college">College of Computer Studies</span>
+                    </span>
+                </a>
+                <a href="index.php"><i class="bi bi-arrow-left me-1"></i> Back to sign in</a>
+                <span class="au-auth-hide-mobile text-muted">Already registered? <a href="index.php">Sign in</a></span>
+            </nav>
 
-<body>
+            <div class="au-auth-center">
+                <div class="au-auth-card is-wide">
+                    <span class="au-eyebrow">Student Registration</span>
+                    <h2>Create your account</h2>
+                    <p class="au-lead">Fill in the details below. We will email you a link to activate your account.</p>
 
-    <div class="container-fluid login-container">
-        <div class="actual-login-container">
-            <!-- Back Button -->
+                    <div class="au-auth-panel">
+                        <form action="processes/register.php" method="POST" id="registrationForm" novalidate>
+                            <input type="hidden" name="role" value="student">
 
-
-
-            <style>
-                @media screen and (max-width: 500px) {
-                    .login-container-with-input {
-                        width: 100% !important;
-                    }
-
-                    .button-linkers {
-                        justify-content: center !important;
-                        text-align: center !important;
-                        font-size: 12px !important;
-                        gap: 2rem;
-                    }
-                }
-            </style>
-            <!-- Registration Form -->
-            <div class="container-fluid mt-4 login-container-with-input">
-                <div class="container-fluid px-3 py-5">
-                    <div class="row justify-content-center align-items-center min-vh-100">
-                        <div class="col-lg-6 d-none d-lg-flex align-items-start justify-content-center">
-                            <div class="position-sticky" style="top: 2rem; z-index: 1;">
-                                <div data-aos="fade-right">
-                                    <img src="external/img/register.png"
-                                        class="img-fluid w-100"
-                                        alt="Registration Banner"
-                                        style="border-radius: 5%;">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-6 col-md-10 col-sm-12">
-                            <div class="container login-container-with-input">
-                                <div data-aos="fade-left">
-                                    <div class="text-center">
-                                        <small><a href="index.php" class="gb text-center"><i class="bi bi-arrow-left-circle-fill"></i> Go back</a></small>
+                            <fieldset class="au-fieldset">
+                                <legend class="au-fieldset-title"><span>1</span> Personal information</legend>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="firstName" class="form-label">First name</label>
+                                        <input type="text" class="form-control" id="firstName" name="firstName" autocomplete="given-name" required>
                                     </div>
-                                    <div class="d-flex justify-content-center align-items-center flex-row mt-3">
-                                        <img src="external/img/AU_Logo.png" class="img-fluid big-logo me-2" alt="AU Logo">
-                                        <!-- <img src="external/img/AU_CCS_Logo.png" class="img-fluid big-logo" alt="CCS Logo"> -->
+                                    <div class="col-md-4">
+                                        <label for="middleName" class="form-label">Middle name <span class="optional">(optional)</span></label>
+                                        <input type="text" class="form-control" id="middleName" name="middleName" autocomplete="additional-name">
                                     </div>
-                                    <h3 class="text-center bold">Welcome to AU - CCS</h3>
-                                    <p class="text-center text-muted">Create your account by filling out the form below</p>
-                                    <form action="processes/register.php" method="POST" id="registrationForm">
-                                        <!-- Name -->
-                                        <div class="mb-3">
-                                            <label for="firstName" class="form-label bold">First Name</label>
-                                            <input type="text" class="input-control" id="firstName" name="firstName"
-                                                placeholder="Enter your first name" required>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label for="middleName" class="form-label bold">Middle Name</label>
-                                            <input type="text" class="input-control" id="middleName" name="middleName"
-                                                placeholder="Enter your middle name" required>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label for="lastName" class="form-label bold">Last Name</label>
-                                            <input type="text" class="input-control" id="lastName" name="lastName"
-                                                placeholder="Enter your last name" required>
-                                        </div>
-
-                                        <!-- Email -->
-                                        <div class="mb-3">
-                                            <label for="email" class="form-label bold">Email Address</label>
-                                            <input type="email" class="input-control" id="email" name="email"
-                                                placeholder="Enter your email" required>
-                                        </div>
-
-                                        <!-- Password -->
-                                        <div class="mb-3">
-                                            <label for="password" class="form-label bold">Password</label>
-                                            <input type="password" class="input-control" id="password" name="password"
-                                                placeholder="Create a password" required>
-                                            <div class="form-check form-switch mt-2">
-                                                <input class="form-check-input toggle-switch" type="checkbox" id="togglePassword"
-                                                    onclick="toggleVisibility('password', this)">
-                                                <label class="form-check-label ms-2" for="togglePassword">Show Password</label>
-                                            </div>
-                                        </div>
-
-                                        <!-- Confirm Password -->
-                                        <div class="mb-3">
-                                            <label for="confirm_password" class="form-label bold">Confirm Password</label>
-                                            <input type="password" class="input-control" id="confirm_password" name="confirm_password"
-                                                placeholder="Re-enter your password" required>
-                                            <div class="form-check form-switch mt-2">
-                                                <input class="form-check-input toggle-switch" type="checkbox" id="toggleConfirmPassword"
-                                                    onclick="toggleVisibility('confirm_password', this)">
-                                                <label class="form-check-label ms-2" for="toggleConfirmPassword">Show Confirm Password</label>
-                                            </div>
-                                        </div>
-
-
-                                        <!-- Gender -->
-                                        <div class="mb-3">
-                                            <label for="gender" class="form-label bold">Gender</label>
-                                            <select class="selector" id="gender" name="gender" required>
-                                                <option value="" disabled selected>Select Gender</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Others">Others</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Role -->
-                                        <div class="mb-3">
-                                            <label for="role" class="form-label bold">Role</label>
-                                            <select class="selector" id="role" name="role" required onchange="updateFormFields()">
-                                                <option value="" disabled selected>Select Role</option>
-                                                <option value="student">Student</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Role-Specific Fields -->
-                                        <div id="additional-fields"></div>
-
-                                        <!-- Submit -->
-                                        <div class="d-grid mt-4">
-                                            <button type="submit" class="btn btn-primary">Register</button>
-                                        </div>
-                                    </form>
+                                    <div class="col-md-4">
+                                        <label for="lastName" class="form-label">Last name</label>
+                                        <input type="text" class="form-control" id="lastName" name="lastName" autocomplete="family-name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="gender" class="form-label">Gender</label>
+                                        <select class="form-select" id="gender" name="gender" required>
+                                            <option value="" disabled selected>Select gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </div>
                                 </div>
+                            </fieldset>
+
+                            <fieldset class="au-fieldset">
+                                <legend class="au-fieldset-title"><span>2</span> Academic information</legend>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="student_id" class="form-label">Student ID number</label>
+                                        <input type="text" class="form-control" id="student_id" name="student_id" inputmode="numeric" pattern="\d+" placeholder="e.g. 202312345" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="year_level" class="form-label">Year level</label>
+                                        <select class="form-select" id="year_level" name="year_level" required>
+                                            <option value="" disabled selected>Select year level</option>
+                                            <option value="1st Year">1st Year</option>
+                                            <option value="2nd Year">2nd Year</option>
+                                            <option value="3rd Year">3rd Year</option>
+                                            <option value="4th Year">4th Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="course" class="form-label">Program</label>
+                                        <select class="form-select" id="course" name="course" required>
+                                            <option value="" disabled selected>Select your program</option>
+                                            <option value="BSCS">Bachelor of Science in Computer Science</option>
+                                            <option value="BSIT">Bachelor of Science in Information Technology</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="au-fieldset">
+                                <legend class="au-fieldset-title"><span>3</span> Account security</legend>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="email" class="form-label">Email address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                            <input type="email" class="form-control" id="email" name="email" placeholder="you@au.edu.ph" autocomplete="email" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="password" class="form-label">Password</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="password" name="password" minlength="8" autocomplete="new-password" required>
+                                            <button type="button" class="btn btn-toggle-pw" data-toggle-password="password" aria-label="Show password"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                        <div class="au-strength" id="strengthMeter" data-score="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                                        <small class="au-field-hint" id="strengthText">At least 8 characters, mixing letters, numbers and symbols.</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="confirm_password" class="form-label">Confirm password</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" autocomplete="new-password" required>
+                                            <button type="button" class="btn btn-toggle-pw" data-toggle-password="confirm_password" aria-label="Show password"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                        <small class="au-field-hint" id="matchText" aria-live="polite"></small>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="agree" required>
+                                <label class="form-check-label" for="agree">
+                                    I confirm the information above is accurate and agree to the College's <a href="../help.php" target="_blank">terms of use and privacy notice</a>.
+                                </label>
                             </div>
-                        </div>
+
+                            <button type="submit" class="btn btn-au-navy btn-submit mt-4" id="registerSubmit">
+                                <i class="bi bi-person-plus me-1"></i> Create Account
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="au-auth-note mt-4">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Faculty and staff accounts are issued by the Office of the Dean. Already have an account? <a href="index.php">Sign in</a>.</span>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Aurelius University – College of Computer Studies</p>
+        </main>
     </div>
 
-
-
-    <script>
-        function validateInputs() {
-            const email = document.getElementById('email').value;
-            const studentId = document.getElementById('student_id').value;
-
-            // Regular Expression to extract the number from email
-            const numberMatch = email.match(/\d+/);
-
-            if (numberMatch && numberMatch[0] === studentId) {
-                return true; // Validation passes; proceed to submit
-            } else {
-                alert("The Student ID does not match the number in the email.");
-                return false; // Block form submission
-            }
-        }
-
-
-        function togglePassword(fieldId, toggleButton) {
-            const field = document.getElementById(fieldId);
-            const icon = toggleButton.querySelector("i");
-
-            if (field.type === "password") {
-                field.type = "text";
-                icon.classList.remove("bi-eye");
-                icon.classList.add("bi-eye-slash");
-            } else {
-                field.type = "password";
-                icon.classList.remove("bi-eye-slash");
-                icon.classList.add("bi-eye");
-            }
-        }
-
-        function updateFormFields() {
-            const role = document.getElementById('role').value;
-            const additionalFields = document.getElementById('additional-fields');
-
-            additionalFields.innerHTML = ''; // Clear previous inputs
-
-            if (role === 'staff') {
-                additionalFields.innerHTML = `
-                <div class="mb-3">
-                    <label for="department" class="form-label bold">Department</label>
-                    <select class="selector" id="department" name="department" required>
-                        <option value="" disabled selected>Select Department</option>
-                        <option value="Department of Information Technology ">Department of Information Technology</option>
-                        <option value="Department of Computer Science">Department of Computer Science</option>
-                    </select>
-                </div>
-                  <div class="mb-3">
-    <label for="phoneNumber" class="form-label bold">Phone Number</label>
-    <input type="tel" class="input-control" id="phoneNumber" name="phone_number" placeholder="Enter phone number" required>
-</div>
-
-            `;
-            } else if (role === 'student') {
-                additionalFields.innerHTML = `
-                        <div class="mb-3">
-                                <label style="text-align: left !important;" class="bold mb-1">Student ID</label>
-                                <br>
-                                <input type="number" class="input-control" name="student_id" id="student_id" placeholder="Student ID" oninput="checkInputs()" required>
-                </div>
-                <div class="mb-3">
-                  <label for="course" class="form-label bold">Course</label>
-                    <select class="selector" id="course" name="course" required>
-                        <option value="" disabled selected>Select Course</option>
-                        <option value="BSIT">Bachelor of Science in Information Technology</option>
-                        <option value="BSCS">Bachelor of Science in Computer Science</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="year_level" class="form-label bold">Year Level</label>
-                    <select class="selector" id="year_level" name="year_level" requifred>
-                        <option value="" disabled selected>Select Year Level</option>
-                        <option value="1st Year">1st Year</option>
-                        <option value="2nd Year">2nd Year</option>
-                        <option value="3rd Year">3rd Year</option>
-                        <option value="4th Year">4th Year</option>
-                    </select>
-                </div>
-            `;
-            }
-        }
-    </script>
-
-    <script>
-        document.getElementById('registrationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const form = e.target;
-            const formData = new FormData(form);
-
-            Swal.fire({
-                title: 'Submitting...',
-                text: 'Please wait while we process your registration.',
-                icon: 'info',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-
-                    fetch(form.action, {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json()) // expect JSON from PHP
-                        .then(data => {
-                            Swal.close();
-
-                            if (data.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: data.message || 'Registration completed!'
-                                }).then(() => {
-                                    form.reset(); // optional
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: data.message || 'Something went wrong.'
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            Swal.close();
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Request Failed',
-                                text: 'Server error. Please try again.'
-                            });
-                            console.error(error);
-                        });
-                }
-            });
-        });
-    </script>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
-    </script>
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
-        function toggleVisibility(fieldId, toggleEl) {
-            const field = document.getElementById(fieldId);
-            field.type = toggleEl.checked ? "text" : "password";
+        (function () {
+            const form = document.getElementById('registrationForm');
+            const password = document.getElementById('password');
+            const confirm = document.getElementById('confirm_password');
+            const meter = document.getElementById('strengthMeter');
+            const strengthText = document.getElementById('strengthText');
+            const matchText = document.getElementById('matchText');
+            const labels = ['', 'Weak password', 'Fair password', 'Good password', 'Strong password'];
 
-            // Optional: subtle animation highlight
-            field.classList.toggle('password-visible', toggleEl.checked);
-        }
-        AOS.init();
+            // Show / hide password
+            document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const field = document.getElementById(btn.dataset.togglePassword);
+                    const show = field.type === 'password';
+                    field.type = show ? 'text' : 'password';
+                    btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+                    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                });
+            });
+
+            function scorePassword(value) {
+                if (!value) return 0;
+                let score = 0;
+                if (value.length >= 8) score++;
+                if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score++;
+                if (/\d/.test(value)) score++;
+                if (/[^A-Za-z0-9]/.test(value) || value.length >= 12) score++;
+                return value.length < 8 ? Math.min(score, 1) : Math.max(score, 1);
+            }
+
+            function updateStrength() {
+                const score = scorePassword(password.value);
+                meter.dataset.score = score;
+                strengthText.textContent = score ? labels[score] + (password.value.length < 8 ? ' — use at least 8 characters' : '') : 'At least 8 characters, mixing letters, numbers and symbols.';
+                strengthText.className = 'au-field-hint' + (score >= 3 ? ' is-ok' : score ? ' is-bad' : '');
+            }
+
+            function updateMatch() {
+                if (!confirm.value) {
+                    matchText.textContent = '';
+                    confirm.setCustomValidity('');
+                    return;
+                }
+                const ok = confirm.value === password.value;
+                matchText.innerHTML = ok ? '<i class="bi bi-check-circle"></i> Passwords match' : '<i class="bi bi-x-circle"></i> Passwords do not match';
+                matchText.className = 'au-field-hint ' + (ok ? 'is-ok' : 'is-bad');
+                confirm.setCustomValidity(ok ? '' : 'Passwords do not match');
+            }
+
+            password.addEventListener('input', function () { updateStrength(); updateMatch(); });
+            confirm.addEventListener('input', updateMatch);
+
+            form.querySelectorAll('.form-control, .form-select, .form-check-input').forEach(function (field) {
+                field.addEventListener('input', function () {
+                    if (field.classList.contains('is-invalid') && field.checkValidity()) field.classList.remove('is-invalid');
+                });
+                field.addEventListener('change', function () {
+                    if (field.classList.contains('is-invalid') && field.checkValidity()) field.classList.remove('is-invalid');
+                });
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                updateMatch();
+
+                const invalid = Array.from(form.querySelectorAll('input, select')).filter(function (field) {
+                    const bad = !field.checkValidity();
+                    field.classList.toggle('is-invalid', bad);
+                    return bad;
+                });
+                if (invalid.length) {
+                    invalid[0].focus();
+                    Swal.fire({ icon: 'warning', title: 'Please check the form', text: invalid[0].id === 'agree' ? 'Please confirm the declaration to continue.' : (invalid[0].validationMessage || 'Some fields need your attention.') });
+                    return;
+                }
+
+                const btn = document.getElementById('registerSubmit');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Creating account…';
+
+                fetch(form.action, { method: 'POST', body: new FormData(form) })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Account created!',
+                                html: 'We sent an activation link to <strong>' + document.getElementById('email').value.replace(/[<>&"]/g, '') + '</strong>. Activate your account, then sign in.',
+                                confirmButtonText: 'Go to sign in',
+                                confirmButtonColor: '#061E4E'
+                            }).then(function () {
+                                window.location.href = 'index.php';
+                            });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Registration failed', text: data.message || 'Something went wrong.', confirmButtonColor: '#061E4E' });
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        Swal.fire({ icon: 'error', title: 'Request failed', text: 'We could not reach the server. Please try again.', confirmButtonColor: '#061E4E' });
+                    })
+                    .finally(function () {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-person-plus me-1"></i> Create Account';
+                    });
+            });
+        })();
     </script>
-</body>
 
-<?php
-include('processes/alerts.php');
-?>
+    <?php include('processes/alerts.php'); ?>
+</body>
 
 </html>

@@ -15,7 +15,7 @@ include('processes/server/conn.php');
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>ADDU - CCS | Student Management System</title>
+    <title>AU - CCS | Student Management System</title>
     <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -103,7 +103,7 @@ include('processes/server/conn.php');
                     <i class="hamburger align-self-center"></i>
                 </a>
                 <img src="external/img/ccs_logo-removebg-preview.png" class="logo-small">
-                <span class="text-white">ADDU - Student Management System </span>
+                <span class="text-white">AU - Student Management System </span>
                 <div class="navbar-collapse collapse">
                     <?php include('top-bar.php') ?>
                 </div>
@@ -431,8 +431,8 @@ include('processes/server/conn.php');
                                             <img src="external/img/ADDU_logo-removebg-preview.png" alt="ADDU Logo"
                                                 style="height: 80px; width: auto;">
                                             <div>
-                                                <h3 style="margin: 0;">Ateneo de Davao University</h3>
-                                                <h4 style="margin: 0;">College of Computing Studies</h4>
+                                                <h3 style="margin: 0;">Aurelius University</h3>
+                                                <h4 style="margin: 0;">College of Computer Studies</h4>
                                             </div>
                                             <img src="external/img/ccs_logo-removebg-preview.png" alt="CCS Logo"
                                                 style="height: 80px; width: auto;">

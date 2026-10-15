@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         // Delete the associated image file if it exists
         if ($image_path) {
-            $file_path = "../../uploads/posts/" . $image_path;
+            $file_path = "../../../../uploads/posts/" . basename($image_path);
             if (file_exists($file_path)) {
                 unlink($file_path);
             }

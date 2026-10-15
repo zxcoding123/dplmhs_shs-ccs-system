@@ -25,7 +25,7 @@ $stmt->execute();
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>ADDU - CCS | Student Management System</title>
+    <title>AU - CCS | Student Management System</title>
     <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -429,17 +429,17 @@ $stmt->execute();
                                                 </button>
                                             </a>
                                             <?php if ($meetingData['addu_radius'] == 'on') { ?>
-                                                <!-- Turn off ADDU Radius button with an icon -->
+                                                <!-- Turn off Campus Radius button with an icon -->
                                                 <button class="btn btn-warning" id="turnOffAdduRadius"
                                                     onclick="turnAdduRadius('off', <?php echo $_GET['class_id']; ?>, '<?php echo $_GET['classAttendanceId']; ?>')">
-                                                    <i class="bi bi-x-circle" style="margin-right: 5px;"></i> Turn off ADDUU
+                                                    <i class="bi bi-x-circle" style="margin-right: 5px;"></i> Turn off Campus
                                                     Radius
                                                 </button>
                                             <?php } else { ?>
-                                                <!-- Turn on ADDU Radius button with an icon -->
+                                                <!-- Turn on Campus Radius button with an icon -->
                                                 <button class="btn btn-success" id="turnOnAdduRadius"
                                                     onclick="turnAdduRadius('on', <?php echo $_GET['class_id']; ?>, '<?php echo $_GET['classAttendanceId']; ?>')">
-                                                    <i class="bi bi-circle" style="margin-right: 5px;"></i> Turn on ADDU
+                                                    <i class="bi bi-circle" style="margin-right: 5px;"></i> Turn on Campus
                                                     Radius
                                                 </button>
                                             <?php } ?>
@@ -487,15 +487,15 @@ $stmt->execute();
                                             function turnAdduRadius(action, classId, meetingId) {
                                                 // Display SweetAlert confirmation
                                                 let message = (action === 'on') ?
-                                                    'Are you sure you want to turn on ADDU Radius?' :
-                                                    'Are you sure you want to turn off ADDU Radius?';
+                                                    'Are you sure you want to turn on Campus Radius?' :
+                                                    'Are you sure you want to turn off Campus Radius?';
 
                                                 Swal.fire({
                                                     title: 'Are you sure?',
                                                     text: message,
                                                     icon: 'warning',
                                                     showCancelButton: true,
-                                                    confirmButtonText: `Yes, turn ${action} ADDU Radius`,
+                                                    confirmButtonText: `Yes, turn ${action} Campus Radius`,
                                                     cancelButtonText: 'No, cancel',
                                                     reverseButtons: true
                                                 }).then((result) => {

@@ -105,7 +105,7 @@ if ($class_id) {
                 <div class="col">
                     <h3 class="mt-10 bold">Repblic of the Philippines</h3>
                     <h3 class="mt-10 bold">Aurelius University</h3>
-                    <h3 class="mt-10 bold">College of Computing Studies</h3>
+                    <h3 class="mt-10 bold">College of Computer Studies</h3>
                     <p>Aurelius University, Ateneo Avenue, Naga City, 4400 Philippines</p>
                 </div>
                 <div class="col-sm-3">

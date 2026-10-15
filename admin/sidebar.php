@@ -1,65 +1,85 @@
-﻿<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+<?php
+$current_page = basename($_SERVER['PHP_SELF']);
 
-<nav id="sidebar" class="sidebar js-sidebar" style="background-color: orange !important;">
+$admin_display_name = 'Administrator';
+if (isset($_SESSION['admin_id'], $pdo)) {
+    try {
+        $stmt = $pdo->prepare("SELECT CONCAT(first_name, ' ', last_name) FROM admin WHERE id = ?");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $admin_display_name = $stmt->fetchColumn() ?: $admin_display_name;
+    } catch (PDOException $e) {
+        // Keep the generic label if the lookup fails.
+    }
+}
+?>
+
+<nav id="sidebar" class="sidebar js-sidebar">
     <div class="sidebar-content js-simplebar">
-        <div class="text-center">
-            <p class="text-light time" id="currentTime"> </p>
-        </div>
-        <a class="sidebar-brand text-center" href="index.php">
-            <img src="external/img/AU_Logo.png" class="img-fluid logo">
-            <h1 class="align-middle text-light bold">Welcome, Admin!</h1>
+        <a class="au-portal-brand" href="index.php">
+            <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
+            <span><strong>Aurelius University</strong><small>CCS Admin Portal</small></span>
         </a>
 
-        <ul class="sidebar-nav">
-            <li class="sidebar-header">
-                Pages
-            </li>
+        <div class="au-portal-user">
+            <img src="../external/img/AU_CCS_Logo.png" class="au-portal-avatar" alt="">
+            <h1 class="au-portal-name"><?php echo htmlspecialchars($admin_display_name); ?></h1>
+            <span class="au-portal-role">Administrator</span>
+            <span class="au-portal-clock time" id="currentTime"></span>
+        </div>
 
+        <ul class="sidebar-nav">
+            <li class="sidebar-header">Overview</li>
             <li class="sidebar-item <?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="index.php">
-                    <i class="bi bi-sliders align-middle"></i> <span class="align-middle">Index</span>
+                    <i class="bi bi-speedometer2 align-middle"></i> <span class="align-middle">Dashboard</span>
                 </a>
             </li>
-            <hr style="border-bottom: 1px solid white;">
 
+            <li class="sidebar-header">Academics</li>
             <li class="sidebar-item <?php echo ($current_page == 'teacher_management.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="teacher_management.php">
-                    <i class="bi bi-person-lines-fill align-middle"></i> <span class="align-middle">Adviser & Teacher Management</span>
+                    <i class="bi bi-person-lines-fill align-middle"></i> <span class="align-middle">Advisers &amp; Teachers</span>
                 </a>
             </li>
-
-            <li class="sidebar-item <?php echo ($current_page == 'post_management.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="post_management.php">
-                    <i class="bi bi-file-post align-middle"></i> <span class="align-middle">Posts Management</span>
-                </a>
-            </li>
-
-
             <li class="sidebar-item <?php echo ($current_page == 'class_management.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="class_management.php">
-                    <i class="bi bi-person align-middle"></i> <span class="align-middle">Class Management</span>
+                    <i class="bi bi-people align-middle"></i> <span class="align-middle">Class Management</span>
                 </a>
             </li>
-
             <li class="sidebar-item <?php echo ($current_page == 'subject_management.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="subject_management.php">
                     <i class="bi bi-journal-plus align-middle"></i> <span class="align-middle">Subject Management</span>
                 </a>
             </li>
-
             <li class="sidebar-item <?php echo ($current_page == 'semester_management.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="semester_management.php">
-                    <i class="bi bi-journal align-middle"></i> <span class="align-middle">Semester Management</span>
+                    <i class="bi bi-calendar3 align-middle"></i> <span class="align-middle">Semester Management</span>
                 </a>
             </li>
 
-            <hr style="border-bottom: 1px solid white;">
+            <li class="sidebar-header">Website</li>
+            <li class="sidebar-item <?php echo ($current_page == 'post_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="post_management.php">
+                    <i class="bi bi-newspaper align-middle"></i> <span class="align-middle">News &amp; Posts</span>
+                </a>
+            </li>
+            <li class="sidebar-item <?php echo ($current_page == 'gallery_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="gallery_management.php">
+                    <i class="bi bi-images align-middle"></i> <span class="align-middle">Gallery Management</span>
+                </a>
+            </li>
 
+            <li class="sidebar-header">Account</li>
             <li class="sidebar-item <?php echo ($current_page == 'admin_management.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="admin_management.php">
-                    <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">Admin User</span>
+                    <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">Admin Users</span>
                 </a>
             </li>
         </ul>
+
+        <div class="au-portal-foot">
+            <a href="../index.php" target="_blank"><i class="bi bi-globe2"></i> View public website</a>
+            <a href="processes/admin/account/logout.php"><i class="bi bi-box-arrow-right"></i> Sign out</a>
+        </div>
     </div>
 </nav>

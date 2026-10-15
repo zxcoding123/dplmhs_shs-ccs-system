@@ -447,8 +447,8 @@ include('processes/server/conn.php');
                                             <img src="external/img/ADDU_logo-removebg-preview.png" alt="ADDU Logo"
                                                 style="height: 80px; width: auto;">
                                             <div>
-                                                <h3 style="margin: 0;">Ateneo de Davao University</h3>
-                                                <h4 style="margin: 0;">College of Computing Studies</h4>
+                                                <h3 style="margin: 0;">Aurelius University</h3>
+                                                <h4 style="margin: 0;">College of Computer Studies</h4>
                                             </div>
                                             <img src="external/img/ccs_logo-removebg-preview.png" alt="CCS Logo"
                                                 style="height: 80px; width: auto;">

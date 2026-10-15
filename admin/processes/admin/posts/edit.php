@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $current_image = $stmt->fetchColumn();
 
             if ($current_image) {
-                $file_path = "../../uploads/posts/" . $current_image;
+                $file_path = "../../../../uploads/posts/" . $current_image;
                 if (file_exists($file_path)) {
                     unlink($file_path);
                 }
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Handle new image upload
         if (isset($_FILES['featured_image']) && $_FILES['featured_image']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = "../../uploads/posts/";
+            $upload_dir = "../../../../uploads/posts/";
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }

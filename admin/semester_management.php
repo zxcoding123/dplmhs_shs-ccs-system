@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					<h5>Welcome to this simple management tool for handling semesters!</h5>
 					<p>
 						In terms of handling semesters, you, as an admin, must create a semester that will be utilized
-						by the whole College of Computing Studies.
+						by the whole College of Computer Studies.
 					</p>
 					<p>You can add, edit or delete a semester here! Keep in mind that the start date must not be in
 						align with the end date.</p>

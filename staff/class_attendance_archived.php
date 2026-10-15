@@ -447,8 +447,8 @@ $stmt->execute();
             <div class="print-header">
                 <img src="external/img/ADDU_logo-removebg-preview.png" alt="University Logo 1">
                 <div>
-                    <h3>Ateneo de Davao University</h3>
-                    <h3>College of Computing Studies</h3>
+                    <h3>Aurelius University</h3>
+                    <h3>College of Computer Studies</h3>
                     <h5>Meeting Details</h5>
                     <p>A summary of meeting details and attendance records.</p>
                 </div>

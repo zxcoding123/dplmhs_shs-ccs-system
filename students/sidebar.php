@@ -1,105 +1,78 @@
-﻿<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+<?php
+$current_page = basename($_SERVER['PHP_SELF']);
+
+$stmt = $pdo->prepare("SELECT picture FROM student_pictures WHERE user_id = :user_id");
+$stmt->execute([':user_id' => $_SESSION['user_id']]);
+$student = $stmt->fetch(PDO::FETCH_ASSOC);
+$profilePictureSrc = !empty($student['picture'])
+    ? '../uploads/profile_pictures/' . rawurlencode($student['picture'])
+    : '../external/img/AU_CCS_Logo.png';
+
+$studentDisplayName = 'Student';
+if (isset($_SESSION['student_id'])) {
+    try {
+        $stmt = $pdo->prepare("SELECT fullName FROM students WHERE student_id = :student_id");
+        $stmt->bindParam(':student_id', $_SESSION['student_id'], PDO::PARAM_INT);
+        $stmt->execute();
+        $studentDisplayName = $stmt->fetchColumn() ?: $studentDisplayName;
+    } catch (PDOException $e) {
+        // Keep the generic label if the lookup fails.
+    }
+}
+?>
 
 <nav id="sidebar" class="sidebar js-sidebar">
     <div class="sidebar-content js-simplebar">
-        <div class="text-center">
-            <p class="text-light time" id="currentTime"></p>
-        </div>
-        <div class="sidebar-brand text-center" href="index.html">
-            <?php
-            $stmt = $pdo->prepare("SELECT picture FROM student_pictures WHERE user_id = :user_id");
-            $stmt->execute([':user_id' => $_SESSION['user_id']]);
-            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+        <a class="au-portal-brand" href="student_dashboard.php">
+            <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
+            <span><strong>Aurelius University</strong><small>CCS Student Portal</small></span>
+        </a>
 
-            $profilePicture = !empty($student['picture']) ? $student['picture'] : 'AU_Logo.png';
-            $path = "AU_CCS_Logo.png" . $profilePicture;
-            ?>
-
-            <img src="../uploads/profile_pictures/<?php echo $profilePicture; ?>" class="img-fluid logo" alt="Profile Picture">
-
-
-
-
-            <?php
-            if (isset($_SESSION['student_id'])) {
-                $student_id = $_SESSION['student_id'];
-
-                try {
-                    $stmt = $pdo->prepare("SELECT fullName FROM students WHERE student_id = :student_id");
-                    $stmt->bindParam(':student_id', $student_id, PDO::PARAM_INT);
-                    $stmt->execute();
-                    $student = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    if ($student) {
-                        echo '<h3 class="align-middle text-light bold">Welcome, ' . htmlspecialchars($student['fullName']) . '!</h3>';
-                    } else {
-                        echo '<h1 class="align-middle text-light bold">Welcome, Student!</h1>';
-                    }
-                } catch (PDOException $e) {
-                    echo "Error: " . $e->getMessage();
-                }
-            } else {
-                echo '<h1 class="align-middle text-light bold">Welcome, Student!</h1>';
-            }
-            ?>
-
-            <!-- Four Buttons -->
-            <div class="mt-3">
-                <button type="button" class="btn btn-csms w-100 mb-2" data-bs-toggle="modal"
-                    data-bs-target="#updateProfileModal">
-                    <i class="bi bi-pencil-square"></i> Update Profile
+        <div class="au-portal-user">
+            <img src="<?php echo htmlspecialchars($profilePictureSrc); ?>" class="au-portal-avatar" alt="Profile picture">
+            <h1 class="au-portal-name"><?php echo htmlspecialchars($studentDisplayName); ?></h1>
+            <span class="au-portal-role">Student<?php echo isset($_SESSION['student_id']) ? ' · ' . htmlspecialchars($_SESSION['student_id']) : ''; ?></span>
+            <span class="au-portal-clock time" id="currentTime"></span>
+            <div class="au-portal-actions">
+                <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#updateProfileModal">
+                    <i class="bi bi-pencil-square"></i> Profile
                 </button>
-                <button type="button" class="btn btn-csms w-100 mb-2" data-bs-toggle="modal"
-                    data-bs-target="#changePasswordModal">
-                    <i class="bi bi-lock"></i> Change Password
+                <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    <i class="bi bi-lock"></i> Password
                 </button>
-
-                <button type="button" class="btn btn-csms w-100 mb-2" data-bs-toggle="modal"
-                    data-bs-target="#updateProfilePictureModal">
-                    <i class="bi bi-person-circle"></i> Update Profile Picture
+                <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#updateProfilePictureModal">
+                    <i class="bi bi-person-circle"></i> Photo
                 </button>
-
-
             </div>
-
         </div>
-        <ul class="sidebar-nav">
-            <li class="sidebar-header">
-                Pages
-            </li>
 
+        <ul class="sidebar-nav">
+            <li class="sidebar-header">Overview</li>
             <li class="sidebar-item <?php echo ($current_page == 'student_dashboard.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="student_dashboard.php">
-                    <i class="bi bi-sliders align-middle"></i> <span class="align-middle">Index</span>
+                    <i class="bi bi-speedometer2 align-middle"></i> <span class="align-middle">Dashboard</span>
                 </a>
             </li>
-            <hr style="border-bottom: 1px solid white;">
 
-            <li class="sidebar-item <?php echo ($current_page == 'student_classes_dashboard.php') ? 'active' : ''; ?>">
+            <li class="sidebar-header">Academics</li>
+            <li class="sidebar-item <?php echo in_array($current_page, ['student_classes_dashboard.php', 'student_classes.php', 'subject_dashboard.php', 'class_announcements.php', 'subject_announcements.php', 'class_attendance_qr.php'], true) ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="student_classes_dashboard.php">
-                    <i class="bi bi-people align-middle"></i> <span class="align-middle">Class</span>
+                    <i class="bi bi-people align-middle"></i> <span class="align-middle">My Classes</span>
                 </a>
             </li>
 
-            <li class="sidebar-item <?php echo ($current_page == 'student_subjects.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="student_subjects.php">
-                    <i class="bi bi-journal align-middle"></i> <span class="align-middle">Subjects</span>
-                </a>
-            </li>
-
-
-
-
-
-            <hr style="border-bottom: 1px solid white;">
-
-            <li class="sidebar-item <?php echo ($current_page == 'student_dashboard.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="#">
-                    <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">Student User</span>
+            <li class="sidebar-header">Account</li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" data-bs-toggle="modal" data-bs-target="#updateProfileModal">
+                    <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">My Profile</span>
                 </a>
             </li>
         </ul>
 
+        <div class="au-portal-foot">
+            <a href="../index.php" target="_blank"><i class="bi bi-globe2"></i> View public website</a>
+            <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Sign out</a>
+        </div>
     </div>
 </nav>
 
@@ -177,7 +150,7 @@ if (isset($_SESSION['student_id'])) {
 
                     <!-- Student Email Field -->
                     <div class="mb-3">
-                        <label for="studentEmail" class="form-label">ADDU Email</label>
+                        <label for="studentEmail" class="form-label">University Email</label>
                         <input type="email" class="form-control" readonly
                             value="<?php echo htmlspecialchars($prevStudentData['email'] ?? ''); ?>">
                     </div>

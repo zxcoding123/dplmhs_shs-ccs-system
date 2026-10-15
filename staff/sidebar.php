@@ -1,96 +1,5 @@
-﻿<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
-
-<nav id="sidebar" class="sidebar js-sidebar">
-    <div class="sidebar-content js-simplebar">
-        <div class="text-center">
-            <p class="text-light time" id="currentTime"> </p>
-        </div>
-        <div class="sidebar-brand text-center" href="index.html">
-            <img src="external/img/AU_Logo.png" class="img-fluid logo">
-            <?php
-            // Start the session to access the teacher's session ID
-
-            // Check if the teacher's ID is set in the session
-            if (isset($_SESSION['teacher_id'])) {
-                $teacher_id = $_SESSION['teacher_id'];
-
-                // Assuming $pdo is the PDO connection to the database
-                try {
-                    // Query to select the teacher's full name from staff_accounts based on the session teacher ID
-                    $stmt = $pdo->prepare("SELECT fullName FROM staff_accounts WHERE id = :teacher_id");
-                    $stmt->bindParam(':teacher_id', $teacher_id);
-                    $stmt->execute();
-
-                    // Fetch the teacher's details
-                    $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    // Check if the teacher's data was found
-                    if ($teacher) {
-                        // Display the teacher's name in the greeting
-                        echo '<h3 class="align-middle text-light bold">Welcome, ' . htmlspecialchars($teacher['fullName']) . '!</h3>';
-                    } else {
-                        // Handle the case where no teacher was found (optional)
-                        echo '<h1 class="align-middle text-light bold">Welcome, Teacher!</h1>';
-                    }
-                } catch (PDOException $e) {
-                    // Error handling (optional)
-                    echo "Error: " . $e->getMessage();
-                }
-            } else {
-                // If the session does not contain a teacher ID, show a default message
-                echo '<h1 class="align-middle text-light bold">Welcome, Teacher!</h1>';
-            }
-            ?>
-
-            <!-- Edit Profile Button -->
-            <button type="button" class="btn btn-csms mt-2" data-bs-toggle="modal" data-bs-target="#editStaffModal">
-                <i class="bi bi-pencil-square"></i> Edit Profile
-            </button>
-        </div>
-
-
-
-
-        <ul class="sidebar-nav">
-            <li class="sidebar-header">
-                Pages
-            </li>
-
-            <li class="sidebar-item <?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="index.php">
-                    <i class="bi bi-sliders align-middle"></i> <span class="align-middle">Index</span>
-                </a>
-            </li>
-            <hr style="border-bottom: 1px solid white;">
-
-            <li class="sidebar-item <?php echo ($current_page == 'class_management.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="class_management.php">
-                    <i class="bi bi-people align-middle"></i> <span class="align-middle">Class Management</span>
-                </a>
-            </li>
-
-            <li class="sidebar-item <?php echo ($current_page == 'subject_management.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="subject_management.php">
-                    <i class="bi bi-journal align-middle"></i> <span class="align-middle">Subject Management</span>
-                </a>
-            </li>
-
-
-
-
-
-            <hr style="border-bottom: 1px solid white;">
-
-            <li class="sidebar-item <?php echo ($current_page == 'teacher_management.php') ? 'active' : ''; ?>">
-                <a class="sidebar-link" href="#" data-bs-toggle="modal" data-bs-target="#viewStaffModal">
-                    <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">Teacher User</span>
-                </a>
-            </li>
-        </ul>
-    </div>
-</nav>
-
 <?php
+$current_page = basename($_SERVER['PHP_SELF']);
 $teacher_id = $_SESSION['teacher_id'];
 
 try {
@@ -112,11 +21,71 @@ try {
     $department = $teacher['department'];
     $phone_number = $teacher['phone_number'];
     $gender = $teacher['gender'];
-    $avatar = $teacher['avatar'];
+    $avatar = $teacher['avatar'] ?? '';
 } catch (PDOException $e) {
     echo "An error occurred while fetching the teacher's data: " . $e->getMessage();
 }
 ?>
+
+<nav id="sidebar" class="sidebar js-sidebar">
+    <div class="sidebar-content js-simplebar">
+        <a class="au-portal-brand" href="index.php">
+            <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
+            <span><strong>Aurelius University</strong><small>CCS Faculty Portal</small></span>
+        </a>
+
+        <div class="au-portal-user">
+            <img src="<?php echo !empty($avatar) ? '../uploads/profile_pictures/' . htmlspecialchars($avatar) : '../external/img/AU_CCS_Logo.png'; ?>" class="au-portal-avatar" alt="">
+            <h1 class="au-portal-name"><?php echo htmlspecialchars(!empty($fullName) ? $fullName : 'Faculty Member'); ?></h1>
+            <span class="au-portal-role">Faculty</span>
+            <?php if (!empty($department)): ?>
+                <span class="au-portal-clock"><?php echo htmlspecialchars($department); ?></span>
+            <?php endif; ?>
+            <span class="au-portal-clock time" id="currentTime"></span>
+            <div class="au-portal-actions">
+                <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#editStaffModal">
+                    <i class="bi bi-pencil-square"></i> Edit Profile
+                </button>
+                <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#viewStaffModal">
+                    <i class="bi bi-person-vcard"></i> View
+                </button>
+            </div>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li class="sidebar-header">Overview</li>
+            <li class="sidebar-item <?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="index.php">
+                    <i class="bi bi-speedometer2 align-middle"></i> <span class="align-middle">Dashboard</span>
+                </a>
+            </li>
+
+            <li class="sidebar-header">Teaching</li>
+            <li class="sidebar-item <?php echo ($current_page == 'class_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="class_management.php">
+                    <i class="bi bi-people align-middle"></i> <span class="align-middle">Class Management</span>
+                </a>
+            </li>
+            <li class="sidebar-item <?php echo ($current_page == 'subject_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="subject_management.php">
+                    <i class="bi bi-journal-bookmark align-middle"></i> <span class="align-middle">Subject Management</span>
+                </a>
+            </li>
+
+            <li class="sidebar-header">Account</li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" data-bs-toggle="modal" data-bs-target="#viewStaffModal">
+                    <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">My Profile</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="au-portal-foot">
+            <a href="../index.php" target="_blank"><i class="bi bi-globe2"></i> View public website</a>
+            <a href="processes/teachers/account/logout.php"><i class="bi bi-box-arrow-right"></i> Sign out</a>
+        </div>
+    </div>
+</nav>
 
 <!-- Modal for Editing Staff Information -->
 <div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
