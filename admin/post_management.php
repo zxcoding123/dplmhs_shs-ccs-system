@@ -163,8 +163,8 @@ include __DIR__ . '/../database/connection.php';
                 <a class="sidebar-toggle js-sidebar-toggle">
                     <i class="hamburger align-self-center"></i>
                 </a>
-                <img src="external/img/dp_logo.avif" class="logo-small">
-                <span class="text-white"><b>AU</b> - Post Management System</span>
+                <img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
+                <span class="text-white"><b>DPLMHS</b> - Post Management System</span>
                 <div class="navbar-collapse collapse">
                     <?php include('top-bar.php'); ?>
                 </div>

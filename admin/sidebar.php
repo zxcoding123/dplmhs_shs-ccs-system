@@ -21,7 +21,7 @@ if (isset($_SESSION['admin_id'], $pdo)) {
         </a>
 
         <div class="au-portal-user">
-            <img src="../external/img/AU_CCS_Logo.png" class="au-portal-avatar" alt="">
+            <span class="au-portal-avatar au-portal-avatar-placeholder" aria-hidden="true"><i class="bi bi-person-fill"></i></span>
             <h1 class="au-portal-name"><?php echo htmlspecialchars($admin_display_name); ?></h1>
             <span class="au-portal-role">Administrator</span>
             <span class="au-portal-clock time" id="currentTime"></span>

@@ -347,6 +347,27 @@ html body .content a:not(.btn):not(.dropdown-item):not(.nav-link) {
     color: var(--au-navy-soft);
 }
 
+/* Dashboard quick-access tiles */
+html body .content a.nav-link-shortcut {
+    background-color: var(--au-navy);
+    color: #fff;
+}
+
+html body .content a.nav-link-shortcut:hover,
+html body .content a.nav-link-shortcut:focus {
+    background-color: var(--au-navy-soft);
+    color: var(--au-gold-light);
+}
+
+/* Placeholder avatar used in the portal sidebars */
+html body .au-portal-avatar-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--au-navy);
+    font-size: 2.6rem;
+}
+
 /* Buttons */
 html body .btn-csms,
 html body .btn-primary {

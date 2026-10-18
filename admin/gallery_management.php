@@ -211,8 +211,8 @@ function g_e($value)
                 <a class="sidebar-toggle js-sidebar-toggle">
                     <i class="hamburger align-self-center"></i>
                 </a>
-                <img src="external/img/dp_logo.avif" class="logo-small">
-                <span class="text-white"><b>AU</b> - Gallery Management</span>
+                <img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
+                <span class="text-white"><b>DPLMHS</b> - Gallery Management</span>
                 <div class="navbar-collapse collapse">
                     <?php include('top-bar.php'); ?>
                 </div>
