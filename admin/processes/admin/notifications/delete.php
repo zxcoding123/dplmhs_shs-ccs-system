@@ -1,6 +1,7 @@
 <?php 
 // delete.php
 session_start();
+require_once __DIR__ . '/../../../includes/guard.php';
 require __DIR__ . '/../../../../database/connection.php'; // Adjust the path based on your directory structure
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {

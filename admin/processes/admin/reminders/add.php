@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../../../includes/guard.php';
 date_default_timezone_set('Asia/Manila');
 include __DIR__ . '/../../../../database/connection.php';
 

@@ -2,6 +2,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *'); // Adjust this for security in production
 session_start();
+require_once __DIR__ . '/includes/guard.php';
 require_once __DIR__ . '/../database/connection.php'; // Assumes this file defines $pdo or connection details
 
 // Get parameters

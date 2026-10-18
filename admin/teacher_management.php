@@ -3,6 +3,36 @@ session_start();
 include __DIR__ . '/../database/connection.php';
 require '../app/helpers/auth.php'; // adjust path to your file
 requireRole('admin'); // ensures only admins can access
+require_once __DIR__ . '/includes/ui.php';
+
+// Advisory sections each department can be assigned
+$departmentClasses = [
+	'Department of Information Technology' => ['BSIT-1A', 'BSIT-1B', 'BSIT-2A', 'BSIT-2B', 'BSIT-3A', 'BSIT-3B', 'BSIT-4A', 'BSIT-4B'],
+	'Department of Computer Science' => ['BSCS-1A', 'BSCS-1B', 'BSCS-2A', 'BSCS-2B', 'BSCS-3A', 'BSCS-3B', 'BSCS-4A', 'BSCS-4B'],
+];
+
+$teachers = $pdo->query("SELECT * FROM staff_accounts ORDER BY last_name, first_name")->fetchAll(PDO::FETCH_ASSOC);
+
+// Advisory classes keyed by the stored fullName (the column staff/add.php and staff/edit.php write)
+$advisory = [];
+foreach ($pdo->query("SELECT fullName, class_advising FROM staff_advising ORDER BY class_advising") as $row) {
+	$advisory[$row['fullName']][] = $row['class_advising'];
+}
+
+// Classes each teacher is assigned to teach
+$teaching = [];
+foreach ($pdo->query("SELECT teacher, COUNT(*) AS total FROM classes WHERE is_archived = 0 GROUP BY teacher") as $row) {
+	$teaching[$row['teacher']] = (int) $row['total'];
+}
+
+$activeCount = count(array_filter($teachers, fn($t) => strcasecmp((string) $t['status'], 'Active') === 0));
+$adviserCount = count(array_filter($teachers, fn($t) => !empty($advisory[$t['fullName']])));
+$departments = array_values(array_unique(array_filter(array_column($teachers, 'department'), fn($d) => $d && $d !== 'None')));
+
+function teacher_name(array $t): string
+{
+	return trim(preg_replace('/\s+/', ' ', $t['first_name'] . ' ' . $t['middle_name'] . ' ' . $t['last_name']));
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,119 +41,29 @@ requireRole('admin'); // ensures only admins can access
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<title>DPLMHS-SHS | Student Management System</title>
+	<title>Advisers &amp; Teachers | DPLMHS-SHS Admin Portal</title>
 	<?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
 		integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link href="css/app.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+	<link href="<?= admin_asset('css/admin-ui.css') ?>" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
 	<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-
-
-
+	<style>
+		.person { display: flex; align-items: center; gap: 0.65rem; }
+		.person-avatar { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--ui-navy); color: var(--ui-gold-light); font-size: 0.8rem; font-weight: 700; }
+		.person-name { display: block; font-weight: 700; color: var(--ui-navy); }
+		.person-meta { display: block; font-size: 0.8rem; color: var(--ui-muted); }
+		.tag-row { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+	</style>
 </head>
-
-<style>
-	table.dataTable {
-		font-size: 12px;
-	}
-
-	td {
-		text-align: center;
-		vertical-align: middle;
-
-	}
-
-	.btn-csms {
-		background-color: #10177a;
-		color: white;
-	}
-
-	.btn-csms:hover {
-		border: 1px solid #10177a;
-		color: #10177a;
-	}
-</style>
-
-<style>
-	.responsive-table {
-		width: 100%;
-		border-collapse: collapse;
-		margin: 0 0 1em 0;
-	}
-
-	/* Ensure table header and footer cells are centered where needed */
-	.responsive-table th.text-center,
-	.responsive-table td.text-center {
-		text-align: center;
-	}
-
-	/* Style for table headers */
-	.responsive-table th {
-		background-color: #f5f5f5;
-		font-weight: bold;
-		padding: 8px;
-		border: 1px solid #ddd;
-	}
-
-	/* Style for table cells */
-	.responsive-table td {
-		padding: 8px;
-		border: 1px solid #ddd;
-	}
-
-	/* Container for responsive behavior */
-	.table-wrapper {
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-		margin-bottom: 1em;
-	}
-
-	/* Minimum width to ensure all content is visible */
-	.responsive-table {
-		min-width: 800px;
-		/* Adjust based on your content */
-	}
-
-	/* Button spacing */
-	.responsive-table td .btn {
-		margin: 2px;
-	}
-
-	/* Media query for smaller screens */
-	@media screen and (max-width: 768px) {
-
-		.responsive-table th,
-		.responsive-table td {
-			font-size: 14px;
-		}
-
-		.responsive-table td .btn {
-			padding: 4px 8px;
-			font-size: 12px;
-		}
-
-		/* Stack buttons vertically on very small screens */
-		@media screen and (max-width: 480px) {
-			.responsive-table td .btn {
-				display: block;
-				width: 100%;
-				margin: 2px 0;
-			}
-		}
-	}
-</style>
 
 <body>
 	<div class="wrapper">
-		<?php
-		include('sidebar.php')
-		?>
+		<?php include('sidebar.php'); ?>
 
 		<div class="main">
 			<nav class="navbar navbar-expand navbar-light navbar-bg">
@@ -131,866 +71,397 @@ requireRole('admin'); // ensures only admins can access
 					<i class="hamburger align-self-center"></i>
 				</a>
 				<img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
-				<span class="text-white"><b>DPLMHS</b> - Student Management System </span>
+				<span class="text-white d-none d-md-inline"><b>DPLMHS</b> - Student Management System </span>
 				<div class="navbar-collapse collapse">
-					<?php
-					include('top-bar.php');
-					?>
+					<?php include('top-bar.php'); ?>
 				</div>
 			</nav>
 
 			<main class="content">
 				<div class="container-fluid p-0">
+					<?php admin_page_header('Advisers & Teachers', 'Teaching staff, their advisory sections and account access', 'bi-person-badge',
+						'<button type="button" class="btn btn-ui-gold" data-bs-toggle="modal" data-bs-target="#addTeacherModal"><i class="bi bi-person-plus"></i> Add teacher</button>'); ?>
 
+					<?php admin_stat_tiles([
+						['label' => 'Teachers', 'value' => count($teachers), 'icon' => 'bi-people', 'filter' => ''],
+						['label' => 'Active', 'value' => $activeCount, 'icon' => 'bi-person-check', 'tone' => 'ok', 'filter' => 'Active', 'filter_col' => 'Status'],
+						['label' => 'Inactive', 'value' => count($teachers) - $activeCount, 'icon' => 'bi-person-dash', 'tone' => 'muted', 'filter' => 'Inactive', 'filter_col' => 'Status'],
+						['label' => 'Class advisers', 'value' => $adviserCount, 'icon' => 'bi-mortarboard', 'hint' => (count($teachers) - $adviserCount) . ' without an advisory'],
+					]); ?>
 
-
-					<div class="row">
-
-						<div class="col-12">
-							<div class="card">
-
-								<div class="card-header">
-									<div class="d-flex align-items-center">
-										<h5 class="h5 mb-3"><a href="index.php" class="nav-ham-link">Home</a> /
-											<span>Teacher Management</span>
-										</h5>
-
-										<div class="ms-auto" aria-hidden="true">
-											<img src="external/svgs/undraw_favorite_gb6n.svg"
-												class=" small-picture img-fluid">
-										</div>
+					<section class="ui-panel">
+						<?php if ($teachers): ?>
+							<div class="ui-panel-head">
+								<div>
+									<h2>Teaching staff</h2>
+									<p>Click a tile to filter by status. Press <kbd>/</kbd> to search.</p>
+								</div>
+								<?php if ($departments): ?>
+									<div class="ui-filters">
+										<select class="form-select form-select-sm" id="departmentFilter" aria-label="Filter by department">
+											<option value="">All departments</option>
+											<?php foreach ($departments as $dept): ?><option value="<?= admin_e($dept) ?>"><?= admin_e($dept) ?></option><?php endforeach; ?>
+										</select>
 									</div>
-
-									<br>
-
-									<h5 class="card-title mb-0">
-										<div class="d-flex align-items-center">
-											<h3>Teacher List</h3>
-											<div class="ms-auto" aria-hidden="true">
-												<button type="button" class="btn btn-csms" data-bs-toggle="modal"
-													data-bs-target="#addTeacherModal"><i
-														class="bi bi-pencil-square"></i>
-													Add a Teacher</button>
-											</div>
-										</div>
-									</h5>
-								</div>
-								<div class="card-body">
-									<?php
-									// Query to select staff details along with their class advisings
-									$sql = "
-    SELECT sa.id, sa.first_name, sa.middle_name, sa.last_name, sa.email, sa.department, sa.gender, sa.phone_number, sa.status, 
-           GROUP_CONCAT(sa_ad.class_advising ORDER BY sa_ad.class_advising SEPARATOR ', ') AS class_advising
-    FROM staff_accounts sa
-    LEFT JOIN staff_advising sa_ad ON sa.fullName = sa_ad.fullName
-    GROUP BY sa.id
-";
-									$stmt = $pdo->query($sql);
-
-									if ($stmt->rowCount() > 0) {
-										echo '
-										<div class="table-wrapper">
-										<table id="teachers" class="responsive" style="width: 100%;">
-        <thead>
-            <tr>
-               <th>First Name</th>
-               <th>Middle Name</th>
-               <th>Last Name</th>
-               <th class="text-center">Email</th>
-               <th class="text-center">Department</th>
-               <th class="text-center">Gender</th>
-               <th class="text-center">Phone Number</th>
-               <th class="text-center">Class Advising</th>
-               <th class="text-center">Actions</th>
-            </tr>
-        </thead>
-        <tfoot class="text-center">
-            <tr>
-               <th>First Name</th>
-               <th>Middle Name</th>
-               <th>Last Name</th>
-               <th>Email</th>
-               <th>Department</th>
-               <th>Gender</th>
-               <th>Phone Number</th>
-               <th>Class Advising</th>
-               <th>Actions</th>
-            </tr>
-        </tfoot>
-        <tbody>';
-
-										while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-											// Set text and class for activate/deactivate button
-											$statusText = $row['status'] == 'Active' ? 'Deactivate' : 'Activate';
-											$statusBtnClass = $row['status'] == 'Active' ? 'btn-danger' : 'btn-success';
-
-											// Check if class advising is available, otherwise set to "None"
-											$classAdvising = !empty($row['class_advising']) ? $row['class_advising'] : 'None';
-
-											echo '<tr>
-            <td>' . htmlspecialchars($row['first_name']) . '</td>
-            <td>' . htmlspecialchars($row['middle_name']) . '</td>
-            <td>' . htmlspecialchars($row['last_name']) . '</td>
-            <td>' . htmlspecialchars($row['email']) . '</td>
-            <td>' . htmlspecialchars($row['department']) . '</td>
-            <td>' . htmlspecialchars($row['gender']) . '</td>
-            <td>' . htmlspecialchars($row['phone_number']) . '</td>
-            <td>' . htmlspecialchars($classAdvising) . '</td>
-            <td>
-                <button type="button" data-bs-toggle="modal" data-bs-target="#viewModal' . $row['id'] . '" class="btn btn-primary">
-                    <i class="bi bi-eye"></i> View
-                </button>
-                <button type="button" data-bs-toggle="modal" data-bs-target="#editModal' . $row['id'] . '" class="btn btn-warning">
-                    <i class="bi bi-pencil"></i> Edit
-                </button>
-                <button type="button" onclick="deleteModal(' . $row['id'] . ')" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Delete
-                </button>
-                <button type="button" onclick="changeStatus(' . $row['id'] . ', \'' . $statusText . '\')" class="btn ' . $statusBtnClass . '">
-                    <i class="bi bi-activity"></i> ' . $statusText . '
-                </button>
-            </td>
-        </tr>';
-										}
-
-										echo '</tbody></table>';
-									} else {
-										echo '<h1 class="text-center">No teachers added, yet.</h1>';
-									}
-									echo "</div>";
-									?>
-
-
-									<script>
-										function changeStatus(userId, currentStatus) {
-											const newStatus = currentStatus === 'Activate' ? 'Active' : 'Inactive'; // Adjusting here: you are toggling "Activate/Deactivate"
-
-											console.log(`Changing status for user ${userId} to ${newStatus}`);
-
-											var xhr = new XMLHttpRequest();
-											xhr.open('POST', 'change_status.php', true);
-											xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-											xhr.onload = function() {
-												if (xhr.status === 200) {
-													console.log("Status update response:", xhr.responseText);
-													location.reload(); // Reload the page to show the updated status
-												} else {
-													console.error("Error updating status:", xhr.status, xhr.statusText);
-												}
-											};
-
-											xhr.onerror = function() {
-												console.error("Request failed");
-											};
-
-											xhr.send('user_id=' + userId + '&new_status=' + newStatus);
-										}
-									</script>
-								</div>
-
+								<?php endif; ?>
 							</div>
-
-						</div>
-					</div>
+							<table id="teachers" class="display">
+								<thead>
+									<tr>
+										<th>Teacher</th>
+										<th>Department</th>
+										<th>Advisory</th>
+										<th>Classes</th>
+										<th>Phone</th>
+										<th>Status</th>
+										<th>Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ($teachers as $t):
+										$id = (int) $t['id'];
+										$isActive = strcasecmp((string) $t['status'], 'Active') === 0;
+										$classes = $advisory[$t['fullName']] ?? [];
+										$name = teacher_name($t);
+										$initials = strtoupper(mb_substr($t['first_name'], 0, 1) . mb_substr($t['last_name'], 0, 1)); ?>
+										<tr>
+											<td>
+												<div class="person">
+													<span class="person-avatar"><?= admin_e($initials ?: '?') ?></span>
+													<div>
+														<span class="person-name"><?= admin_e($name) ?></span>
+														<span class="person-meta"><?= admin_e($t['email']) ?></span>
+													</div>
+												</div>
+											</td>
+											<td><?= admin_e($t['department'] && $t['department'] !== 'None' ? $t['department'] : '—') ?></td>
+											<td>
+												<?php if ($classes): ?>
+													<div class="tag-row"><?php foreach ($classes as $c): ?><span class="ui-tag"><?= admin_e($c) ?></span><?php endforeach; ?></div>
+												<?php else: ?>
+													<span class="text-muted">None</span>
+												<?php endif; ?>
+											</td>
+											<td><?= $teaching[$t['fullName']] ?? 0 ?></td>
+											<td><?= admin_e($t['phone_number'] ?: '—') ?></td>
+											<td><span class="ui-pill <?= $isActive ? 'is-ok' : '' ?>"><?= $isActive ? 'Active' : 'Inactive' ?></span></td>
+											<td>
+												<div class="ui-acts">
+													<button type="button" class="ui-act" data-bs-toggle="modal" data-bs-target="#viewModal<?= $id ?>" title="View" aria-label="View"><i class="bi bi-eye"></i></button>
+													<button type="button" class="ui-act" data-bs-toggle="modal" data-bs-target="#editModal<?= $id ?>" title="Edit" aria-label="Edit"><i class="bi bi-pencil"></i></button>
+													<button type="button" class="ui-act <?= $isActive ? 'is-warn' : 'is-ok' ?>" onclick="changeStatus(<?= $id ?>, '<?= $isActive ? 'Inactive' : 'Active' ?>', <?= admin_e(json_encode($name)) ?>)"
+														title="<?= $isActive ? 'Deactivate' : 'Activate' ?>" aria-label="<?= $isActive ? 'Deactivate' : 'Activate' ?>">
+														<i class="bi <?= $isActive ? 'bi-person-dash' : 'bi-person-check' ?>"></i>
+													</button>
+													<button type="button" class="ui-act is-danger" onclick="deleteModal(<?= $id ?>, <?= admin_e(json_encode($name)) ?>)" title="Delete" aria-label="Delete"><i class="bi bi-trash"></i></button>
+												</div>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						<?php else: ?>
+							<div class="ui-empty">
+								<i class="bi bi-person-badge"></i>
+								<h3>No teachers yet</h3>
+								<p>Add teaching staff so they can sign in, advise sections and handle classes.</p>
+								<button type="button" class="btn btn-ui-gold" data-bs-toggle="modal" data-bs-target="#addTeacherModal"><i class="bi bi-person-plus"></i> Add teacher</button>
+							</div>
+						<?php endif; ?>
+					</section>
 				</div>
+			</main>
 		</div>
 	</div>
-	</div>
-	</div>
-	</div>
-	</div>
-	</div>
-	</main>
-	</div>
-	</div>
 
-	<script src="js/app.js"></script>
-
-	<div class="modal fade" id="addTeacherModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
+	<!-- Add teacher -->
+	<div class="modal fade" id="addTeacherModal" tabindex="-1" aria-labelledby="addTeacherLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+			<form class="modal-content" method="POST" action="processes/admin/staff/add.php" data-password-form>
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="exampleModalLabel"><b>Add a new Teacher</b></h1>
+					<span class="ui-modal-icon"><i class="bi bi-person-plus"></i></span>
+					<h1 class="modal-title" id="addTeacherLabel">Add a teacher</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<form method="POST" action="processes/admin/staff/add.php">
-						<div class="mb-3">
-							<label for="first_name" class="form-label bold">First Name</label>
-							<input type="text" class="form-control" id="first_name" name="firstName">
+					<div class="row g-3">
+						<div class="col-md-4">
+							<label for="first_name" class="form-label">First name</label>
+							<input type="text" class="form-control" id="first_name" name="firstName" required>
 						</div>
-						<div class="mb-3">
-							<label for="middle_name" class="form-label bold">Middle Name</label>
+						<div class="col-md-4">
+							<label for="middle_name" class="form-label">Middle name</label>
 							<input type="text" class="form-control" id="middle_name" name="middleName">
 						</div>
-						<div class="mb-3">
-							<label for="last_name" class="form-label bold">Last Name</label>
-							<input type="text" class="form-control" id="last_name" name="lastName">
+						<div class="col-md-4">
+							<label for="last_name" class="form-label">Last name</label>
+							<input type="text" class="form-control" id="last_name" name="lastName" required>
 						</div>
-						<div class="mb-3">
-							<label for="email" class="form-label bold">Email</label>
-							<input type="email" class="form-control" id="email" name="email">
+						<div class="col-md-6">
+							<label for="email" class="form-label">Email</label>
+							<input type="email" class="form-control" id="email" name="email" autocomplete="off" required>
 						</div>
-						<div class="mb-3">
-							<label for="department" class="form-label bold">Department</label>
-							<select class="form-control" name="department" id="department-1" required>
-								<option value="None">None</option>
-								<option value="Department of Information Technology">Department of Information
-									Technology</option>
-								<option value="Department of Computer Science">Department of Computer Science</option>
-							</select>
+						<div class="col-md-3">
+							<label for="phone_number" class="form-label">Phone</label>
+							<input type="tel" class="form-control" id="phone_number" name="phone_number" value="+63" pattern="^\+63\d{10}$" maxlength="13" placeholder="+639xxxxxxxxx" required>
 						</div>
-
-						<div class="mb-3">
-							<label for="class" class="form-label bold">Class Advisory (Multi-selectable)</label>
-							<select class="form-select" name="class[]" id="class-1" multiple disabled>
-								<option value="" selected>None</option>
-								<!-- Options will be dynamically populated -->
-							</select>
-						</div>
-
-						<script>
-							document.addEventListener('DOMContentLoaded', function() {
-								const departmentSelect1 = document.getElementById('department-1');
-								const classSelect1 = document.getElementById('class-1');
-
-								// Define class options based on the department
-								const classes = {
-									"Department of Information Technology": [
-										"BSIT-1A", "BSIT-1B", "BSIT-2A", "BSIT-2B",
-										"BSIT-3A", "BSIT-3B", "BSIT-4A", "BSIT-4B"
-									],
-									"Department of Computer Science": [
-										"BSCS-1A", "BSCS-1B", "BSCS-2A", "BSCS-2B",
-										"BSCS-3A", "BSCS-3B", "BSCS-4A", "BSCS-4B"
-									]
-								};
-
-								// Function to update class options based on selected department
-								function updateClassOptions(department) {
-									// Clear the current options
-									classSelect1.innerHTML = '<option value="" disabled selected>None</option>';
-
-									// Enable the class select dropdown
-									classSelect1.disabled = false;
-
-									// If a valid department is selected, update the class options
-									if (classes[department]) {
-										classes[department].forEach(function(classOption) {
-											const option = document.createElement('option');
-											option.value = classOption;
-											option.textContent = classOption;
-											classSelect1.appendChild(option);
-										});
-									} else {
-										// If no department is selected, disable the class select
-										classSelect1.disabled = true;
-									}
-								}
-
-								// Event listener for when the department changes
-								departmentSelect1.addEventListener('change', function() {
-									const selectedDepartment = departmentSelect1.value;
-									updateClassOptions(selectedDepartment);
-								});
-
-								// Initialize class options based on the initially selected department (if any)
-								updateClassOptions(departmentSelect1.value);
-							});
-						</script>
-
-
-
-						<div class="mb-3">
-							<label for="password" class="form-label bold">Password</label>
-							<input type="password" class="form-control" id="password" name="password"
-								style="width: 100%; display: inline !important;">
-							<span
-								style="position: absolute; display: inline; right: 5%; margin-top: 5px !important; vertical-align: middle">
-								<i class="bi bi-eye-slash-fill" id="togglerPassword"></i>
-							</span>
-						</div>
-						<div class="mb-3">
-							<label for="confirm_password" class="form-label bold">Confirm Password</label>
-							<input type="password" class="form-control" id="confirm_password" name="confirm_password"
-								style="width: 100%; display: inline !important;">
-							<span
-								style="position: absolute; display: inline; right: 5%; margin-top: 5px !important; vertical-align: middle">
-								<i class="bi bi-eye-slash-fill" id="togglerConfirmPassword"></i>
-							</span>
-						</div>
-
-
-						<div class="mb-3">
-							<label for="gender" class="form-label bold">Gender</label>
-							<select class="form-control" name="gender" id="gender">
+						<div class="col-md-3">
+							<label for="gender" class="form-label">Gender</label>
+							<select class="form-select" name="gender" id="gender">
 								<option value="Male">Male</option>
 								<option value="Female">Female</option>
 							</select>
 						</div>
+					</div>
 
-						<div class="mb-3">
-							<label for="phone_number" class="form-label bold">Phone Number</label>
-							<input type="tel" class="form-control" id="phone_number" name="phone_number" value="+63"
-								pattern="^\+63\d{10}$" maxlength="13" placeholder="+63xxxxxxxxxx" required>
-
+					<p class="ui-section-label">Department &amp; advisory</p>
+					<div class="row g-3">
+						<div class="col-md-6">
+							<label for="department-new" class="form-label">Department</label>
+							<select class="form-select" name="department" id="department-new" data-dept-select="#class-new" required>
+								<option value="None">None</option>
+								<?php foreach (array_keys($departmentClasses) as $dept): ?><option value="<?= admin_e($dept) ?>"><?= admin_e($dept) ?></option><?php endforeach; ?>
+							</select>
 						</div>
+						<div class="col-md-6">
+							<label for="class-new" class="form-label">Advisory sections</label>
+							<select class="form-select" name="class[]" id="class-new" multiple disabled data-taken="[]"></select>
+							<small class="text-muted">Hold Ctrl (⌘ on Mac) to choose several. Optional.</small>
+						</div>
+					</div>
+
+					<p class="ui-section-label">Sign-in password</p>
+					<div class="row g-3">
+						<div class="col-md-6">
+							<label for="password" class="form-label">Password</label>
+							<input type="password" class="form-control" id="password" name="password" minlength="8" autocomplete="new-password" required>
+							<small class="text-muted">At least 8 characters.</small>
+						</div>
+						<div class="col-md-6">
+							<label for="confirm_password" class="form-label">Confirm password</label>
+							<input type="password" class="form-control" id="confirm_password" name="confirm_password" autocomplete="new-password" required data-confirms="#password">
+						</div>
+					</div>
 				</div>
 				<div class="modal-footer">
-					<input type="submit" class="btn btn-primary" value="Update">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					</form>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Add teacher</button>
 				</div>
-			</div>
+			</form>
 		</div>
 	</div>
 
-	<?php
-	include('processes/server/modals.php');
-	?>
+	<?php foreach ($teachers as $t):
+		$id = (int) $t['id'];
+		$classes = $advisory[$t['fullName']] ?? [];
+		$name = teacher_name($t);
+		$isActive = strcasecmp((string) $t['status'], 'Active') === 0; ?>
 
-	<script>
-		function getTime() {
-			const now = new Date();
-			const newTime = now.toLocaleString();
-			console.log(newTime);
-			document.querySelector("#currentTime").textContent = "The current date and time is: " + newTime;
-		}
-		setInterval(getTime, 100);
-		$(document).ready(function() {
-			var table = $('#teachers').DataTable({
-				responsive: true,
-			});
+		<!-- Edit teacher -->
+		<div class="modal fade" id="editModal<?= $id ?>" tabindex="-1" aria-labelledby="editTeacherLabel<?= $id ?>" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+				<form class="modal-content" method="POST" action="processes/admin/staff/edit.php?id=<?= $id ?>" data-password-form>
+					<div class="modal-header">
+						<span class="ui-modal-icon"><i class="bi bi-pencil"></i></span>
+						<h1 class="modal-title" id="editTeacherLabel<?= $id ?>">Edit <?= admin_e($name) ?></h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="row g-3">
+							<div class="col-md-4">
+								<label for="first_name<?= $id ?>" class="form-label">First name</label>
+								<input type="text" class="form-control" id="first_name<?= $id ?>" name="first_name" value="<?= admin_e($t['first_name']) ?>" required>
+							</div>
+							<div class="col-md-4">
+								<label for="middle_name<?= $id ?>" class="form-label">Middle name</label>
+								<input type="text" class="form-control" id="middle_name<?= $id ?>" name="middle_name" value="<?= admin_e($t['middle_name']) ?>">
+							</div>
+							<div class="col-md-4">
+								<label for="last_name<?= $id ?>" class="form-label">Last name</label>
+								<input type="text" class="form-control" id="last_name<?= $id ?>" name="last_name" value="<?= admin_e($t['last_name']) ?>" required>
+							</div>
+							<div class="col-md-6">
+								<label for="email<?= $id ?>" class="form-label">Email</label>
+								<input type="email" class="form-control" id="email<?= $id ?>" name="email" value="<?= admin_e($t['email']) ?>" required>
+							</div>
+							<div class="col-md-3">
+								<label for="phone_number<?= $id ?>" class="form-label">Phone</label>
+								<input type="tel" class="form-control" id="phone_number<?= $id ?>" name="phone_number" value="<?= admin_e($t['phone_number']) ?>" pattern="^\+63\d{10}$" maxlength="13" placeholder="+639xxxxxxxxx" required>
+							</div>
+							<div class="col-md-3">
+								<label for="gender-<?= $id ?>" class="form-label">Gender</label>
+								<select class="form-select" name="gender" id="gender-<?= $id ?>">
+									<?php foreach (['Male', 'Female', 'Other'] as $g): ?>
+										<option value="<?= $g ?>" <?= strcasecmp((string) $t['gender'], $g) === 0 ? 'selected' : '' ?>><?= $g ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+						</div>
 
-			// Loop through each footer element
-			$('#teachers tfoot th').each(function(index) {
-				var title = $(this).text(); // Get column title
+						<p class="ui-section-label">Department &amp; advisory</p>
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label for="department-<?= $id ?>" class="form-label">Department</label>
+								<select class="form-select" name="department" id="department-<?= $id ?>" data-dept-select="#class-<?= $id ?>" required>
+									<option value="None" <?= !isset($departmentClasses[$t['department']]) ? 'selected' : '' ?>>None</option>
+									<?php foreach (array_keys($departmentClasses) as $dept): ?>
+										<option value="<?= admin_e($dept) ?>" <?= $t['department'] === $dept ? 'selected' : '' ?>><?= admin_e($dept) ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+							<div class="col-md-6">
+								<label for="class-<?= $id ?>" class="form-label">Advisory sections</label>
+								<select class="form-select" name="class[]" id="class-<?= $id ?>" multiple data-taken="<?= admin_e(json_encode($classes)) ?>"></select>
+								<small class="text-muted">Currently: <?= $classes ? admin_e(implode(', ', $classes)) : 'none' ?>.</small>
+							</div>
+						</div>
 
-				// Decide which column should have a dropdown
-				if (title === 'Department' || title === 'Class') {
-					// Example: Dropdown for 'Status' or 'Role' columns
-					var options = '';
-					if (title === 'Department') {
-						options = `
-					<select class="selector">
-						<option value="">None</option>
-						<option value="Department of Information Technology">Department of Information Technology</option>
-						<option value="Department of Computer Science">Department of Computer Science</option>
-					</select>
-				`;
-					} else if (title === 'Class') {
-						options = `
-				  <select class="selector">
-	<option value="">All</option>
-	<option value="Teacher">Teacher</option>
-	<option value="Admin">Admin</option>
-	<!-- BSIT Classes -->
-	<option value="BSIT-1A">BSIT-1A</option>
-	<option value="BSIT-1B">BSIT-1B</option>
-	<option value="BSIT-2A">BSIT-2A</option>
-	<option value="BSIT-2B">BSIT-2B</option>
-	<option value="BSIT-3A">BSIT-3A</option>
-	<option value="BSIT-3B">BSIT-3B</option>
-	<option value="BSIT-4A">BSIT-4A</option>
-		<option value="BSIT-4B">BSIT-4B</option>
-	<!-- BSCS Classes -->
-	<option value="BSCS-1A">BSCS-1A</option>
-		<option value="BSCS-1B">BSCS-1B</option>
-	<option value="BSCS-2A">BSCS-2A</option>
-		<option value="BSCS-2B">BSCS-2B</option>
-	<option value="BSCS-3A">BSCS-3A</option>
-		<option value="BSCS-3B">BSCS-3B</option>
-	<option value="BSCS-4A">BSCS-4A</option>
-	   <option value="BSCS-4B">BSCS-4B</option>
-</select>
-				`;
-					}
-					$(this).html(options); // Replace footer cell with a dropdown
-				} else {
-					// For other columns, use text input
-					$(this).html('<input type="text" placeholder="Search ' + title + '" />');
-				}
-			});
-
-			// Apply search logic
-			table.columns().every(function() {
-				var that = this;
-
-				// Search for text input
-				$('input', this.footer()).on('keyup change clear', function() {
-					if (that.search() !== this.value) {
-						that.search(this.value).draw();
-					}
-				});
-
-				// Search for dropdown
-				$('select', this.footer()).on('change', function() {
-					if (that.search() !== this.value) {
-						that.search(this.value).draw();
-					}
-				});
-			});
-
-
-		});
-	</script>
-
-
-	<?php
-	$sql = "SELECT * FROM staff_accounts";
-	$stmt = $pdo->query($sql);
-
-	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-		// Pre-select the department, gender, and phone number if they exist in the record
-		$selectedDepartment = $row['department'];
-		$selectedGender = $row['gender'];
-		$selectedPhoneNumber = $row['phone_number'];
-
-		// Construct the teacher's full name
-		$fullName = $row['first_name'] . ' ' . ($row['middle_name'] ? $row['middle_name'] . ' ' : '') . $row['last_name'];
-
-		// Fetch all unique class advising options
-		$all_classes_stmt = $pdo->prepare("SELECT DISTINCT class_advising FROM staff_advising");
-		$all_classes_stmt->execute();
-		$all_classes = $all_classes_stmt->fetchAll(PDO::FETCH_COLUMN);
-
-		// Fetch the classes this teacher advises
-		$teacher_classes_stmt = $pdo->prepare("SELECT class_advising FROM staff_advising WHERE fullName = :fullName");
-		$teacher_classes_stmt->execute([':fullName' => $fullName]);
-		$teacher_classes = $teacher_classes_stmt->fetchAll(PDO::FETCH_COLUMN);
-
-		echo '
-    <div class="modal fade" id="editModal' . $row['id'] . '" tabindex="-1" aria-labelledby="exampleModalLabel' . $row['id'] . '" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel' . $row['id'] . '"><b>Editing Teacher: ' . htmlspecialchars($row['fullName']) . '</b></h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form method="POST" action="processes/admin/staff/edit.php?id=' . $row['id'] . '">
-                        <div class="mb-3">
-                            <label for="first_name' . $row['id'] . '" class="form-label bold">First Name</label>
-                            <input type="text" class="form-control" id="first_name' . $row['id'] . '" name="first_name" value="' . htmlspecialchars($row['first_name']) . '">
-                        </div>
-                        <div class="mb-3">
-                            <label for="middle_name' . $row['id'] . '" class="form-label bold">Middle Name</label>
-                            <input type="text" class="form-control" id="middle_name' . $row['id'] . '" name="middle_name" value="' . htmlspecialchars($row['middle_name']) . '">
-                        </div>
-                        <div class="mb-3">
-                            <label for="last_name' . $row['id'] . '" class="form-label bold">Last Name</label>
-                            <input type="text" class="form-control" id="last_name' . $row['id'] . '" name="last_name" value="' . htmlspecialchars($row['last_name']) . '">
-                        </div>
-                        <div class="mb-3">
-                            <label for="email' . $row['id'] . '" class="form-label bold">Email</label>
-                            <input type="email" class="form-control" id="email' . $row['id'] . '" name="email" value="' . htmlspecialchars($row['email']) . '">
-                        </div>
-                        <div class="mb-3">
-                            <label for="department' . $row['id'] . '" class="form-label bold">Department</label>
-                            <select class="form-control" name="department" id="department-' . $row['id'] . '" required>
-                                <option>Select a department</option>
-                                <option value="Department of Information Technology"' . ($selectedDepartment == 'Department of Information Technology' ? ' selected' : '') . '>Department of Information Technology</option>
-                                <option value="Department of Computer Science"' . ($selectedDepartment == 'Department of Computer Science' ? ' selected' : '') . '>Department of Computer Science</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="class' . $row['id'] . '" class="form-label bold">Class Advisory (Multi-selectable)</label>
-                            <select class="form-control" name="class[]" id="class-' . $row['id'] . '" multiple>
-                                <optgroup label="Past Selected Classes">
-                                    ';
-		foreach ($teacher_classes as $class) {
-			echo '<option style="background-color:lightgrey"value="' . htmlspecialchars($class) . '" selected>' . htmlspecialchars($class) . '</option>';
-		}
-		echo '
-                                </optgroup>
-                                <optgroup label="Department-Specific Classes" id="dept-classes-' . $row['id'] . '">
-                                    <!-- Populated by JavaScript -->
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div class="mb-3 position-relative">
-                            <label for="password' . $row['id'] . '" class="form-label bold">Password</label>
-                            <input type="password" class="form-control" id="password' . $row['id'] . '" name="password">
-                            <i class="bi bi-eye-slash-fill toggler-icon" id="togglerPassword' . $row['id'] . '" style="position: absolute; top: 70%; right: 10px; cursor: pointer; transform: translateY(-50%);"></i>
-                        </div>
-                        <div class="mb-3 position-relative">
-                            <label for="confirm_password' . $row['id'] . '" class="form-label bold">Confirm Password</label>
-                            <input type="password" class="form-control" id="confirm_password' . $row['id'] . '" name="confirm_password">
-                            <i class="bi bi-eye-slash-fill toggler-icon" id="togglerConfirmPassword' . $row['id'] . '" style="position: absolute; top: 70%; right: 10px; cursor: pointer; transform: translateY(-50%);"></i>
-                        </div>
-                        <div class="mb-3">
-                            <label for="gender' . $row['id'] . '" class="form-label bold">Gender</label>
-                            <select class="form-control" name="gender" id="gender-' . $row['id'] . '">
-                                <option value="Male" ' . ($selectedGender == 'Male' ? 'selected' : '') . '>Male</option>
-                                <option value="Female" ' . ($selectedGender == 'Female' ? 'selected' : '') . '>Female</option>
-                                <option value="Other" ' . ($selectedGender == 'Other' ? 'selected' : '') . '>Other</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="phone_number' . $row['id'] . '" class="form-label bold">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone_number' . $row['id'] . '" name="phone_number" value="' . $selectedPhoneNumber . '" 
-                                pattern="^\+63\d{10}$" maxlength="13" placeholder="+63xxxxxxxxxx" required>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Save changes</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>';
-
-		// Password toggler JavaScript
-		echo "
-        <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const togglerPassword = document.querySelector('#togglerPassword" . $row['id'] . "');
-            const password = document.querySelector('#password" . $row['id'] . "');
-            togglerPassword.addEventListener('click', () => {
-                password.type = (password.type === 'password') ? 'text' : 'password';
-            });
-
-            const togglerConfirmPassword = document.querySelector('#togglerConfirmPassword" . $row['id'] . "');
-            const confirmPassword = document.querySelector('#confirm_password" . $row['id'] . "');
-            togglerConfirmPassword.addEventListener('click', () => {
-                confirmPassword.type = (confirmPassword.type === 'password') ? 'text' : 'password';
-            });
-        });
-        </script>
-    ";
-
-		// Department-class linkage JavaScript with optgroup separation
-		echo '
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const departmentSelect = document.getElementById("department-' . $row['id'] . '");
-        const classSelect = document.getElementById("class-' . $row['id'] . '");
-        const deptClassesGroup = document.getElementById("dept-classes-' . $row['id'] . '");
-
-        const classes = {
-            "Department of Information Technology": [
-                "BSIT-1A", "BSIT-1B", "BSIT-2A", "BSIT-2B",
-                "BSIT-3A", "BSIT-3B", "BSIT-4A", "BSIT-4B"
-            ],
-            "Department of Computer Science": [
-                "BSCS-1A", "BSCS-1B", "BSCS-2A", "BSCS-2B",
-                "BSCS-3A", "BSCS-3B", "BSCS-4A", "BSCS-4B"
-            ]
-        };
-
-        const teacherClasses = ' . json_encode($teacher_classes) . ';
-
-        function updateClassOptions(department) {
-            deptClassesGroup.innerHTML = ""; // Clear department-specific options
-
-            if (classes[department]) {
-                classes[department].forEach(function (classOption) {
-                    // Skip if already in past selected classes to avoid duplicates
-                    if (!teacherClasses.includes(classOption)) {
-                        const option = document.createElement("option");
-                        option.value = classOption;
-                        option.textContent = classOption;
-                        deptClassesGroup.appendChild(option);
-                    }
-                });
-            }
-
-            // Ensure past selected classes remain selected
-            Array.from(classSelect.options).forEach(function (option) {
-                if (teacherClasses.includes(option.value)) {
-                    option.selected = true;
-                }
-            });
-        }
-
-        // Initialize class options based on current department
-        updateClassOptions(departmentSelect.value);
-
-        // Update class options when department changes
-        departmentSelect.addEventListener("change", function () {
-            updateClassOptions(this.value);
-        });
-    });
-    </script>';
-	}
-	?><?php
-		$sql = "SELECT * FROM staff_accounts";
-		$stmt = $pdo->query($sql);
-
-		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-			// Pre-select fields
-			$selectedDepartment = $row['department'];
-			$selectedGender = $row['gender'];
-			$selectedPhoneNumber = $row['phone_number'];
-
-			// Construct full name
-			$fullName = trim($row['first_name'] . ' ' . ($row['middle_name'] ? $row['middle_name'] . ' ' : '') . $row['last_name']);
-
-			// Fetch the classes this teacher advises
-			$teacher_classes_stmt = $pdo->prepare("SELECT class_advising FROM staff_advising WHERE fullName = :fullName");
-			$teacher_classes_stmt->execute([':fullName' => $fullName]);
-			$teacher_classes = $teacher_classes_stmt->fetchAll(PDO::FETCH_COLUMN);
-
-			echo '
-    <div class="modal fade" id="viewModal' . $row['id'] . '" tabindex="-1" aria-labelledby="exampleModalLabel' . $row['id'] . '" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel' . $row['id'] . '"><b>Viewing Teacher: ' . htmlspecialchars($fullName) . '</b></h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label bold">First Name</label>
-                        <input type="text" class="form-control" value="' . htmlspecialchars($row['first_name']) . '" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label bold">Middle Name</label>
-                        <input type="text" class="form-control" value="' . htmlspecialchars($row['middle_name']) . '" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label bold">Last Name</label>
-                        <input type="text" class="form-control" value="' . htmlspecialchars($row['last_name']) . '" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label bold">Email</label>
-                        <input type="email" class="form-control" value="' . htmlspecialchars($row['email']) . '" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label bold">Department</label>
-                        <input type="text" class="form-control" value="' . htmlspecialchars($selectedDepartment) . '" readonly>
-                    </div>
-                    <div class="mb-3">
-                    <label class="form-label bold">Class Advisory</label>';
-
-			if (empty($teacher_classes)) {
-				echo '<p class="text-muted"><em>No assigned classes</em></p>';
-			} else {
-				echo '<div class="table-responsive">
-                                <table class="table table-bordered text-center">
-                                    <tbody>
-                                        <tr>';
-				foreach ($teacher_classes as $index => $class) {
-					echo '<td style="background-color:white !important">' . htmlspecialchars($class) . '</td>';
-					if (($index + 1) % 3 == 0) {
-						echo '</tr t"><tr>';
-					}
-				}
-				echo '                </tr>
-                                    </tbody>
-                                </table>
-                              </div>';
-			}
-
-			echo '
-                </div>
-                    <div class="mb-3">
-                        <label class="form-label bold">Gender</label>
-                        <input type="text" class="form-control" value="' . htmlspecialchars($selectedGender) . '" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label bold">Phone Number</label>
-                        <input type="text" class="form-control" value="' . htmlspecialchars($selectedPhoneNumber) . '" readonly>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>';
-		}
-		?>
-
-	<script>
-		function getTime() {
-			const now = new Date();
-			const newTime = now.toLocaleString();
-			console.log(newTime);
-			document.querySelector("#currentTime").textContent = "The current date and time is: " + newTime;
-		}
-
-		setInterval(getTime, 100);
-
-		document.addEventListener('DOMContentLoaded', function() {
-			const semesterSelect = document.getElementById('semester');
-			const availableClassesSelect = document.getElementById('availableClasses');
-			const assignedClassesContainer = document.getElementById('assignedClassesContainer');
-			const assignedClassesBody = document.getElementById('assignedClassesBody');
-
-			const classes = {
-				"First Semester": ["BSIT-1A", "BSIT-1B", "BSIT-2A"],
-				"Second Semester": ["BSIT-3A", "BSIT-3B", "BSIT-4A"]
-			};
-
-			// Update available classes based on selected semester
-			semesterSelect.addEventListener('change', function() {
-				const selectedSemester = semesterSelect.value;
-
-				// Clear previous options
-				availableClassesSelect.innerHTML = '<option selected disabled>Select a Class</option>';
-
-				// Add new options based on selected semester
-				if (classes[selectedSemester]) {
-					classes[selectedSemester].forEach(function(className) {
-						const option = document.createElement('option');
-						option.value = className;
-						option.textContent = className;
-						availableClassesSelect.appendChild(option);
-					});
-				}
-
-				checkSelections();
-			});
-
-			// Show/hide assigned classes section based on selections
-			function checkSelections() {
-				if (semesterSelect.value !== 'Select a Semester' && availableClassesSelect.value !== 'Select a Class') {
-					// Filter and show only relevant rows
-					const selectedSemester = semesterSelect.value;
-					const selectedClass = availableClassesSelect.value;
-					let hasRelevantClasses = false;
-
-					[...assignedClassesBody.getElementsByTagName('tr')].forEach(row => {
-						if (row.dataset.semester === selectedSemester && row.dataset.class === selectedClass) {
-							row.style.display = '';
-							hasRelevantClasses = true;
-						} else {
-							row.style.display = 'none';
-						}
-					});
-
-					if (hasRelevantClasses) {
-						assignedClassesContainer.style.display = 'block';
-					} else {
-						assignedClassesContainer.style.display = 'none';
-					}
-				} else {
-					assignedClassesContainer.style.display = 'none';
-				}
-			}
-
-			// Remove class
-			document.querySelectorAll('.remove-btn').forEach(button => {
-				button.addEventListener('click', function() {
-					const row = this.closest('tr');
-					row.parentNode.removeChild(row);
-					checkSelections();
-				});
-			});
-
-			// Also check the selections when the class dropdown changes
-			availableClassesSelect.addEventListener('change', checkSelections);
-		});
-
-		function hidePasswordsOnLoad() {
-			var passwordCells = document.querySelectorAll('span[data-password]');
-			passwordCells.forEach(function(passwordCell) {
-				var password = passwordCell.getAttribute('data-password');
-				passwordCell.textContent = '*'.repeat(password.length);
-				passwordCell.setAttribute('data-hidden', 'true');
-			});
-		}
-
-		function togglePassword(passwordId, button) {
-			var passwordCell = document.getElementById(passwordId);
-			var isHidden = passwordCell.getAttribute('data-hidden') === 'true';
-
-			if (isHidden) {
-				passwordCell.textContent = passwordCell.getAttribute('data-password');
-				button.textContent = "Hide";
-				passwordCell.setAttribute('data-hidden', 'false');
-			} else {
-				passwordCell.textContent = '*'.repeat(passwordCell.getAttribute('data-password').length);
-				button.textContent = "Show";
-				passwordCell.setAttribute('data-hidden', 'true');
-			}
-		}
-
-		// Hide passwords when the page loads
-		window.onload = hidePasswordsOnLoad;
-
-		const togglerPassword = document
-			.querySelector('#togglerPassword');
-		const password = document.querySelector('#password');
-		togglerPassword.addEventListener('click', () => {
-			const type = password
-				.getAttribute('type') === 'password' ?
-				'text' : 'password';
-			password.setAttribute('type', type);
-			togglerPassword.classList.toggle('bi-eye');
-		});
-
-		const togglerConfirmPassword = document.querySelector('#togglerConfirmPassword');
-		const confirmPassword = document.querySelector('#confirm_password');
-		togglerConfirmPassword.addEventListener('click', () => {
-			const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
-			confirmPassword.setAttribute('type', type);
-			togglerConfirmPassword.classList.toggle('bi-eye');
-			togglerConfirmPassword.classList.toggle('bi-eye-slash');
-		});
-
-
-		function deleteModal(id) {
-			Swal.fire({
-				title: "Are you sure?",
-				text: "You won't be able to revert this!",
-				icon: "warning",
-				showCancelButton: true,
-				confirmButtonColor: "#3085d6",
-				cancelButtonColor: "#d33",
-				confirmButtonText: "Yes, delete it!"
-			}).then((result) => {
-				if (result.isConfirmed) {
-					window.location.href = "processes/admin/staff/delete.php?id=" + id;
-				}
-			});
-		}
-	</script>
-
-	<script>
-		document.getElementById('messageForm').addEventListener('submit', function(event) {
-			event.preventDefault(); // Prevent form submission
-
-			// Get the message from the textarea
-			var messageText = document.getElementById('messageInput').value;
-
-			// If the message is not empty, append it to the chat
-			if (messageText.trim() !== '') {
-				var chatBody = document.getElementById('chatBody');
-
-				// Create the new message element
-				var newMessage = document.createElement('div');
-				newMessage.className = 'row receiver'; // Set it as a sender message
-				newMessage.innerHTML = `
-	  
-			<div class="col">
-			  <div class="message">
-				 <span>${messageText}</span>
-			  </div>
-			  <i class="bi bi-person"></i>
+						<p class="ui-section-label">Change password <span class="text-muted fw-normal text-lowercase">(leave blank to keep the current one)</span></p>
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label for="password<?= $id ?>" class="form-label">New password</label>
+								<input type="password" class="form-control" id="password<?= $id ?>" name="password" minlength="8" autocomplete="new-password">
+							</div>
+							<div class="col-md-6">
+								<label for="confirm_password<?= $id ?>" class="form-label">Confirm new password</label>
+								<input type="password" class="form-control" id="confirm_password<?= $id ?>" name="confirm_password" autocomplete="new-password" data-confirms="#password<?= $id ?>">
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+						<button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save changes</button>
+					</div>
+				</form>
 			</div>
-	  
-	  
-	  `;
+		</div>
 
-				// Append the new message to the chat body
-				chatBody.appendChild(newMessage);
+		<!-- View teacher -->
+		<div class="modal fade" id="viewModal<?= $id ?>" tabindex="-1" aria-labelledby="viewTeacherLabel<?= $id ?>" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<span class="ui-modal-icon"><i class="bi bi-person-vcard"></i></span>
+						<h1 class="modal-title" id="viewTeacherLabel<?= $id ?>"><?= admin_e($name) ?></h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<dl class="ui-dl">
+							<dt>Status</dt>
+							<dd><span class="ui-pill <?= $isActive ? 'is-ok' : '' ?>"><?= $isActive ? 'Active' : 'Inactive' ?></span></dd>
+							<dt>Email</dt>
+							<dd><?= admin_e($t['email']) ?></dd>
+							<dt>Phone</dt>
+							<dd><?= admin_e($t['phone_number'] ?: '—') ?></dd>
+							<dt>Gender</dt>
+							<dd><?= admin_e($t['gender'] ?: '—') ?></dd>
+							<dt>Department</dt>
+							<dd><?= admin_e($t['department'] && $t['department'] !== 'None' ? $t['department'] : '—') ?></dd>
+							<dt>Classes taught</dt>
+							<dd><?= $teaching[$t['fullName']] ?? 0 ?> active class<?= ($teaching[$t['fullName']] ?? 0) === 1 ? '' : 'es' ?></dd>
+							<dt>Added</dt>
+							<dd><?= $t['datetime_added'] ? date('M j, Y', strtotime($t['datetime_added'])) : ($t['date_created'] ? date('M j, Y', strtotime($t['date_created'])) : '—') ?></dd>
+						</dl>
+						<p class="ui-section-label">Advisory sections</p>
+						<?php if ($classes): ?>
+							<div class="tag-row"><?php foreach ($classes as $c): ?><span class="ui-tag"><?= admin_e($c) ?></span><?php endforeach; ?></div>
+						<?php else: ?>
+							<div class="ui-list-empty">Not advising any section.</div>
+						<?php endif; ?>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?= $id ?>"><i class="bi bi-pencil"></i> Edit</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	<?php endforeach; ?>
 
-				// Clear the textarea
-				document.getElementById('messageInput').value = '';
+	<script src="js/app.js"></script>
+	<script src="<?= admin_asset('js/admin-ui.js') ?>"></script>
+	<script>
+		const departmentClasses = <?= json_encode($departmentClasses) ?>;
 
-				// Scroll to the bottom of the chat
-				chatBody.scrollTop = chatBody.scrollHeight;
-
-			}
+		$(function () {
+			const table = $('#teachers').DataTable({
+				order: [[0, 'asc']],
+				columnDefs: [{ targets: 6, orderable: false, searchable: false }]
+			});
+			$('#departmentFilter').on('change', function () {
+				table.column(1).search(this.value ? '^' + $.fn.dataTable.util.escapeRegex(this.value) + '$' : '', true, false).draw();
+			});
 		});
+
+		// Department → advisory section options. Sections the teacher already advises stay selected,
+		// even when they belong to another department.
+		document.querySelectorAll('[data-dept-select]').forEach(function (deptSelect) {
+			const classSelect = document.querySelector(deptSelect.dataset.deptSelect);
+			const taken = JSON.parse(classSelect.dataset.taken || '[]');
+
+			function render() {
+				const keep = new Set(taken.concat(Array.from(classSelect.selectedOptions).map(o => o.value)));
+				const options = (departmentClasses[deptSelect.value] || []).slice();
+				keep.forEach(c => { if (!options.includes(c)) options.unshift(c); });
+				classSelect.innerHTML = '';
+				options.forEach(function (c) {
+					const option = new Option(c, c, false, keep.has(c));
+					classSelect.add(option);
+				});
+				classSelect.disabled = options.length === 0;
+			}
+
+			deptSelect.addEventListener('change', render);
+			render();
+		});
+
+		// Password and confirmation must match
+		document.querySelectorAll('form[data-password-form]').forEach(function (form) {
+			form.addEventListener('submit', function (e) {
+				const confirm = form.querySelector('[data-confirms]');
+				const password = form.querySelector(confirm.dataset.confirms);
+				if (password.value !== confirm.value) {
+					e.preventDefault();
+					Swal.fire('Passwords don\'t match', 'Type the same password in both fields.', 'warning');
+				}
+			});
+		});
+
+		function changeStatus(userId, newStatus, name) {
+			Swal.fire({
+				title: (newStatus === 'Active' ? 'Activate ' : 'Deactivate ') + name + '?',
+				text: newStatus === 'Active' ? 'They will be able to sign in to the teacher portal again.' : 'They will no longer be able to sign in.',
+				icon: 'question',
+				showCancelButton: true,
+				reverseButtons: true,
+				confirmButtonText: newStatus === 'Active' ? 'Activate' : 'Deactivate'
+			}).then(function (result) {
+				if (!result.isConfirmed) return;
+				fetch('change_status.php', { method: 'POST', body: new URLSearchParams({ user_id: userId, new_status: newStatus }) })
+					.then(function (response) {
+						if (!response.ok) throw new Error();
+						location.reload();
+					})
+					.catch(function () { Swal.fire('Error', 'The status could not be changed. Please try again.', 'error'); });
+			});
+		}
+
+		function deleteModal(id, name) {
+			Swal.fire({
+				title: 'Delete ' + name + '?',
+				text: 'Their account and advisory assignments will be removed, and their classes left without a teacher.',
+				icon: 'warning',
+				showCancelButton: true,
+				reverseButtons: true,
+				confirmButtonText: 'Delete teacher',
+				customClass: { popup: 'ui-swal-danger' }
+			}).then(function (result) {
+				if (result.isConfirmed) window.location.href = 'processes/admin/staff/delete.php?id=' + id;
+			});
+		}
 	</script>
+
+	<?php include('processes/server/alerts.php') ?>
+</body>
 
 </html>
-
-<?php include('processes/server/alerts.php') ?>
-<!-- Floating Chat Widget -->
-<?php include(__DIR__ . '/../includes/floating-chat-widget.php'); ?>

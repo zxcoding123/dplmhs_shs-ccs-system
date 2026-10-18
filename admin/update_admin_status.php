@@ -3,7 +3,19 @@
 <?php
 session_start();
 require __DIR__ . '/../database/connection.php'; // Adjust the path as needed
-if (isset($_POST['admin_id']) && isset($_POST['new_status'])) {
+
+if (!isset($_SESSION['admin_id']) || ($_SESSION['user_type'] ?? '') !== 'admin') {
+    http_response_code(401);
+    exit('Unauthorized');
+}
+
+// An admin cannot deactivate their own account and lock themselves out.
+if ((int) ($_POST['admin_id'] ?? 0) === (int) $_SESSION['admin_id']) {
+    http_response_code(400);
+    exit('You cannot change the status of your own account.');
+}
+
+if (isset($_POST['admin_id']) && isset($_POST['new_status']) && in_array($_POST['new_status'], ['Active', 'Inactive'], true)) {
     $admin_id = $_POST['admin_id'];
     $new_status = $_POST['new_status'];
 

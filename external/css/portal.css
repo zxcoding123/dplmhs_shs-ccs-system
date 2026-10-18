@@ -343,7 +343,7 @@ html body .nav-ham-link:hover {
     color: var(--au-crimson) !important;
 }
 
-html body .content a:not(.btn):not(.dropdown-item):not(.nav-link) {
+html body .content a:not(.btn):not(.dropdown-item):not(.nav-link):not(.nav-link-shortcut) {
     color: var(--au-navy-soft);
 }
 
@@ -351,11 +351,26 @@ html body .content a:not(.btn):not(.dropdown-item):not(.nav-link) {
 html body .content a.nav-link-shortcut {
     background-color: var(--au-navy);
     color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+html body .content a.nav-link-shortcut i {
+    color: var(--au-gold);
+    font-size: 1.1rem;
+    vertical-align: -0.1em;
+    transition: color 0.2s ease;
 }
 
 html body .content a.nav-link-shortcut:hover,
 html body .content a.nav-link-shortcut:focus {
     background-color: var(--au-navy-soft);
+    color: var(--au-gold-light);
+}
+
+html body .content a.nav-link-shortcut:hover i,
+html body .content a.nav-link-shortcut:focus i {
     color: var(--au-gold-light);
 }
 

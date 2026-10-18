@@ -1,9 +1,16 @@
 <?php
 include __DIR__ . '/../../../../database/connection.php';
 session_start();
+require_once __DIR__ . '/../../../includes/guard.php';
 
 if (isset($_GET['id'])) {
     $adminId = $_GET['id'];
+
+    if ((int) $adminId === (int) $_SESSION['admin_id']) {
+        $_SESSION['STATUS'] = "ADMIN_SELF_DELETE";
+        header("Location: ../../../admin_management.php");
+        exit();
+    }
 
     try {
         $sql = "DELETE FROM admin WHERE id = :id";

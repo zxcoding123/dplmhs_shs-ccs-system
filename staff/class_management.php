@@ -627,7 +627,6 @@ ClassicEditor
 
 
 <!-- Floating Chat Widget -->
-<?php include(__DIR__ . '/../includes/floating-chat-widget.php'); ?>
 
 </body>
 

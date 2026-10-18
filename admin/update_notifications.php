@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/guard.php';
 require __DIR__ . '/../database/connection.php'; // Adjust the path as needed
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

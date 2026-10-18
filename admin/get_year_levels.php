@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/guard.php';
 // Include your database connection
 require __DIR__ . '/../database/connection.php';
 

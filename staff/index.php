@@ -1212,4 +1212,3 @@ if (isset($_SESSION['student_id'])) {
 }
 ?>
 <!-- Floating Chat Widget -->
-<?php include(__DIR__ . '/../includes/floating-chat-widget.php'); ?>

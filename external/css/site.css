@@ -213,7 +213,8 @@ body.au-site {
 }
 
 /* ---------- Buttons ---------- */
-.btn-au-gold {
+/* .btn prefix outranks the global `.au-site a` link colors. */
+.btn.btn-au-gold {
     background-color: var(--au-gold);
     border: 1px solid var(--au-gold);
     color: var(--au-navy);
@@ -223,14 +224,14 @@ body.au-site {
     padding: 0.6rem 1.4rem;
 }
 
-.btn-au-gold:hover,
-.btn-au-gold:focus {
+.btn.btn-au-gold:hover,
+.btn.btn-au-gold:focus {
     background-color: var(--au-gold-light);
     border-color: var(--au-gold-light);
     color: var(--au-navy);
 }
 
-.btn-au-outline {
+.btn.btn-au-outline {
     background-color: transparent;
     border: 1px solid rgba(255, 255, 255, 0.75);
     color: var(--au-white);
@@ -240,13 +241,14 @@ body.au-site {
     padding: 0.6rem 1.4rem;
 }
 
-.btn-au-outline:hover,
-.btn-au-outline:focus {
+.btn.btn-au-outline:hover,
+.btn.btn-au-outline:focus {
     background-color: var(--au-white);
+    border-color: var(--au-white);
     color: var(--au-navy);
 }
 
-.btn-au-navy {
+.btn.btn-au-navy {
     background-color: var(--au-navy);
     border: 1px solid var(--au-navy);
     color: var(--au-white);
@@ -256,8 +258,8 @@ body.au-site {
     padding: 0.6rem 1.4rem;
 }
 
-.btn-au-navy:hover,
-.btn-au-navy:focus {
+.btn.btn-au-navy:hover,
+.btn.btn-au-navy:focus {
     background-color: var(--au-navy-soft);
     border-color: var(--au-navy-soft);
     color: var(--au-white);

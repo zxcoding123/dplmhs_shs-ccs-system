@@ -1,13 +1,64 @@
 ﻿<?php
 session_start();
-if (!isset($_SESSION['admin_id'])) {
-    $_SESSION['STATUS'] = "ADMIN_NOT_LOGGED_IN";
-    header("Location: admin_login_page.php");
-}
 include __DIR__ . '/../database/connection.php';
-?>
+require '../app/helpers/auth.php';
+requireRole('admin');
+require_once __DIR__ . '/includes/ui.php';
 
-  
+$days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+$courses = ['BSIT' => 'Bachelor of Science in Information Technology', 'BSCS' => 'Bachelor of Science in Computer Science'];
+$yearLevels = ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B'];
+
+$subjects = $pdo->query("SELECT * FROM subjects ORDER BY is_archived, name")->fetchAll(PDO::FETCH_ASSOC);
+
+$schedules = [];
+foreach ($pdo->query("SELECT subject_id, meeting_days, start_time, end_time FROM subjects_schedules ORDER BY FIELD(meeting_days, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'), start_time") as $row) {
+    $schedules[$row['subject_id']][] = $row;
+}
+
+$classCounts = [];
+foreach ($pdo->query("SELECT subject_id, COUNT(*) AS total FROM classes WHERE is_archived = 0 GROUP BY subject_id") as $row) {
+    $classCounts[$row['subject_id']] = (int) $row['total'];
+}
+
+$activeSemesters = $pdo->query("SELECT name FROM semester WHERE status = 'active'")->fetchAll(PDO::FETCH_COLUMN);
+$activeSemester = $activeSemesters[0] ?? null;
+
+$activeSubjects = array_filter($subjects, fn($s) => (int) $s['is_archived'] === 0);
+$lectureCount = count(array_filter($activeSubjects, fn($s) => $s['type'] === 'Lecture'));
+$unscheduled = count(array_filter($activeSubjects, fn($s) => empty($schedules[$s['id']])));
+
+// Weekly timetable for active subjects
+$timetable = array_fill_keys($days, []);
+foreach ($activeSubjects as $s) {
+    foreach ($schedules[$s['id']] ?? [] as $slot) {
+        if (isset($timetable[$slot['meeting_days']])) {
+            $timetable[$slot['meeting_days']][] = $slot + ['subject' => $s];
+        }
+    }
+}
+foreach ($timetable as &$slots) {
+    usort($slots, fn($a, $b) => strcmp($a['start_time'], $b['start_time']));
+}
+unset($slots);
+
+// Slots for the client-side clash check (same rule as processes/admin/subjects/add.php)
+$clashData = [];
+foreach ($activeSubjects as $s) {
+    foreach ($schedules[$s['id']] ?? [] as $slot) {
+        $clashData[] = ['id' => (int) $s['id'], 'name' => $s['code'] . ' ' . $s['name'], 'day' => $slot['meeting_days'], 'start' => substr($slot['start_time'], 0, 5), 'end' => substr($slot['end_time'], 0, 5)];
+    }
+}
+
+$usedCourses = array_values(array_unique(array_filter(array_column($subjects, 'course'))));
+$usedYears = array_values(array_unique(array_filter(array_column($subjects, 'year_level'))));
+sort($usedYears);
+
+function time_label(string $time): string
+{
+    return date('g:i A', strtotime($time));
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,957 +66,432 @@ include __DIR__ . '/../database/connection.php';
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>DPLMHS-SHS | Student Management System</title>
+    <title>Subjects | DPLMHS-SHS Admin Portal</title>
     <?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="css/app.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="<?= admin_asset('css/admin-ui.css') ?>" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet"
-        href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .subj-name { font-weight: 700; color: var(--ui-navy); }
+        .subj-code { display: block; font-size: 0.8rem; color: var(--ui-muted); }
+        .slot { display: block; white-space: nowrap; font-size: 0.82rem; }
+        .slot b { display: inline-block; min-width: 2.4rem; color: var(--ui-navy); }
+        .week { display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr)); gap: 0.6rem; overflow-x: auto; }
+        .week-day h3 { margin: 0 0 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--ui-gold); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ui-navy); }
+        .week-slot { margin-bottom: 0.45rem; padding: 0.5rem 0.6rem; border-radius: 8px; border-left: 3px solid var(--ui-blue); background: #f3f6fc; font-size: 0.8rem; }
+        .week-slot.is-lab { border-left-color: var(--ui-gold); background: #fbf7ea; }
+        .week-slot strong { display: block; color: var(--ui-navy); }
+        .week-slot span { color: var(--ui-muted); }
+        .week-empty { font-size: 0.8rem; color: var(--ui-muted); }
+        .nav-tabs .nav-link { font-weight: 600; color: var(--ui-muted); }
+        .nav-tabs .nav-link.active { color: var(--ui-navy); border-bottom-color: #fff; }
+    </style>
 </head>
-
-
-
-<style>
-    table.dataTable {
-        font-size: 12px;
-    }
-
-    td {
-        text-align: center;
-        vertical-align: middle;
-        border-bottom: 1px solid black;
-    }
-
-  .btn-csms {
-		background-color: #10177a;
-		color: white;
-	}
-
-	.btn-csms:hover {
-		border: 1px solid #10177a;
-		color: #10177a;
-	}
-
-    .card-body {
-    overflow-x: auto; /* Allow horizontal scrolling only if content overflows */
-    width: 100%; /* Ensure it takes full container width */
-    padding: 1rem; /* Consistent padding */
-}
-
-#classes_wrapper {
-    width: 100%; /* Ensure DataTables wrapper fits container */
-}
-
-table.dataTable {
-    width: 100% !important; /* Force table to fit container */
-    table-layout: auto; /* Allow columns to adjust naturally */
-    font-size: 12px; /* Keep your original font size */
-}
-
-td {
-    text-align: center;
-    vertical-align: middle;
-    border-bottom: 1px solid black;
-}
-
-/* Ensure responsiveness works on smaller screens */
-@media (max-width: 768px) {
-    .card-body {
-        padding: 0.5rem; /* Reduce padding on smaller screens */
-    }
-}
-</style>
-
-<?php
-include __DIR__ . '/../database/connection.php';
-
-// Fetch all subjects
-$query = "SELECT id, name, type, code, semester, course, year_level, is_archived FROM subjects";
-$result = $pdo->query($query);
-$subjectData = [];
-
-// Prepare subjects data
-while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-    $subjectData[] = [
-        'id' => htmlspecialchars($row['id']),
-        'name' => htmlspecialchars($row['name']),
-        'type' => htmlspecialchars($row['type']),
-        'code' => htmlspecialchars($row['code']),
-        'semester' => htmlspecialchars($row['semester']),
-        'course' => htmlspecialchars($row['course']),
-        'year_level' => htmlspecialchars($row['year_level']),
-        'is_archived' => htmlspecialchars($row['is_archived']),
-        'schedule' => '', // Placeholder for schedule
-        'actions' => ''
-    ];
-}
-
-// Fetch class schedules
-$scheduleQuery = "SELECT subject_id, meeting_days, start_time, end_time FROM subjects_schedules";
-$scheduleResult = $pdo->query($scheduleQuery);
-$scheduleData = [];
-
-// Prepare schedules
-while ($row = $scheduleResult->fetch(PDO::FETCH_ASSOC)) {
-    // Create a formatted string for the schedule
-    $formattedSchedule = '<strong>' . $row['meeting_days'] . '</strong> ' . date("g:i A", strtotime($row['start_time'])) . ' - ' . date("g:i A", strtotime($row['end_time']));
-    $scheduleData[$row['subject_id']][] = $formattedSchedule; // Group by subject_id
-}
-
-// Merge schedules into subject data
-foreach ($subjectData as &$subject) {
-    if (isset($scheduleData[$subject['id']])) {
-        $subject['schedule'] = implode('<br> ', $scheduleData[$subject['id']]); // Join schedules with a semicolon
-    } else {
-        $subject['schedule'] = 'No schedule'; // Default message if no schedule found
-    }
-}
-
-// Convert the final subject data to JSON for JavaScript use
-$subjectDataJSON = json_encode($subjectData);
-?>
-
-<script>
-    var subjectData = <?php echo $subjectDataJSON; ?>;
-
-    // You can use subjectData here to populate your DataTable or display it as needed
-    console.log(subjectData);
-</script>
-
 
 <body>
     <div class="wrapper">
-        <?php
-        include('sidebar.php')
-        ?>
+        <?php include('sidebar.php'); ?>
 
         <div class="main">
             <nav class="navbar navbar-expand navbar-light navbar-bg">
                 <a class="sidebar-toggle js-sidebar-toggle">
                     <i class="hamburger align-self-center"></i>
                 </a>
-                    <img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
-				<span class="text-white"><b>DPLMHS</b> - Student Management System </span>
+                <img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
+                <span class="text-white d-none d-md-inline"><b>DPLMHS</b> - Student Management System </span>
                 <div class="navbar-collapse collapse">
-                    <?php
-                    include('top-bar.php');
-                    ?>
+                    <?php include('top-bar.php'); ?>
                 </div>
             </nav>
 
             <main class="content">
                 <div class="container-fluid p-0">
+                    <?php admin_page_header('Subjects', 'Subjects offered this semester and their weekly meeting times', 'bi-journal-bookmark',
+                        '<button type="button" class="btn btn-ui-gold" data-bs-toggle="modal" data-bs-target="#createSubjectModal"' . ($activeSemester ? '' : ' disabled title="Activate a semester first"') . '><i class="bi bi-plus-lg"></i> New subject</button>'); ?>
 
+                    <?php if (!$activeSemester): ?>
+                        <div class="ui-callout is-alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div><b>No active semester.</b> Subjects are added to the active semester, so <a href="semester_management.php">activate a semester</a> before creating or editing subjects.</div>
+                        </div>
+                    <?php endif; ?>
 
+                    <?php admin_stat_tiles([
+                        ['label' => 'Active subjects', 'value' => count($activeSubjects), 'icon' => 'bi-journal-bookmark', 'filter' => 'Active', 'filter_col' => 'Status'],
+                        ['label' => 'Lecture / Lab', 'value' => $lectureCount . ' / ' . (count($activeSubjects) - $lectureCount), 'icon' => 'bi-easel'],
+                        ['label' => 'Without schedule', 'value' => $unscheduled, 'icon' => 'bi-calendar-x', 'tone' => $unscheduled ? 'alert' : 'ok', 'filter' => 'No schedule'],
+                        ['label' => 'Archived', 'value' => count($subjects) - count($activeSubjects), 'icon' => 'bi-archive', 'tone' => 'muted', 'filter' => 'Archived', 'filter_col' => 'Status'],
+                    ]); ?>
 
-                    <div class="row">
-
-                        <div class="col-12">
-                            <div class="card">
-
-                                <div class="card-header">
-                                    <div class="d-flex align-items-center">
-                                        <h5 class="h5 mb-3"><a
-                                                href="index.php"
-                                                class="nav-ham-link">Home</a> / <span>Subject Management</span></h5>
-
-                                        <div class="ms-auto" aria-hidden="true">
-                                            <img
-                                                src="external/svgs/undraw_favorite_gb6n.svg"
-                                                class=" small-picture img-fluid">
-                                        </div>
+                    <section class="ui-panel">
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabList" type="button" role="tab"><i class="bi bi-list-ul"></i> Subject list</button></li>
+                            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabWeek" type="button" role="tab"><i class="bi bi-calendar-week"></i> Weekly timetable</button></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tabList" role="tabpanel">
+                                <?php if ($subjects): ?>
+                                    <div class="ui-filters mb-3">
+                                        <select class="form-select form-select-sm" data-col-filter="3" aria-label="Filter by course">
+                                            <option value="">All courses</option>
+                                            <?php foreach ($usedCourses as $c): ?><option value="<?= admin_e($c) ?>"><?= admin_e($c) ?></option><?php endforeach; ?>
+                                        </select>
+                                        <select class="form-select form-select-sm" data-col-filter="4" aria-label="Filter by year level">
+                                            <option value="">All year levels</option>
+                                            <?php foreach ($usedYears as $y): ?><option value="<?= admin_e($y) ?>"><?= admin_e($y) ?></option><?php endforeach; ?>
+                                        </select>
+                                        <select class="form-select form-select-sm" data-col-filter="1" aria-label="Filter by type">
+                                            <option value="">Lecture &amp; lab</option>
+                                            <option value="Lecture">Lecture</option>
+                                            <option value="Laboratory">Laboratory</option>
+                                        </select>
                                     </div>
-
-                                    <br>
-
-                                    <h5 class="card-title mb-0">
-                                        <div class="d-flex align-items-center">
-                                            <h3>Subject List</h3>
-                                            <div class="ms-auto" aria-hidden="true">
-                                                <button type="button" class="btn btn-csms"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#createSubjectModal"><i
-                                                        class="bi bi-pencil-square"></i>
-                                                    Create Subject</button>
-                                            </div>
-
-                                        </div>
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                <div class="table-responsive">
-                                    <h1 id="noDataMessage" style="display:none; text-align:center">No subjects added, yet.</h1>
-                                    <table id="classes" class="responsive" style="width:100%">
-                                    <tfoot id="table-footer">
-        <tr>
-            <th>Subject Name</th>
-            <th>Subject Type</th>
-            <th>Subject Code</th>
-            <th>Subject Schedule</th>
-                  <th>Semester</th>
-            <th>Course</th>
-            <th>Year Level</th>
-            <th>Archived Status</th>
-            <th>Actions</th>
-        </tr>
-    </tfoot>
+                                    <table id="subjects" class="display">
+                                        <thead>
+                                            <tr>
+                                                <th>Subject</th>
+                                                <th>Type</th>
+                                                <th>Schedule</th>
+                                                <th>Course</th>
+                                                <th>Year level</th>
+                                                <th>Classes</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($subjects as $s):
+                                                $id = (int) $s['id'];
+                                                $archived = (int) $s['is_archived'] === 1; ?>
+                                                <tr>
+                                                    <td>
+                                                        <span class="subj-name"><?= admin_e($s['name']) ?></span>
+                                                        <span class="subj-code"><?= admin_e($s['code']) ?> · <?= admin_e($s['semester']) ?></span>
+                                                    </td>
+                                                    <td><span class="ui-tag"><?= admin_e($s['type']) ?></span></td>
+                                                    <td>
+                                                        <?php if (!empty($schedules[$id])): ?>
+                                                            <?php foreach ($schedules[$id] as $slot): ?>
+                                                                <span class="slot"><b><?= substr($slot['meeting_days'], 0, 3) ?></b> <?= time_label($slot['start_time']) ?> – <?= time_label($slot['end_time']) ?></span>
+                                                            <?php endforeach; ?>
+                                                        <?php else: ?>
+                                                            <span class="ui-pill is-alert">No schedule</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td><?= admin_e($s['course']) ?></td>
+                                                    <td><?= admin_e($s['year_level']) ?></td>
+                                                    <td><?= $classCounts[$id] ?? 0 ?></td>
+                                                    <td><span class="ui-pill <?= $archived ? '' : 'is-ok' ?>"><?= $archived ? 'Archived' : 'Active' ?></span></td>
+                                                    <td>
+                                                        <div class="ui-acts">
+                                                            <button type="button" class="ui-act" data-bs-toggle="modal" data-bs-target="#viewModal<?= $id ?>" title="View" aria-label="View"><i class="bi bi-eye"></i></button>
+                                                            <?php if (!$archived): ?>
+                                                                <button type="button" class="ui-act" data-bs-toggle="modal" data-bs-target="#editModal<?= $id ?>" title="Edit" aria-label="Edit" <?= $activeSemester ? '' : 'disabled' ?>><i class="bi bi-pencil"></i></button>
+                                                                <button type="button" class="ui-act is-danger" onclick="deleteSubject(<?= $id ?>, <?= admin_e(json_encode($s['name'])) ?>, <?= $classCounts[$id] ?? 0 ?>)" title="Delete" aria-label="Delete"><i class="bi bi-trash"></i></button>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
                                     </table>
+                                <?php else: ?>
+                                    <div class="ui-empty">
+                                        <i class="bi bi-journal-bookmark"></i>
+                                        <h3>No subjects yet</h3>
+                                        <p>Add the subjects offered this semester, with their meeting days and times.</p>
                                     </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="tab-pane fade" id="tabWeek" role="tabpanel">
+                                <div class="week">
+                                    <?php foreach ($timetable as $day => $slots): ?>
+                                        <div class="week-day">
+                                            <h3><?= $day ?></h3>
+                                            <?php if ($slots): ?>
+                                                <?php foreach ($slots as $slot): ?>
+                                                    <div class="week-slot <?= $slot['subject']['type'] === 'Laboratory' ? 'is-lab' : '' ?>">
+                                                        <strong><?= admin_e($slot['subject']['code']) ?></strong>
+                                                        <?= admin_e($slot['subject']['name']) ?><br>
+                                                        <span><?= time_label($slot['start_time']) ?> – <?= time_label($slot['end_time']) ?> · <?= admin_e($slot['subject']['course'] . ' ' . $slot['subject']['year_level']) ?></span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <div class="week-empty">No meetings</div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
+                                <p class="text-muted small mt-2 mb-0"><span class="ui-tag">Blue</span> lecture · <span class="ui-tag">Gold</span> laboratory. Archived subjects are not shown.</p>
                             </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
+            </main>
         </div>
     </div>
+
+    <?php
+    // Shared subject form fields (create + edit). $s is the subject being edited, or null.
+    function subject_fields(?array $s, array $slots, array $days, array $courses, array $yearLevels, ?string $activeSemester, string $prefix): void
+    {
+        $selectedDays = array_column($slots, 'meeting_days');
+        $start = $slots ? substr($slots[0]['start_time'], 0, 5) : '';
+        $end = $slots ? substr($slots[0]['end_time'], 0, 5) : '';
+        $nameField = $s ? 'name' : 'subjectName';
+        $codeField = $s ? 'code' : 'subjectCode';
+        $course = $s['course'] ?? '';
+        $year = $s['year_level'] ?? '';
+        ?>
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label for="<?= $prefix ?>Name" class="form-label">Subject name</label>
+                <input type="text" class="form-control" id="<?= $prefix ?>Name" name="<?= $nameField ?>" value="<?= admin_e($s['name'] ?? '') ?>" required>
+            </div>
+            <div class="col-md-4">
+                <label for="<?= $prefix ?>Code" class="form-label">Subject code</label>
+                <input type="text" class="form-control" id="<?= $prefix ?>Code" name="<?= $codeField ?>" value="<?= admin_e($s['code'] ?? '') ?>" required>
+            </div>
+            <div class="col-md-4">
+                <label for="<?= $prefix ?>Type" class="form-label">Type</label>
+                <select class="form-select" id="<?= $prefix ?>Type" name="type" required>
+                    <option value="" disabled <?= $s ? '' : 'selected' ?>>Select a type</option>
+                    <?php foreach (['Lecture', 'Laboratory'] as $type): ?>
+                        <option value="<?= $type ?>" <?= ($s['type'] ?? '') === $type ? 'selected' : '' ?>><?= $type ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="<?= $prefix ?>Course" class="form-label">Course</label>
+                <select class="form-select" id="<?= $prefix ?>Course" name="course" required>
+                    <option value="" disabled <?= $course ? '' : 'selected' ?>>Select a course</option>
+                    <?php if ($course && !isset($courses[$course])): ?><option value="<?= admin_e($course) ?>" selected><?= admin_e($course) ?></option><?php endif; ?>
+                    <?php foreach ($courses as $value => $label): ?>
+                        <option value="<?= $value ?>" <?= $course === $value ? 'selected' : '' ?>><?= $value ?> — <?= $label ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="<?= $prefix ?>Year" class="form-label">Year level</label>
+                <select class="form-select" id="<?= $prefix ?>Year" name="year_level" required>
+                    <option value="" disabled <?= $year ? '' : 'selected' ?>>Select a year level</option>
+                    <?php foreach ($yearLevels as $y): ?>
+                        <option value="<?= $y ?>" <?= $year === $y ? 'selected' : '' ?>><?= $y ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <p class="ui-section-label">Weekly schedule</p>
+        <div class="ui-day-picker mb-3" role="group" aria-label="Meeting days">
+            <?php foreach ($days as $day): ?>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="meeting_days[]" value="<?= $day ?>" id="<?= $prefix . $day ?>" <?= in_array($day, $selectedDays, true) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="<?= $prefix . $day ?>"><?= substr($day, 0, 3) ?></label>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="row g-3">
+            <div class="col-6">
+                <label for="<?= $prefix ?>Start" class="form-label">Start time</label>
+                <input type="time" class="form-control" id="<?= $prefix ?>Start" name="start_time" value="<?= admin_e($start) ?>" required>
+            </div>
+            <div class="col-6">
+                <label for="<?= $prefix ?>End" class="form-label">End time</label>
+                <input type="time" class="form-control" id="<?= $prefix ?>End" name="end_time" value="<?= admin_e($end) ?>" required>
+            </div>
+        </div>
+        <input type="hidden" name="semester" value="<?= admin_e($activeSemester ?? '') ?>">
+        <?php
+    }
+    ?>
+
+    <!-- Create subject -->
+    <div class="modal fade" id="createSubjectModal" tabindex="-1" aria-labelledby="createSubjectLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <form class="modal-content" method="POST" action="processes/admin/subjects/add.php" data-subject-form data-subject-id="0">
+                <div class="modal-header">
+                    <span class="ui-modal-icon"><i class="bi bi-journal-plus"></i></span>
+                    <h1 class="modal-title" id="createSubjectLabel">New subject</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?php if ($activeSemester): ?><p class="text-muted small">This subject will be added to <b><?= admin_e($activeSemester) ?></b>.</p><?php endif; ?>
+                    <?php subject_fields(null, [], $days, $courses, $yearLevels, $activeSemester, 'new'); ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" <?= $activeSemester ? '' : 'disabled' ?>><i class="bi bi-check2"></i> Create subject</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    </div>
-    </main>
+    <?php foreach ($subjects as $s):
+        $id = (int) $s['id'];
+        $slots = $schedules[$id] ?? []; ?>
 
+        <!-- View subject -->
+        <div class="modal fade" id="viewModal<?= $id ?>" tabindex="-1" aria-labelledby="viewSubjectLabel<?= $id ?>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span class="ui-modal-icon"><i class="bi bi-journal-bookmark"></i></span>
+                        <h1 class="modal-title" id="viewSubjectLabel<?= $id ?>"><?= admin_e($s['name']) ?></h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl class="ui-dl">
+                            <dt>Code</dt>
+                            <dd><?= admin_e($s['code']) ?></dd>
+                            <dt>Type</dt>
+                            <dd><span class="ui-tag"><?= admin_e($s['type']) ?></span></dd>
+                            <dt>Course &amp; year</dt>
+                            <dd><?= admin_e($s['course'] . ' · ' . $s['year_level']) ?></dd>
+                            <dt>Semester</dt>
+                            <dd><?= admin_e($s['semester']) ?></dd>
+                            <dt>Active classes</dt>
+                            <dd><?= $classCounts[$id] ?? 0 ?></dd>
+                            <dt>Status</dt>
+                            <dd><span class="ui-pill <?= (int) $s['is_archived'] ? '' : 'is-ok' ?>"><?= (int) $s['is_archived'] ? 'Archived' : 'Active' ?></span></dd>
+                            <dt>Added</dt>
+                            <dd><?= $s['datetime_added'] ? date('M j, Y', strtotime($s['datetime_added'])) : '—' ?></dd>
+                        </dl>
+                        <p class="ui-section-label">Meeting times</p>
+                        <?php if ($slots): ?>
+                            <ul class="ui-list">
+                                <?php foreach ($slots as $slot): ?>
+                                    <li><b><?= admin_e($slot['meeting_days']) ?></b><span><?= time_label($slot['start_time']) ?> – <?= time_label($slot['end_time']) ?></span></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <div class="ui-list-empty">No meeting times set.</div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <?php if (!(int) $s['is_archived'] && $activeSemester): ?>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?= $id ?>"><i class="bi bi-pencil"></i> Edit</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    </div>
-    </div>
-
-
-
+        <?php if (!(int) $s['is_archived']): ?>
+            <!-- Edit subject -->
+            <div class="modal fade" id="editModal<?= $id ?>" tabindex="-1" aria-labelledby="editSubjectLabel<?= $id ?>" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                    <form class="modal-content" method="POST" action="processes/admin/subjects/edit.php?id=<?= $id ?>" data-subject-form data-subject-id="<?= $id ?>">
+                        <div class="modal-header">
+                            <span class="ui-modal-icon"><i class="bi bi-pencil"></i></span>
+                            <h1 class="modal-title" id="editSubjectLabel<?= $id ?>">Edit <?= admin_e($s['name']) ?></h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="id" value="<?= $id ?>">
+                            <?php subject_fields($s, $slots, $days, $courses, $yearLevels, $activeSemester, 'edit' . $id); ?>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" <?= $activeSemester ? '' : 'disabled' ?>><i class="bi bi-check2"></i> Save changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
 
     <script src="js/app.js"></script>
- 
-    <div class="modal fade" id="createSubjectModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Create a Subjects</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" action="processes/admin/subjects/add.php" id="createSubjectForm">
-                    <!-- Subject Name -->
-                    <div class="mb-3">
-                        <label for="subjectName" class="form-label bold">Subject Name</label>
-                        <input type="text" class="form-control" id="subjectName" name="subjectName" required>
-                    </div>
+    <script src="<?= admin_asset('js/admin-ui.js') ?>"></script>
+    <script>
+        const scheduleSlots = <?= json_encode($clashData) ?>;
 
-                    <!-- Subject Code -->
-                    <div class="mb-3">
-                        <label for="subjectCode" class="form-label bold">Subject Code</label>
-                        <input type="text" class="form-control" id="subjectCode" name="subjectCode" required>
-                    </div>
+        $(function () {
+            const table = $('#subjects').DataTable({
+                order: [[6, 'asc'], [0, 'asc']],
+                columnDefs: [{ targets: 7, orderable: false, searchable: false }]
+            });
+            document.querySelectorAll('[data-col-filter]').forEach(function (select) {
+                select.addEventListener('change', function () {
+                    const value = select.value ? '^' + $.fn.dataTable.util.escapeRegex(select.value) + '$' : '';
+                    table.column(+select.dataset.colFilter).search(value, true, false).draw();
+                });
+            });
+        });
 
-                    <!-- Subject Type -->
-                    <div class="mb-3">
-                        <label for="type" class="form-label bold">Subject Type</label>
-                        <select class="form-control" name="type" id="type">
-                            <option default selected disabled>Select class type below</option>
-                            <option value="Lecture">Lecture</option>
-                            <option value="Laboratory">Laboratory</option>
-                        </select>
-                    </div>
+        // Validate days/times and warn about clashes before the server rejects the save
+        document.querySelectorAll('form[data-subject-form]').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                const subjectId = +form.dataset.subjectId;
+                const days = Array.from(form.querySelectorAll('input[name="meeting_days[]"]:checked')).map(i => i.value);
+                const start = form.querySelector('input[name=start_time]').value;
+                const end = form.querySelector('input[name=end_time]').value;
 
-                    <!-- Meeting Days -->
-                    <div class="mb-3">
-                        <label for="meetingDays" class="form-label bold">Meeting Days:</label>
-                        <div id="meetingDays">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="meeting_days[]" value="Monday">
-                                <label class="form-check-label">Monday</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="meeting_days[]" value="Tuesday">
-                                <label class="form-check-label">Tuesday</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="meeting_days[]" value="Wednesday">
-                                <label class="form-check-label">Wednesday</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="meeting_days[]" value="Thursday">
-                                <label class="form-check-label">Thursday</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="meeting_days[]" value="Friday">
-                                <label class="form-check-label">Friday</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="meeting_days[]" value="Saturday">
-                                <label class="form-check-label">Saturday</label>
-                            </div>
-                        </div>
-                    </div>
+                let problem = '';
+                if (!days.length) problem = 'Pick at least one meeting day.';
+                else if (end <= start) problem = 'The end time must be after the start time.';
+                if (problem) {
+                    e.preventDefault();
+                    Swal.fire('Check the schedule', problem, 'warning');
+                    return;
+                }
 
-                    <!-- Start Time -->
-                    <div class="mb-3">
-                        <label for="startTime" class="form-label bold">Start Time:</label>
-                        <input type="time" class="form-control" name="start_time" required>
-                    </div>
-
-                    <!-- End Time -->
-                    <div class="mb-3">
-                        <label for="endTime" class="form-label bold">End Time:</label>
-                        <input type="time" class="form-control" name="end_time" required>
-                    </div>
-
-                    <!-- Semester -->
-                    <div class="mb-3" style="display:none" >
-                        <label for="semester" class="form-label bold">Select Semester:</label>
-                        <?php
-                        $semesters = [];
-                        try {
-                            $stmt = $pdo->query("SELECT name FROM semester WHERE status = 'active'");
-                            $semesters = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        } catch (PDOException $e) {
-                            echo "Error fetching semesters: " . $e->getMessage();
-                        }
-                        ?>
-                        <select class="form-select" name="semester" id="semesterSelect" required>
-                            <?php if (!empty($semesters)): ?>
-                                <?php foreach ($semesters as $semester): ?>
-                                    <option selected value="<?= htmlspecialchars($semester['name']) ?>"><?= htmlspecialchars($semester['name']) ?></option>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <option disabled>No semesters available</option>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-
-                    <!-- Course (e.g., BSIT, BSCS) -->
-                    <div class="mb-3">
-                        <label for="course" class="form-label bold">Course</label>
-                        <select class="form-control" name="course" required>
-                            <option value="" disabled selected>Select Course</option>
-                            <option value="BSIT">Bachelor of Science in Information Technology</option>
-                            <option value="BSCS">Bachelor of Science in Computer Science</option>
-                        </select>
-                    </div>
-
-                    <!-- Year Level -->
-                    <div class="mb-3">
-                        <label for="yearLevel" class="form-label bold">Year Level</label>
-                        <select class="form-control" name="year_level" required>
-                            <option value="" disabled selected>Select Year Level</option>
-                            <option value="1A">1A</option>
-                            <option value="1B">1B</option>
-                            <option value="2A">2A</option>
-                            <option value="2B">2B</option>
-                            <option value="3A">3A</option>
-                            <option value="3B">3B</option>
-                            <option value="4A">4A</option>
-                            <option value="4B">4B</option>
-                        </select>
-                    </div>
-              
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-                <input type="submit" class="btn btn-csms" value="Save Changes" id="submitBtn">
-                <button type="button" class="btn btn-csms" data-bs-dismiss="modal">Close</button>
-            </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Include SweetAlert2 CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('createSubjectForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const semesterSelect = document.getElementById('semesterSelect');
-
-    // Check if there are no active semesters
-    const hasActiveSemester = <?php echo !empty($semesters) ? 'true' : 'false'; ?>;
-
-    if (!hasActiveSemester) {
-        submitBtn.disabled = true; // Disable the submit button
-
-        // Show SweetAlert when the modal is opened
-        $('#createSubjectModal').on('shown.bs.modal', function () {
-            Swal.fire({
-                icon: 'warning',
-                title: 'No Active Semester',
-                text: 'There is no active semester available. Please activate a semester before creating a subject.',
-                confirmButtonText: 'OK',
-                allowOutsideClick: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $('#createSubjectModal').modal('hide'); // Close the modal after confirmation
+                // Same overlap rule as the server (boundaries count as overlapping)
+                const clashes = scheduleSlots.filter(s => s.id !== subjectId && days.includes(s.day) && start <= s.end && end >= s.start);
+                if (clashes.length) {
+                    e.preventDefault();
+                    const list = clashes.map(c => '<li><b>' + $('<div>').text(c.name).html() + '</b> — ' + c.day + ' ' + c.start + '–' + c.end + '</li>').join('');
+                    Swal.fire({
+                        title: 'Schedule clash',
+                        html: 'These subjects already meet at that time:<ul class="text-start mt-2">' + list + '</ul>Pick different days or times.',
+                        icon: 'warning'
+                    });
                 }
             });
         });
-    }
 
-    // Prevent form submission if no active semester (extra safety)
-    form.addEventListener('submit', function (e) {
-        if (!hasActiveSemester) {
-            e.preventDefault(); // Prevent form submission
-        }
-    });
-});
-</script>
-
-
-    <?php
-    require __DIR__ . '/../database/connection.php';
-
-    $staffQuery = "SELECT id, fullName FROM staff_accounts";
-    $staffStmt = $pdo->query($staffQuery);
-    $staffMembers = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $sql = "SELECT * FROM subjects";
-    $stmt = $pdo->query($sql);
-    $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($subjects as $subject) {
-        $modalId = $subject['id'];
-    ?>
-     <?php
-// Fetching meeting days with start and end times for the selected subject
-$meetingDetails = [];
-try {
-    $stmt = $pdo->prepare("SELECT meeting_days, start_time, end_time FROM subjects_schedules WHERE subject_id = :subject_id");
-    $stmt->bindParam(':subject_id', $subject['id'], PDO::PARAM_INT); // Assuming $subject['id'] contains the subject ID
-    $stmt->execute();
-    $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Store each meeting day with start and end times in the array
-    foreach ($schedules as $schedule) {
-        $meetingDetails[] = htmlspecialchars($schedule['meeting_days']) . ": " . date("h:i A", strtotime($schedule['start_time'])) . " - " . date("h:i A", strtotime($schedule['end_time']));
-    }
-} catch (PDOException $e) {
-    echo "Error fetching meeting details: " . $e->getMessage();
-}
-?>
-
-<div class="modal fade" id="viewModal<?php echo $modalId; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5 bold" id="exampleModalLabel">Viewing Subject: <?php echo htmlspecialchars($subject['name']); ?></h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label bold">Subject Name</label>
-                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($subject['name']); ?>" readonly>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label bold">Subject Code</label>
-                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($subject['code']); ?>" readonly>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label bold">Semester</label>
-                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($subject['semester']); ?>" readonly>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label bold">Meeting Days and Times</label>
-                    <textarea class="form-control" rows="3" readonly><?php echo implode("\n", $meetingDetails); ?></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-        <!-- Edit Subject Modal -->
-        <div class="modal fade" id="editModal<?php echo $modalId; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Editing Subject: <?php echo htmlspecialchars($subject['name']); ?></h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editSubjectForm<?php echo $subject['id']; ?>" method="POST" action="processes/admin/subjects/edit.php?id=<?php echo $subject['id'] ?>">
-                    <input type="hidden" id="editSubjectId<?php echo $subject['id']; ?>" name="id" value="<?php echo $subject['id']; ?>">
-
-                    <div class="mb-3">
-                        <label for="editSubjectName<?php echo $subject['id']; ?>" class="form-label fw-bold">Subject Name</label>
-                        <input type="text" class="form-control" id="editSubjectName<?php echo $subject['id']; ?>" name="name" value="<?php echo htmlspecialchars($subject['name']); ?>" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="editSubjectCode<?php echo $subject['id']; ?>" class="form-label fw-bold">Subject Code</label>
-                        <input type="text" class="form-control" id="editSubjectCode<?php echo $subject['id']; ?>" name="code" value="<?php echo htmlspecialchars($subject['code']); ?>" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="type" class="form-label fw-bold">Subject Type</label>
-                        <select class="form-select" name="type" id="type" required>
-                            <option value="" disabled>Select class type below</option>
-                            <option value="Lecture" <?php echo ($subject['type'] === 'Lecture') ? 'selected' : ''; ?>>Lecture</option>
-                            <option value="Laboratory" <?php echo ($subject['type'] === 'Laboratory') ? 'selected' : ''; ?>>Laboratory</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <?php
-                        // Fetch all selected meeting days for the subject
-                        $query = "SELECT meeting_days FROM subjects_schedules WHERE subject_id = :subjectId";
-                        $stmt = $pdo->prepare($query);
-                        $stmt->bindParam(':subjectId', $modalId, PDO::PARAM_INT);
-                        $stmt->execute();
-                        $selectedDays = $stmt->fetchAll(PDO::FETCH_COLUMN); // Fetch meeting days as a flat array
-
-                        // Define all possible days to render the checkboxes
-                        $allDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                        ?>
-                        <label for="meetingDays" class="form-label bold">Meeting Days:</label>
-                        <div id="meetingDays">
-                            <?php foreach ($allDays as $day): ?>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" name="meeting_days[]" value="<?php echo $day; ?>" <?php echo in_array($day, $selectedDays) ? 'checked' : ''; ?>>
-                                    <label class="form-check-label"><?php echo $day; ?></label>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    $selectedStartTime = '';
-                    $selectedEndTime = '';
-                    try {
-                        $stmt = $pdo->prepare("SELECT start_time, end_time FROM subjects_schedules WHERE subject_id = :subject_id LIMIT 1");
-                        $stmt->bindParam(':subject_id', $modalId, PDO::PARAM_INT);
-                        $stmt->execute();
-                        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($result) {
-                            $selectedStartTime = htmlspecialchars($result['start_time']);
-                            $selectedEndTime = htmlspecialchars($result['end_time']);
-                        }
-                    } catch (PDOException $e) {
-                        echo "Error fetching times: " . $e->getMessage();
-                    }
-                    ?>
-
-                    <!-- Start Time Input -->
-                    <div class="mb-3">
-                        <label for="startTime" class="form-label bold">Start Time:</label>
-                        <input type="time" class="form-control" name="start_time" value="<?php echo $selectedStartTime; ?>" required>
-                    </div>
-
-                    <!-- End Time Input -->
-                    <div class="mb-3">
-                        <label for="endTime" class="form-label bold">End Time:</label>
-                        <input type="time" class="form-control" name="end_time" value="<?php echo $selectedEndTime; ?>" required>
-                    </div>
-
-                    <div class="mb-3" style="display:none" >
-                        <label for="editSemester<?php echo $subject['id']; ?>" class="form-label fw-bold">Select Semester:</label>
-                        <select class="form-select" id="editSemester<?php echo $subject['id']; ?>" name="semester">
-                            <?php if (!empty($semesters)): ?>
-                                <?php foreach ($semesters as $semester): ?>
-                                    <option selected value="<?php echo htmlspecialchars($semester['name']); ?>" <?php echo ($subject['semester'] === $semester['name']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($semester['name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <option value="" disabled>No semesters available</option>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="course" class="form-label bold">Course</label>
-                        <select class="form-control" name="course" required>
-                            <option value="" disabled>Select Course</option>
-                            <option value="BSIT" <?php echo ($subject['course'] === 'BSIT') ? 'selected' : ''; ?>>Bachelor of Science in Information Technology</option>
-                            <option value="BSCS" <?php echo ($subject['course'] === 'BSCS') ? 'selected' : ''; ?>>Bachelor of Science in Computer Science</option>
-                            <option value="MIT" <?php echo ($subject['course'] === 'MIT') ? 'selected' : ''; ?>>Masters in Information Technology</option>
-                            <option value="MCS" <?php echo ($subject['course'] === 'MCS') ? 'selected' : ''; ?>>Masters in Computer Science</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="yearLevel" class="form-label bold">Year Level</label>
-                        <select class="form-control" name="year_level" required>
-                            <option value="" disabled>Select Year Level</option>
-                            <option value="1A" <?php echo ($subject['year_level'] === '1A') ? 'selected' : ''; ?>>1A</option>
-                            <option value="1B" <?php echo ($subject['year_level'] === '1B') ? 'selected' : ''; ?>>1B</option>
-                            <option value="2A" <?php echo ($subject['year_level'] === '2A') ? 'selected' : ''; ?>>2A</option>
-                            <option value="2B" <?php echo ($subject['year_level'] === '2B') ? 'selected' : ''; ?>>2B</option>
-                            <option value="3A" <?php echo ($subject['year_level'] === '3A') ? 'selected' : ''; ?>>3A</option>
-                            <option value="3B" <?php echo ($subject['year_level'] === '3B') ? 'selected' : ''; ?>>3B</option>
-                            <option value="4A" <?php echo ($subject['year_level'] === '4A') ? 'selected' : ''; ?>>4A</option>
-                            <option value="4B" <?php echo ($subject['year_level'] === '4B') ? 'selected' : ''; ?>>4B</option>
-                        </select>
-                    </div>
-            
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary" id="saveChangesBtn<?php echo $modalId; ?>">Save changes</button>
-            </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Include SweetAlert2 CDN (if not already included in your project) -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('editSubjectForm<?php echo $subject['id']; ?>');
-    const submitBtn = document.getElementById('saveChangesBtn<?php echo $modalId; ?>');
-    const hasActiveSemester = <?php echo !empty($semesters) ? 'true' : 'false'; ?>;
-
-    if (!hasActiveSemester) {
-        submitBtn.disabled = true; // Disable the submit button
-
-        // Show SweetAlert when the modal is opened
-        $('#editModal<?php echo $modalId; ?>').on('shown.bs.modal', function () {
+        function deleteSubject(id, name, classCount) {
             Swal.fire({
+                title: 'Delete ' + name + '?',
+                html: classCount
+                    ? 'It is used by <b>' + classCount + ' active class' + (classCount === 1 ? '' : 'es') + '</b>. Deleting the subject removes its schedule and may leave those classes without a subject.'
+                    : 'Its weekly schedule will be removed too.',
                 icon: 'warning',
-                title: 'No Active Semester',
-                text: 'There is no active semester available. Please activate a semester before editing a subject.',
-                confirmButtonText: 'OK',
-                allowOutsideClick: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $('#editModal<?php echo $modalId; ?>').modal('hide'); // Close the modal after confirmation
-                }
+                showCancelButton: true,
+                reverseButtons: true,
+                confirmButtonText: 'Delete subject',
+                customClass: { popup: 'ui-swal-danger' }
+            }).then(function (result) {
+                if (result.isConfirmed) window.location.href = 'processes/admin/subjects/delete.php?id=' + id;
             });
-        });
-    }
-
-    // Prevent form submission if no active semester (extra safety)
-    form.addEventListener('submit', function (e) {
-        if (!hasActiveSemester) {
-            e.preventDefault(); // Prevent form submission
         }
-    });
-});
-</script>
-
+    </script>
 
     <?php
+    $subjectAlerts = [
+        'ADMIN_SUBJECT_ADD_SUCCESS' => ['Subject added', 'The subject and its schedule have been saved.', 'success'],
+        'ADMIN_SUBJECT_ADD_FAIL' => ['Error', 'The subject could not be added. Please try again.', 'error'],
+        'ADMIN_SUBJECT_EXISTS' => ['Subject already exists', 'A subject with this code already exists.', 'error'],
+        'ADMIN_SUBJECT_UPDATE_SUCCESS' => ['Saved', 'The subject has been updated.', 'success'],
+        'ADMIN_SUBJECT_UPDATE_ERROR' => ['Error', 'The subject could not be updated. Please try again.', 'error'],
+        'ADMIN_SUBJECT_DELETE_SUCCESS' => ['Deleted', 'The subject has been deleted.', 'success'],
+        'ADMIN_SUBJECT_DELETE_ERROR' => ['Error', 'The subject could not be deleted. Please try again.', 'error'],
+        'SCHEDULE_CONFLICT' => ['Schedule clash', 'Another subject already meets at that day and time.', 'error'],
+    ];
+    if (isset($_SESSION['STATUS'], $subjectAlerts[$_SESSION['STATUS']])) {
+        [$title, $text, $icon] = $subjectAlerts[$_SESSION['STATUS']];
+        echo '<script>Swal.fire(' . json_encode($title) . ', ' . json_encode($text) . ', ' . json_encode($icon) . ');</script>';
+        unset($_SESSION['STATUS']);
     }
     ?>
+    <?php include('processes/server/alerts.php'); ?>
+</body>
 
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-
-
-
-<script>
-    var subjectData = <?php echo $subjectDataJSON; ?>;
-
-    $(document).ready(function() {
-        if (subjectData.length > 0) {
-            $('#classes').show();
-
-            var table = $('#classes').DataTable({
-                responsive: true,
-                data: subjectData.map(row => {
-                    const isArchived = row.is_archived == 1;
-                    row.is_archived = isArchived ? 'Archived' : 'Not Archived';
-                    
-                    row.actions = isArchived 
-                        ? `
-                            <button type="button" class="btn btn-primary view-btn" data-bs-toggle="modal" data-bs-target="#viewModal${row.id}">
-                                <i class="bi bi-eye"></i> View
-                            </button>`
-                        : `
-                            <button type="button" class="btn btn-primary view-btn" data-bs-toggle="modal" data-bs-target="#viewModal${row.id}">
-                                <i class="bi bi-eye"></i> View
-                            </button>
-                            <button type="button" class="btn btn-warning edit-btn" data-bs-toggle="modal" data-bs-target="#editModal${row.id}">
-                                <i class="bi bi-pencil"></i> Edit
-                            </button>
-                            <button type="button" class="btn btn-danger delete-btn" data-id="${row.id}">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>`;
-
-                    return [
-                        `${row.name}`,
-                        row.type,
-                        row.code,
-                        row.schedule,
-                        row.semester,
-                        row.course,
-                        row.year_level,
-                        row.is_archived,
-                        row.actions,
-                    ];
-                }),
-                columns: [
-                    { title: 'Subject Name' },
-                    { title: 'Subject Type' },
-                    { title: 'Subject Code' },
-                    { title: 'Subject Schedule' },
-                    { title: 'Semester' },
-                    { title: 'Course' },
-                    { title: 'Year Level' },
-                    { title: 'Archive Status' },
-                    { title: 'Actions', orderable: false }
-                ],
-              
-            });
-
-       
-            $(document).on('click', '.delete-btn', function() {
-                var subjectId = $(this).data('id');
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "This action cannot be undone!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = 'processes/admin/subjects/delete.php?id=' + subjectId;
-                    }
-                });
-            });
-        } else {
-            $('#noDataMessage').show();
-            $('#table-footer').hide();
-        }
-    });
-</script>
-
-
-
-
-    <script>
-        document.getElementById('toggleButton').addEventListener('click', function() {
-            document.getElementById('sidebarContainer').classList.toggle('collapsed');
-        });
-    </script>
-    <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-
-        function getTime() {
-            const now = new Date();
-            const newTime = now.toLocaleString();
-            console.log(newTime);
-            document.querySelector("#currentTime").textContent = "The current date and time is: " + newTime;
-        }
-
-        setInterval(getTime, 100);
-
-        $(document).ready(function() {
-            var table = $('#classes').DataTable();
-
-            // Create input fields in the footer for search functionality
-            $('#classes tfoot th').each(function() {
-                var title = $(this).text();
-                if (title === 'Subject Type') { // Assuming 'Subject Type' is the header name
-                    $(this).html(`
-                <select class="selector">
-                    <option value="">All</option>
-                    <option value="lecture">Lecture</option>
-                    <option value="laboratory">Laboratory</option>
-                </select>
-            `);
-                } else {
-                    $(this).html('<input type="text" placeholder="Search ' + title + '" />');
-                }
-
-                if (title === 'Archived Status') { // Assuming 'Subject Type' is the header name
-                    $(this).html(`
-                <select class="selector">
-                    <option value="">All</option>
-                    <option value="Not Archived">Not Archived</option>
-                    <option value="Archived">Archived</option>
-                </select>
-            `);
-                }
-            });
-
-            // Apply search functionality for the input fields
-            table.columns().every(function() {
-                var that = this;
-
-                // Handle text input for all columns except 'Subject Type'
-                $('input', this.footer()).on('keyup change clear', function() {
-                    if (that.search() !== this.value) {
-                        that
-                            .search(this.value)
-                            .draw();
-                    }
-                });
-
-                // Handle the dropdown for the 'Subject Type'
-                $('select', this.footer()).on('change', function() {
-                    var selectedValue = $(this).val();
-                    if (that.search() !== selectedValue) {
-                        that
-                            .search(selectedValue ? '^' + selectedValue + '$' : '', true, false)
-                            .draw();
-                    }
-                });
-            });
-        });
-
-
-
-        $(document).ready(function() {
-            var subjects = {
-
-                'BSIT-4A': [{
-                        value: 'Software Engineering',
-                        text: 'Software Engineering'
-                    },
-                    {
-                        value: 'Capstone Project and Research I',
-                        text: 'Capstone Project and Research I'
-                    },
-                    {
-                        value: 'Networks',
-                        text: 'Networks'
-                    }
-                ],
-                'BSIT-4B': [{
-                        value: 'Capstone Project and Research I',
-                        text: 'Capstone Project and Research I'
-                    },
-                    {
-                        value: 'Software Engineering',
-                        text: 'Software Engineering'
-                    },
-                    {
-                        value: 'Networks',
-                        text: 'Networks'
-                    }
-                ]
-            };
-
-            var assignedSubjects = {
-                'BSIT-4A': [
-                    'Software Engineering',
-                ],
-                'BSIT-4B': [
-                    'Capstone Project and Research I',
-
-                ]
-            };
-
-
-            $('#class-select').change(function() {
-                var classSelected = $(this).val();
-                var subjectSelect = $('#subject-select');
-                var assignedSubjectsContainer = $('#assigned-subjects-container');
-
-                subjectSelect.empty();
-                assignedSubjectsContainer.empty();
-
-                if (classSelected !== 'Select a class') {
-
-                    $.each(subjects[classSelected], function(index, subject) {
-                        subjectSelect.append($('<option>', {
-                            value: subject.value,
-                            text: subject.text
-                        }));
-                    });
-
-
-                    $.each(assignedSubjects[classSelected], function(index, subject) {
-                        assignedSubjectsContainer.append(
-                            '<div class="col"><small>' + subject + '</small></div>' +
-                            '<div class="col"><a href="#" class="remove-subject">Remove</a></div>'
-                        );
-                    });
-                } else {
-                    subjectSelect.append($('<option>', {
-                        text: 'Select a class first'
-                    }));
-
-                    assignedSubjectsContainer.append('<div class="col"><small>No subjects assigned</small></div>');
-                }
-            });
-
-
-            $('#subject-select').change(function() {
-                var subjectSelected = $(this).val();
-                var assignedSubjectsContainer = $('#assigned-subjects-container');
-
-                var exists = assignedSubjectsContainer.find('.col:contains("' + subjectSelected + '")').length;
-                if (!exists && subjectSelected !== 'Select a class first') {
-                    assignedSubjectsContainer.append(
-                        '<div class="col"><small>' + subjectSelected + '</small></div>' +
-                        '<div class="col"><a href="#" class="remove-subject">Remove</a></div>'
-                    );
-                }
-            });
-
-
-            $(document).on('click', '.remove-subject', function(e) {
-                e.preventDefault();
-                $(this).closest('.col').prev('.col').remove();
-                $(this).closest('.col').remove();
-            });
-        });
-
-
-        document.getElementById('messageForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-
-            var messageText = document.getElementById('messageInput').value;
-
-
-            if (messageText.trim() !== '') {
-                var chatBody = document.getElementById('chatBody');
-
-
-                var newMessage = document.createElement('div');
-                newMessage.className = 'row receiver';
-                newMessage.innerHTML = `
-      
-            <div class="col">
-              <div class="message">
-                 <span>${messageText}</span>
-              </div>
-              <i class="bi bi-person"></i>
-            </div>
-      
-      
-      `;
-
-
-                chatBody.appendChild(newMessage);
-
-
-                document.getElementById('messageInput').value = '';
-
-
-                chatBody.scrollTop = chatBody.scrollHeight;
-
-            }
-        });
-    </script>
-    
-  
-
-    <?php
-include('processes/server/alerts.php');
-?>
 </html>
-
-
-
-    
-
-
-
-<!-- Floating Chat Widget -->
-<?php include(__DIR__ . '/../includes/floating-chat-widget.php'); ?>

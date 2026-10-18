@@ -1,6 +1,7 @@
 <?php
 include __DIR__ . '/../../../../database/connection.php'; 
 session_start();
+require_once __DIR__ . '/../../../includes/guard.php';
 
 if (isset($_GET['id'])) {
     $id = $_GET['id'];

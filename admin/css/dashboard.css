@@ -1,0 +1,608 @@
+/* =========================================================
+   Admin dashboard (admin/index.php)
+
+   Loaded directly from the page (not through app.css's @import) with a
+   filemtime() version so edits are never hidden by a cached stylesheet.
+   Every rule is scoped under .dash and prefixed with "html body" so it
+   wins over AdminKit and the generic portal link colors.
+   ========================================================= */
+
+html body .dash {
+    --dash-blue: #2f5bb7;
+    --dash-gold: #b08f2e;
+    --dash-red: #c4314b;
+    --dash-green: #1f7a3a;
+    --dash-surface: #ffffff;
+    --dash-text: var(--au-ink, #1f2430);
+    --dash-muted: var(--au-muted, #5d6475);
+    --dash-line: var(--au-line, #e6e1d3);
+    --dash-navy: var(--au-navy, #061E4E);
+    color: var(--dash-text);
+}
+
+/* ---------- Hero ---------- */
+html body .dash .dash-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    background: linear-gradient(120deg, var(--au-navy-deep, #03122f) 0%, var(--dash-navy) 55%, var(--au-navy-soft, #0d2c6b) 100%);
+    border-bottom: 3px solid var(--au-gold, #c2a74d);
+    color: #fff;
+}
+
+html body .dash .dash-hero::after {
+    content: '';
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 28px solid rgba(194, 167, 77, 0.12);
+    pointer-events: none;
+}
+
+html body .dash .dash-eyebrow {
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--au-gold-light, #e3d29a);
+}
+
+html body .dash .dash-hero h1 {
+    margin: 0 0 0.35rem;
+    font-family: var(--au-serif, Georgia, serif);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+html body .dash .dash-hero p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+html body .dash .dash-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+}
+
+html body .dash .dash-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+html body .dash .dash-chip i {
+    color: var(--au-gold-light, #e3d29a);
+}
+
+html body .dash .dash-hero-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+/* ---------- Buttons ---------- */
+html body .dash .btn.dash-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+}
+
+html body .dash .btn.dash-btn-gold {
+    background: var(--au-gold, #c2a74d);
+    border: 1px solid var(--au-gold, #c2a74d);
+    color: var(--dash-navy);
+}
+
+html body .dash .btn.dash-btn-gold:hover,
+html body .dash .btn.dash-btn-gold:focus {
+    background: var(--au-gold-light, #e3d29a);
+    border-color: var(--au-gold-light, #e3d29a);
+    color: var(--dash-navy);
+}
+
+html body .dash .btn.dash-btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #fff;
+}
+
+html body .dash .btn.dash-btn-ghost:hover,
+html body .dash .btn.dash-btn-ghost:focus {
+    background: #fff;
+    border-color: #fff;
+    color: var(--dash-navy);
+}
+
+html body .dash .btn.dash-btn-sm {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+    background: transparent;
+    border: 1px solid var(--dash-line);
+    color: var(--dash-navy);
+}
+
+html body .dash .btn.dash-btn-sm:hover,
+html body .dash .btn.dash-btn-sm:focus {
+    background: var(--dash-navy);
+    border-color: var(--dash-navy);
+    color: #fff;
+}
+
+/* ---------- Panels ---------- */
+html body .dash .dash-panel {
+    height: 100%;
+    padding: 1.25rem 1.35rem;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-line);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(6, 30, 78, 0.05);
+}
+
+html body .dash .dash-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+html body .dash .dash-panel-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dash-navy);
+}
+
+html body .dash .dash-panel-head p {
+    margin: 0.15rem 0 0;
+    font-size: 0.82rem;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-section-title {
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dash-muted);
+}
+
+/* ---------- KPI tiles ---------- */
+html body .dash .dash-kpi {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.1rem 1.2rem;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-line);
+    border-top: 3px solid var(--au-gold, #c2a74d);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(6, 30, 78, 0.05);
+    text-decoration: none;
+    color: var(--dash-text);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+html body .dash a.dash-kpi:hover,
+html body .dash a.dash-kpi:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(6, 30, 78, 0.1);
+    color: var(--dash-text);
+}
+
+html body .dash .dash-kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+html body .dash .dash-kpi-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-kpi-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 8px;
+    background: rgba(6, 30, 78, 0.07);
+    color: var(--dash-navy);
+    font-size: 1.05rem;
+}
+
+html body .dash .dash-kpi-value {
+    margin: 0.6rem 0 0.2rem;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--dash-navy);
+    font-variant-numeric: tabular-nums;
+}
+
+html body .dash .dash-kpi-sub {
+    margin-top: auto;
+    font-size: 0.82rem;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-kpi-sub strong {
+    color: var(--dash-text);
+}
+
+html body .dash .dash-kpi-sub .is-alert {
+    color: var(--dash-red);
+    font-weight: 700;
+}
+
+/* ---------- Charts ---------- */
+html body .dash .dash-chart {
+    position: relative;
+    height: 260px;
+}
+
+html body .dash .dash-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.8rem;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+html body .dash .dash-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+html body .dash .dash-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 100%;
+    min-height: 160px;
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-empty i {
+    font-size: 1.6rem;
+    color: var(--dash-line);
+}
+
+html body .dash .dash-figure-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: var(--dash-muted);
+}
+
+/* Meter rows (learner profile) */
+html body .dash .dash-meter {
+    margin-bottom: 0.85rem;
+}
+
+html body .dash .dash-meter-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+}
+
+html body .dash .dash-meter-row span:last-child {
+    font-weight: 700;
+    color: var(--dash-text);
+    font-variant-numeric: tabular-nums;
+}
+
+html body .dash .dash-meter-track {
+    height: 8px;
+    border-radius: 4px;
+    background: #eef0f4;
+    overflow: hidden;
+}
+
+html body .dash .dash-meter-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--dash-blue);
+}
+
+html body .dash .dash-split {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #eef0f4;
+}
+
+html body .dash .dash-split span {
+    height: 100%;
+}
+
+/* ---------- Semester ring ---------- */
+html body .dash .dash-ring-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+html body .dash .dash-ring {
+    --pct: 0;
+    position: relative;
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--dash-blue) calc(var(--pct) * 1%), #eef0f4 0);
+}
+
+html body .dash .dash-ring::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: var(--dash-surface);
+}
+
+html body .dash .dash-ring span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-navy);
+    line-height: 1;
+}
+
+html body .dash .dash-ring small {
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-facts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85rem;
+}
+
+html body .dash .dash-facts li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px dashed var(--dash-line);
+}
+
+html body .dash .dash-facts li:last-child {
+    border-bottom: 0;
+}
+
+html body .dash .dash-facts span:first-child {
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-facts span:last-child {
+    font-weight: 600;
+    text-align: right;
+}
+
+/* ---------- Lists ---------- */
+html body .dash .dash-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+html body .dash .dash-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--dash-line);
+}
+
+html body .dash .dash-list li:last-child {
+    border-bottom: 0;
+}
+
+html body .dash .dash-list-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    background: rgba(6, 30, 78, 0.07);
+    color: var(--dash-navy);
+}
+
+html body .dash .dash-list-icon.is-alert {
+    background: rgba(196, 49, 75, 0.1);
+    color: var(--dash-red);
+}
+
+html body .dash .dash-list-icon.is-ok {
+    background: rgba(31, 122, 58, 0.1);
+    color: var(--dash-green);
+}
+
+html body .dash .dash-list-body {
+    flex: 1;
+    min-width: 0;
+}
+
+html body .dash .dash-list-title {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    overflow-wrap: anywhere;
+}
+
+html body .dash .dash-list-meta {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--dash-muted);
+}
+
+html body .dash .dash-count {
+    flex-shrink: 0;
+    min-width: 2rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    background: #eef0f4;
+    color: var(--dash-text);
+}
+
+html body .dash .dash-count.is-alert {
+    background: var(--dash-red);
+    color: #fff;
+}
+
+html body .dash .dash-badge {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: 0.1em;
+}
+
+html body .dash .dash-badge-high { background: rgba(196, 49, 75, 0.12); color: #9b2238; }
+html body .dash .dash-badge-medium { background: rgba(176, 143, 46, 0.16); color: #7a6118; }
+html body .dash .dash-badge-low { background: #eef0f4; color: var(--dash-muted); }
+
+/* ---------- Quick actions ---------- */
+html body .dash .dash-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+html body .dash .btn.dash-action {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid var(--dash-line);
+    background: #fbfaf6;
+    color: var(--dash-navy);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    white-space: normal;
+}
+
+html body .dash .btn.dash-action i {
+    font-size: 1.1rem;
+    color: var(--dash-gold);
+}
+
+html body .dash .btn.dash-action:hover,
+html body .dash .btn.dash-action:focus {
+    background: var(--dash-navy);
+    border-color: var(--dash-navy);
+    color: #fff;
+}
+
+html body .dash .btn.dash-action:hover i,
+html body .dash .btn.dash-action:focus i {
+    color: var(--au-gold-light, #e3d29a);
+}
+
+/* Visually hidden data tables that back each chart */
+html body .dash .dash-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    html body .dash .dash-hero {
+        padding: 1.35rem 1.1rem;
+    }
+
+    html body .dash .dash-hero h1 {
+        font-size: 1.4rem;
+    }
+
+    html body .dash .dash-ring-wrap {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    html body .dash .dash-ring {
+        margin: 0 auto;
+    }
+}

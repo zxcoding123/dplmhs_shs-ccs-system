@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../../../../database/connection.php'; // Ensure this sets up $pdo as a PDO object
 session_start();
+require_once __DIR__ . '/../../../includes/guard.php';
 
 // Enable error reporting for debugging (remove in production)
 ini_set('display_errors', 1);
@@ -12,9 +13,6 @@ if (!$pdo) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Debugging: Log POST data
-    file_put_contents('debug.log', "POST Data: " . print_r($_POST, true) . "\n", FILE_APPEND);
-
     // Retrieve and sanitize input data
     $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
     $password = password_hash($_POST['password'] ?? '', PASSWORD_DEFAULT);

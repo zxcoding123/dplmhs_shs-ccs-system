@@ -2256,4 +2256,3 @@ $stmt->execute();
 include('processes/server/alerts.php');
 ?>
 <!-- Floating Chat Widget -->
-<?php include(__DIR__ . '/../includes/floating-chat-widget.php'); ?>

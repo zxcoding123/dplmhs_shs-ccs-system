@@ -1,12 +1,13 @@
 <?php
 include __DIR__ . '/../../../../database/connection.php';
 session_start();
+require_once __DIR__ . '/../../../includes/guard.php';
 
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
 
     // Validate required form data
-    if (!isset($_POST['first_name'], $_POST['middle_name'], $_POST['last_name'], $_POST['email'], $_POST['gender'], $_POST['phone_number'], $_POST['class'])) {
+    if (!isset($_POST['first_name'], $_POST['middle_name'], $_POST['last_name'], $_POST['email'], $_POST['gender'], $_POST['phone_number'])) {
         $_SESSION['STATUS'] = "INVALID_DATA";
         header('Location: ../../../teacher_management.php');
         exit();
@@ -22,7 +23,8 @@ if (isset($_GET['id'])) {
     $password = !empty($_POST['password']) ? password_hash($_POST['password'], PASSWORD_BCRYPT) : null;
     $gender = $_POST['gender'];
     $phone_number = $_POST['phone_number'];
-    $classAdvising = $_POST['class'];  // This is the class advising array
+    // No section selected (or the select is disabled) means "advises nothing"
+    $classAdvising = !empty($_POST['class']) ? (array) $_POST['class'] : ['None'];
 
     try {
         // Step 1: Check if the email already exists for another staff member

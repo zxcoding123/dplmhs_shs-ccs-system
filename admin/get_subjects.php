@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/guard.php';
 // Assuming you already have the database connection set up.
 require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 

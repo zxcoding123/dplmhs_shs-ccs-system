@@ -1,12 +1,9 @@
 <?php
 session_start();
-if (!isset($_SESSION['admin_id'])) {
-    $_SESSION['STATUS'] = "ADMIN_NOT_LOGGED_IN";
-    header("Location: ../login/index.php");
-    exit;
-}
-
 include __DIR__ . '/../database/connection.php';
+require '../app/helpers/auth.php';
+requireRole('admin');
+require_once __DIR__ . '/includes/ui.php';
 require_once __DIR__ . '/../includes/gallery-store.php';
 
 au_gallery_ensure_table($pdo);
@@ -29,12 +26,12 @@ function g_e($value)
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>DPLMHS-SHS | Gallery Management</title>
+    <title>Gallery | DPLMHS-SHS Admin Portal</title>
     <?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="css/app.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="<?= admin_asset('css/admin-ui.css') ?>" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -189,7 +186,7 @@ function g_e($value)
             color: #6c757d;
         }
 
-        .empty-gallery i {
+        .empty-gallery > i {
             font-size: 3rem;
             color: #c2a74d;
         }
@@ -212,7 +209,7 @@ function g_e($value)
                     <i class="hamburger align-self-center"></i>
                 </a>
                 <img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
-                <span class="text-white"><b>DPLMHS</b> - Gallery Management</span>
+                <span class="text-white d-none d-md-inline"><b>DPLMHS</b> - Student Management System</span>
                 <div class="navbar-collapse collapse">
                     <?php include('top-bar.php'); ?>
                 </div>
@@ -220,45 +217,19 @@ function g_e($value)
 
             <main class="content">
                 <div class="container-fluid p-0">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="d-flex align-items-center">
-                                <h5 class="h5 mb-3"><a href="index.php" class="nav-ham-link">Home</a> /
-                                    <span>Gallery Management</span>
-                                </h5>
-                                <div class="ms-auto" aria-hidden="true">
-                                    <img src="external/svgs/undraw_favorite_gb6n.svg" class="small-picture img-fluid">
-                                </div>
-                            </div>
+                    <?php admin_page_header('Gallery', 'Photos shown in the public gallery and on the homepage', 'bi-images',
+                        '<a href="../gallery.php" target="_blank" class="btn btn-ui-ghost"><i class="bi bi-box-arrow-up-right"></i> View public gallery</a>
+                         <button type="button" class="btn btn-ui-gold" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="bi bi-cloud-arrow-up"></i> Upload photos</button>'); ?>
 
-                            <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
-                                <h3 class="mb-0">Photo Gallery</h3>
-                                <div class="ms-auto d-flex gap-2">
-                                    <a href="../gallery.php" target="_blank" class="btn btn-outline-secondary">
-                                        <i class="bi bi-box-arrow-up-right"></i> View Public Gallery
-                                    </a>
-                                    <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                                        <i class="bi bi-cloud-arrow-up"></i> Upload Photos
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    <?php admin_stat_tiles([
+                        ['label' => 'Photos', 'value' => count($photos), 'icon' => 'bi-images'],
+                        ['label' => 'Published', 'value' => $published_count, 'icon' => 'bi-eye', 'tone' => 'ok'],
+                        ['label' => 'Hidden', 'value' => count($photos) - $published_count, 'icon' => 'bi-eye-slash', 'tone' => 'muted'],
+                        ['label' => 'Albums', 'value' => count($albums), 'icon' => 'bi-folder2'],
+                    ]); ?>
 
-                        <div class="card-body">
-                            <div class="row g-3 mb-4">
-                                <div class="col-6 col-md-3">
-                                    <div class="gallery-stat"><div class="value"><?= count($photos) ?></div><div class="label">Total Photos</div></div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="gallery-stat"><div class="value"><?= $published_count ?></div><div class="label">Published</div></div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="gallery-stat"><div class="value"><?= count($photos) - $published_count ?></div><div class="label">Hidden</div></div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="gallery-stat"><div class="value"><?= count($albums) ?></div><div class="label">Albums</div></div>
-                                </div>
-                            </div>
+                    <div class="ui-panel">
+                        <div>
 
                             <?php if (!$photos): ?>
                                 <div class="empty-gallery">
@@ -472,12 +443,8 @@ function g_e($value)
     <form method="POST" action="processes/admin/gallery/delete.php" id="deleteForm" class="d-none"></form>
 
     <script src="js/app.js"></script>
+    <script src="<?= admin_asset('js/admin-ui.js') ?>"></script>
     <script>
-        function getTime() {
-            const el = document.querySelector("#currentTime");
-            if (el) el.textContent = "The current date and time is: " + new Date().toLocaleString();
-        }
-        setInterval(getTime, 1000);
 
         // ----- Upload: drag & drop + previews -----
         (function () {
@@ -633,7 +600,6 @@ function g_e($value)
     </script>
 
     <!-- Floating Chat Widget -->
-    <?php include(__DIR__ . '/../includes/floating-chat-widget.php'); ?>
 
     <?php
     $gallery_alerts = [
