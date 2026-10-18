@@ -45,7 +45,7 @@ include __DIR__ . '/includes/site-header.php';
                 </h2>
                 <div id="faq2" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
                     <div class="accordion-body">
-                        Email us at <a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a> or call <strong>(062) 000-0000</strong>, Monday to Friday, 8:00 AM – 5:00 PM.
+                        Email us at <a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a> or call <strong>(062) 975 1294</strong>, Monday to Friday, 8:00 AM – 5:00 PM.
                     </div>
                 </div>
             </div>

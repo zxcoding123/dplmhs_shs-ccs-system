@@ -93,8 +93,6 @@
         })();
     </script>
     <?= $page_scripts ?? '' ?>
-
-    <?php include __DIR__ . '/floating-chat-widget.php'; ?>
 </body>
 
 </html>

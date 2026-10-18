@@ -306,7 +306,7 @@ include __DIR__ . '/includes/site-header.php';
                 </div>
                 <div class="au-contact-item">
                     <i class="bi bi-telephone"></i>
-                    <div><strong>Phone</strong>(062) 000-0000</div>
+                    <div><strong>Phone</strong>(062) 975 1294</div>
                 </div>
                 <div class="au-contact-item">
                     <i class="bi bi-clock"></i>

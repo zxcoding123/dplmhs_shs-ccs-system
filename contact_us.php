@@ -35,7 +35,7 @@ include __DIR__ . '/includes/site-header.php';
                 <div class="au-card text-center">
                     <i class="bi bi-telephone au-card-icon"></i>
                     <h3>Call Us</h3>
-                    <p class="mb-0">(062) 000-0000<br>Monday – Friday, 8:00 AM – 5:00 PM</p>
+                    <p class="mb-0">(062) 975 1294<br>Monday – Friday, 8:00 AM – 5:00 PM</p>
                 </div>
             </div>
             <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
