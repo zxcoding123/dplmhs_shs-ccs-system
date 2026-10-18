@@ -95,7 +95,8 @@ try {
 
 <?php
 $profileInitials = strtoupper(substr((string) $firstName, 0, 1) . substr((string) $lastName, 0, 1));
-$departmentOptions = ['Department of Information Technology', 'Department of Computer Science'];
+require_once __DIR__ . '/../includes/academic.php';
+$departmentOptions = array_keys(shs_strands()); // teachers are grouped by strand
 if (!empty($department) && !in_array($department, $departmentOptions, true)) {
     // Keep a department set elsewhere (e.g. by an admin) selectable
     array_unshift($departmentOptions, $department);
@@ -153,10 +154,10 @@ $genderOptions = ['Male', 'Female', 'Other'];
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="profileDepartment" class="form-label">Department</label>
+                            <label for="profileDepartment" class="form-label">Strand</label>
                             <select class="form-select" id="profileDepartment" name="department" required>
                                 <?php foreach ($departmentOptions as $option): ?>
-                                    <option value="<?php echo htmlspecialchars($option); ?>" <?php echo ($department === $option) ? 'selected' : ''; ?>><?php echo htmlspecialchars($option); ?></option>
+                                    <option value="<?php echo htmlspecialchars($option); ?>" <?php echo ($department === $option) ? 'selected' : ''; ?>><?php echo htmlspecialchars(shs_strand_label($option)); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

@@ -41,6 +41,11 @@ if (isset($_SESSION['admin_id'], $pdo)) {
                     <i class="bi bi-person-lines-fill align-middle"></i> <span class="align-middle">Advisers &amp; Teachers</span>
                 </a>
             </li>
+            <li class="sidebar-item <?php echo ($current_page == 'section_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="section_management.php">
+                    <i class="bi bi-grid-3x3-gap align-middle"></i> <span class="align-middle">Sections</span>
+                </a>
+            </li>
             <li class="sidebar-item <?php echo ($current_page == 'class_management.php') ? 'active' : ''; ?>">
                 <a class="sidebar-link" href="class_management.php">
                     <i class="bi bi-people align-middle"></i> <span class="align-middle">Class Management</span>

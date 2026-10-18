@@ -4,10 +4,11 @@ include __DIR__ . '/../database/connection.php';
 require '../app/helpers/auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/ui.php';
+require_once __DIR__ . '/../includes/academic.php';
 
 $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-$courses = ['BSIT' => 'Bachelor of Science in Information Technology', 'BSCS' => 'Bachelor of Science in Computer Science'];
-$yearLevels = ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B'];
+$courses = shs_strands();
+$yearLevels = shs_section_suffixes(); // grade + section, e.g. 11A
 
 $subjects = $pdo->query("SELECT * FROM subjects ORDER BY is_archived, name")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -137,12 +138,12 @@ function time_label(string $time): string
                             <div class="tab-pane fade show active" id="tabList" role="tabpanel">
                                 <?php if ($subjects): ?>
                                     <div class="ui-filters mb-3">
-                                        <select class="form-select form-select-sm" data-col-filter="3" aria-label="Filter by course">
-                                            <option value="">All courses</option>
+                                        <select class="form-select form-select-sm" data-col-filter="3" aria-label="Filter by strand">
+                                            <option value="">All strands</option>
                                             <?php foreach ($usedCourses as $c): ?><option value="<?= admin_e($c) ?>"><?= admin_e($c) ?></option><?php endforeach; ?>
                                         </select>
-                                        <select class="form-select form-select-sm" data-col-filter="4" aria-label="Filter by year level">
-                                            <option value="">All year levels</option>
+                                        <select class="form-select form-select-sm" data-col-filter="4" aria-label="Filter by grade and section">
+                                            <option value="">All grades &amp; sections</option>
                                             <?php foreach ($usedYears as $y): ?><option value="<?= admin_e($y) ?>"><?= admin_e($y) ?></option><?php endforeach; ?>
                                         </select>
                                         <select class="form-select form-select-sm" data-col-filter="1" aria-label="Filter by type">
@@ -157,8 +158,8 @@ function time_label(string $time): string
                                                 <th>Subject</th>
                                                 <th>Type</th>
                                                 <th>Schedule</th>
-                                                <th>Course</th>
-                                                <th>Year level</th>
+                                                <th>Strand</th>
+                                                <th>Grade &amp; section</th>
                                                 <th>Classes</th>
                                                 <th>Status</th>
                                                 <th>Actions</th>
@@ -268,9 +269,9 @@ function time_label(string $time): string
                 </select>
             </div>
             <div class="col-md-4">
-                <label for="<?= $prefix ?>Course" class="form-label">Course</label>
+                <label for="<?= $prefix ?>Course" class="form-label">Strand</label>
                 <select class="form-select" id="<?= $prefix ?>Course" name="course" required>
-                    <option value="" disabled <?= $course ? '' : 'selected' ?>>Select a course</option>
+                    <option value="" disabled <?= $course ? '' : 'selected' ?>>Select a strand</option>
                     <?php if ($course && !isset($courses[$course])): ?><option value="<?= admin_e($course) ?>" selected><?= admin_e($course) ?></option><?php endif; ?>
                     <?php foreach ($courses as $value => $label): ?>
                         <option value="<?= $value ?>" <?= $course === $value ? 'selected' : '' ?>><?= $value ?> — <?= $label ?></option>
@@ -278,11 +279,12 @@ function time_label(string $time): string
                 </select>
             </div>
             <div class="col-md-4">
-                <label for="<?= $prefix ?>Year" class="form-label">Year level</label>
+                <label for="<?= $prefix ?>Year" class="form-label">Grade &amp; section</label>
                 <select class="form-select" id="<?= $prefix ?>Year" name="year_level" required>
-                    <option value="" disabled <?= $year ? '' : 'selected' ?>>Select a year level</option>
+                    <option value="" disabled <?= $year ? '' : 'selected' ?>>Select grade &amp; section</option>
+                    <?php if ($year && !in_array($year, $yearLevels, true)): ?><option value="<?= admin_e($year) ?>" selected><?= admin_e($year) ?></option><?php endif; ?>
                     <?php foreach ($yearLevels as $y): ?>
-                        <option value="<?= $y ?>" <?= $year === $y ? 'selected' : '' ?>><?= $y ?></option>
+                        <option value="<?= $y ?>" <?= $year === $y ? 'selected' : '' ?>><?= admin_e(shs_suffix_label($y)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -352,7 +354,7 @@ function time_label(string $time): string
                             <dd><?= admin_e($s['code']) ?></dd>
                             <dt>Type</dt>
                             <dd><span class="ui-tag"><?= admin_e($s['type']) ?></span></dd>
-                            <dt>Course &amp; year</dt>
+                            <dt>Strand &amp; section</dt>
                             <dd><?= admin_e($s['course'] . ' · ' . $s['year_level']) ?></dd>
                             <dt>Semester</dt>
                             <dd><?= admin_e($s['semester']) ?></dd>

@@ -170,32 +170,18 @@ if (isset($_SESSION['student_id'])) {
 
                     <!-- Course Year Field -->
                     <div class="mb-3">
-                        <label for="course_year" class="form-label bold">Course & Year</label>
+                        <?php require_once __DIR__ . '/../includes/academic.php'; ?>
+                        <label for="course_year" class="form-label bold">Strand & Grade</label>
                         <select class="form-select" id="course_year" name="course_year" required>
-                            <option value="" disabled <?php echo empty($prevStudentData['course']) || empty($prevStudentData['year_level']) ? 'selected' : ''; ?>>Select Course & Year
+                            <option value="" disabled <?php echo empty($prevStudentData['course']) || empty($prevStudentData['year_level']) ? 'selected' : ''; ?>>Select Strand & Grade
                             </option>
-                            <!-- Bachelor of Science in Information Technology (BSIT) -->
-                            <optgroup label="Bachelor of Science in Information Technology (BSIT)">
-                                <option value="BSIT-1" <?php echo ($prevStudentData['course'] == 'BSIT' && $prevStudentData['year_level'] == '1st Year') ? 'selected' : ''; ?>>BSIT - 1st Year
-                                </option>
-                                <option value="BSIT-2" <?php echo ($prevStudentData['course'] == 'BSIT' && $prevStudentData['year_level'] == '2nd Year') ? 'selected' : ''; ?>>BSIT - 2nd Year
-                                </option>
-                                <option value="BSIT-3" <?php echo ($prevStudentData['course'] == 'BSIT' && $prevStudentData['year_level'] == '3rd Year') ? 'selected' : ''; ?>>BSIT - 3rd Year
-                                </option>
-                                <option value="BSIT-4" <?php echo ($prevStudentData['course'] == 'BSIT' && $prevStudentData['year_level'] == '4th Year') ? 'selected' : ''; ?>>BSIT - 4th Year
-                                </option>
-                            </optgroup>
-                            <!-- Bachelor of Science in Computer Science (BSCS) -->
-                            <optgroup label="Bachelor of Science in Computer Science (BSCS)">
-                                <option value="BSCS-1" <?php echo ($prevStudentData['course'] == 'BSCS' && $prevStudentData['year_level'] == '1st Year') ? 'selected' : ''; ?>>BSCS - 1st Year
-                                </option>
-                                <option value="BSCS-2" <?php echo ($prevStudentData['course'] == 'BSCS' && $prevStudentData['year_level'] == '2nd Year') ? 'selected' : ''; ?>>BSCS - 2nd Year
-                                </option>
-                                <option value="BSCS-3" <?php echo ($prevStudentData['course'] == 'BSCS' && $prevStudentData['year_level'] == '3rd Year') ? 'selected' : ''; ?>>BSCS - 3rd Year
-                                </option>
-                                <option value="BSCS-4" <?php echo ($prevStudentData['course'] == 'BSCS' && $prevStudentData['year_level'] == '4th Year') ? 'selected' : ''; ?>>BSCS - 4th Year
-                                </option>
-                            </optgroup>
+                            <?php foreach (shs_strands() as $strandCode => $strandName): ?>
+                                <optgroup label="<?php echo htmlspecialchars(shs_strand_label($strandCode)); ?>">
+                                    <?php foreach (shs_grades() as $grade): ?>
+                                        <option value="<?php echo $strandCode . '-' . $grade; ?>" <?php echo (($prevStudentData['course'] ?? '') == $strandCode && ($prevStudentData['year_level'] ?? '') == shs_grade_label($grade)) ? 'selected' : ''; ?>><?php echo $strandCode . ' - ' . shs_grade_label($grade); ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 

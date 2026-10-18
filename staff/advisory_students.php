@@ -7,8 +7,9 @@ if (!isset($_SESSION['teacher_id'])) {
 }
 
 include __DIR__ . '/../database/connection.php';
+require_once __DIR__ . '/../includes/academic.php';
 
-$class_name = $_GET['class_id'] ?? '';            // e.g. "BSIT-1A"
+$class_name = $_GET['class_id'] ?? '';            // e.g. "STEM-11A"
 $teacher    = $_SESSION['full_name'];             // matches staff_advising.fullName
 
 
@@ -34,21 +35,21 @@ if (!$staff_advising) {                  // Security guard‑rail
 $staff_advising_id = $staff_advising['id'];
 
 
-if (!preg_match('/^(?<course>[A-Z]+)-(?<year>[1-4])/', $class_name, $m)) {
+$section = shs_parse_section($class_name);
+if (!$section) {
     throw new RuntimeException("Bad class code: $class_name");
 }
-$course   = $m['course'];      // "BSIT"
-$year_num = $m['year'];        // "1"
-
-$yearMap = ['1' => '1st Year', '2' => '2nd Year', '3' => '3rd Year', '4' => '4th Year'];
-$year_level = $yearMap[$year_num];       // adjust if DB stores digits
+$course     = $section['strand'];       // "STEM"
+$year_level = $section['grade_level'];  // "Grade 11"
 
 
 $students_stmt = $pdo->prepare("
-    SELECT s.*
+    SELECT s.*, u.email
     FROM students s
     JOIN students_advising sa
       ON sa.student_id = s.id
+    LEFT JOIN users u
+      ON u.id = s.user_id
     WHERE sa.staff_advising_id = :sa_id
     ORDER BY s.last_name, s.first_name
 ");
@@ -75,7 +76,13 @@ $avail_stmt->execute([
 ]);
 $available_students = $avail_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$referrer = $_SERVER['HTTP_REFERER'];
+// One-time data from processes/teachers/advisory/create_student.php
+$newStudentForm = $_SESSION['new_student_form'] ?? null;          // refill after a failed attempt
+$newStudentCredentials = $_SESSION['new_student_credentials'] ?? null; // login details after success
+unset($_SESSION['new_student_form'], $_SESSION['new_student_credentials']);
+$old = function (string $key) use ($newStudentForm) {
+    return htmlspecialchars((string) ($newStudentForm[$key] ?? ''));
+};
 ?>
 
 <!DOCTYPE html>
@@ -208,9 +215,14 @@ $referrer = $_SERVER['HTTP_REFERER'];
                                 style="    background-color: #10177a;
         color: white;">
                                 <h6 class="m-0 font-weight-bold text-white">Class Students</h6>
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                                    <i class="bi bi-plus-circle"></i> Add Student
-                                </button>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#registerStudentModal">
+                                        <i class="bi bi-person-plus"></i> Register New Student
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                                        <i class="bi bi-plus-circle"></i> Add Existing Student
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -233,14 +245,14 @@ $referrer = $_SERVER['HTTP_REFERER'];
                                                                 class="student-photo"
                                                                 alt="<?= htmlspecialchars($student['first_name'] . ' ' . $student['last_name']) ?>">
                                                         <?php else: ?>
-                                                            <img src="external/img/dp_logo.avif"
+                                                            <img src="../external/img/dp_logo.avif"
                                                                 class="student-photo"
                                                                 alt="Default student photo">
                                                         <?php endif; ?>
                                                     </td>
                                                     <td><?= htmlspecialchars($student['student_id']) ?></td>
                                                     <td><?= htmlspecialchars($student['last_name']) ?>, <?= htmlspecialchars($student['first_name']) ?> <?= htmlspecialchars($student['middle_name']) ?></td>
-                                                    <td><?= htmlspecialchars($student['email']) ?></td>
+                                                    <td><?= htmlspecialchars($student['email'] ?? '') ?></td>
                                                     <td>
                                                         <button class="btn btn-info btn-sm view-student-profile"
                                                             data-id="<?= $student['id'] ?>"
@@ -316,6 +328,97 @@ $referrer = $_SERVER['HTTP_REFERER'];
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+
+        <!-- Register New Student Modal -->
+        <div class="modal fade" id="registerStudentModal" tabindex="-1" aria-labelledby="registerStudentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <form class="modal-content au-profile" id="registerStudentForm" action="processes/teachers/advisory/create_student.php" method="POST" autocomplete="off">
+                    <input type="hidden" name="class_name" value="<?= htmlspecialchars($class_name) ?>">
+
+                    <div class="au-profile-banner">
+                        <button type="button" class="btn-close btn-close-white au-profile-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <span class="au-profile-avatar au-profile-initials" aria-hidden="true"><i class="bi bi-person-plus"></i></span>
+                        <h5 class="au-profile-name" id="registerStudentModalLabel">Register New Student</h5>
+                        <div class="au-profile-tags">
+                            <span class="au-portal-role"><?= htmlspecialchars($class_name) ?></span>
+                            <span class="au-profile-status is-active"><?= htmlspecialchars($course . ' · ' . $year_level) ?></span>
+                        </div>
+                        <p class="au-profile-hint mt-2">The student is added to your advisory class and can log in right away.</p>
+                    </div>
+
+                    <div class="modal-body au-profile-body">
+                        <fieldset class="au-profile-section">
+                            <legend><i class="bi bi-person" aria-hidden="true"></i> Student Information</legend>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="newStudentFirstName" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="newStudentFirstName" name="first_name" value="<?= $old('first_name') ?>" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="newStudentMiddleName" class="form-label">Middle Name <span class="text-muted fw-normal">(optional)</span></label>
+                                    <input type="text" class="form-control" id="newStudentMiddleName" name="middle_name" value="<?= $old('middle_name') ?>">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="newStudentLastName" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="newStudentLastName" name="last_name" value="<?= $old('last_name') ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="newStudentId" class="form-label">Student ID</label>
+                                    <input type="text" class="form-control" id="newStudentId" name="student_id" value="<?= $old('student_id') ?>"
+                                        inputmode="numeric" pattern="\d{1,9}" maxlength="9" placeholder="e.g. 202312345" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="newStudentGender" class="form-label">Gender</label>
+                                    <select class="form-select" id="newStudentGender" name="gender" required>
+                                        <option value="" disabled <?= empty($newStudentForm['gender']) ? 'selected' : '' ?>>Select gender</option>
+                                        <?php foreach (['Male', 'Female', 'Others'] as $option): ?>
+                                            <option value="<?= $option ?>" <?= ($newStudentForm['gender'] ?? '') === $option ? 'selected' : '' ?>><?= $option ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Course</label>
+                                    <input type="text" class="form-control" value="<?= htmlspecialchars($course) ?>" disabled>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Year Level</label>
+                                    <input type="text" class="form-control" value="<?= htmlspecialchars($year_level) ?>" disabled>
+                                </div>
+                            </div>
+                            <div class="form-text">Course and year level come from your section (<?= htmlspecialchars($class_name) ?>).</div>
+                        </fieldset>
+
+                        <fieldset class="au-profile-section">
+                            <legend><i class="bi bi-key" aria-hidden="true"></i> Login Details</legend>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="newStudentEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="newStudentEmail" name="email" value="<?= $old('email') ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="newStudentPassword" class="form-label">Starting Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="newStudentPassword" name="password" minlength="8" autocomplete="new-password" required>
+                                        <button type="button" class="btn btn-outline-secondary" id="newStudentPasswordToggle" aria-label="Show password">
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="newStudentPasswordGenerate">
+                                            <i class="bi bi-shuffle" aria-hidden="true"></i> Generate
+                                        </button>
+                                    </div>
+                                    <div class="form-text">At least 8 characters. You'll see it once after saving so you can give it to the student.</div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div class="modal-footer au-profile-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-csms"><i class="bi bi-person-check"></i> Register Student</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -473,6 +576,78 @@ $referrer = $_SERVER['HTTP_REFERER'];
         `);
                 });
             });
+        </script>
+
+        <script>
+            (function () {
+                var password = document.getElementById('newStudentPassword');
+                var toggle = document.getElementById('newStudentPasswordToggle');
+
+                function showPassword(show) {
+                    password.type = show ? 'text' : 'password';
+                    toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                    toggle.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+                }
+
+                toggle.addEventListener('click', function () {
+                    showPassword(password.type === 'password');
+                });
+
+                // Readable random password (no look-alike characters such as 0/O or 1/l)
+                document.getElementById('newStudentPasswordGenerate').addEventListener('click', function () {
+                    var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+                    var values = new Uint32Array(10);
+                    crypto.getRandomValues(values);
+                    password.value = Array.from(values, function (v) { return chars[v % chars.length]; }).join('');
+                    showPassword(true);
+                });
+
+                document.getElementById('registerStudentModal').addEventListener('hidden.bs.modal', function () {
+                    showPassword(false);
+                });
+
+                <?php if ($newStudentForm): ?>
+                // A previous attempt failed: reopen the form with what was typed
+                document.addEventListener('DOMContentLoaded', function () {
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('registerStudentModal')).show();
+                });
+                <?php endif; ?>
+
+                <?php if ($newStudentCredentials): ?>
+                <?php $jsFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT; ?>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var c = {
+                        name: <?= json_encode($newStudentCredentials['name'], $jsFlags) ?>,
+                        email: <?= json_encode($newStudentCredentials['email'], $jsFlags) ?>,
+                        password: <?= json_encode($newStudentCredentials['password'], $jsFlags) ?>
+                    };
+                    var esc = function (s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Student Registered',
+                        html: '<p><strong>' + esc(c.name) + '</strong> was added to your advisory class. Give them these login details:</p>' +
+                            '<table class="table table-sm text-start mb-2"><tr><th>Email</th><td>' + esc(c.email) + '</td></tr>' +
+                            '<tr><th>Password</th><td><code>' + esc(c.password) + '</code></td></tr></table>' +
+                            '<small class="text-muted">The password won\'t be shown again.</small>',
+                        showDenyButton: true,
+                        denyButtonText: '<i class="bi bi-clipboard"></i> Copy details',
+                        denyButtonColor: '#6c757d',
+                        confirmButtonText: 'Done',
+                        confirmButtonColor: '#061E4E',
+                        preDeny: function () {
+                            var text = 'Email: ' + c.email + '\nPassword: ' + c.password;
+                            return navigator.clipboard.writeText(text).then(function () {
+                                Swal.showValidationMessage('Copied to clipboard');
+                                return false; // keep the dialog open
+                            }, function () {
+                                Swal.showValidationMessage('Copy failed, please copy them manually');
+                                return false;
+                            });
+                        }
+                    });
+                });
+                <?php endif; ?>
+            })();
         </script>
 
         <script>

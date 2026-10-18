@@ -5,11 +5,10 @@ require '../app/helpers/auth.php'; // adjust path to your file
 requireRole('admin'); // ensures only admins can access
 require_once __DIR__ . '/includes/ui.php';
 
-// Advisory sections each department can be assigned
-$departmentClasses = [
-	'Department of Information Technology' => ['BSIT-1A', 'BSIT-1B', 'BSIT-2A', 'BSIT-2B', 'BSIT-3A', 'BSIT-3B', 'BSIT-4A', 'BSIT-4B'],
-	'Department of Computer Science' => ['BSCS-1A', 'BSCS-1B', 'BSCS-2A', 'BSCS-2B', 'BSCS-3A', 'BSCS-3B', 'BSCS-4A', 'BSCS-4B'],
-];
+require_once __DIR__ . '/../includes/academic.php';
+
+// Advisory sections each strand can be assigned (stored in staff_accounts.department)
+$departmentClasses = shs_sections();
 
 $teachers = $pdo->query("SELECT * FROM staff_accounts ORDER BY last_name, first_name")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -98,8 +97,8 @@ function teacher_name(array $t): string
 								</div>
 								<?php if ($departments): ?>
 									<div class="ui-filters">
-										<select class="form-select form-select-sm" id="departmentFilter" aria-label="Filter by department">
-											<option value="">All departments</option>
+										<select class="form-select form-select-sm" id="departmentFilter" aria-label="Filter by strand">
+											<option value="">All strands</option>
 											<?php foreach ($departments as $dept): ?><option value="<?= admin_e($dept) ?>"><?= admin_e($dept) ?></option><?php endforeach; ?>
 										</select>
 									</div>
@@ -109,7 +108,7 @@ function teacher_name(array $t): string
 								<thead>
 									<tr>
 										<th>Teacher</th>
-										<th>Department</th>
+										<th>Strand</th>
 										<th>Advisory</th>
 										<th>Classes</th>
 										<th>Phone</th>
@@ -214,13 +213,13 @@ function teacher_name(array $t): string
 						</div>
 					</div>
 
-					<p class="ui-section-label">Department &amp; advisory</p>
+					<p class="ui-section-label">Strand &amp; advisory</p>
 					<div class="row g-3">
 						<div class="col-md-6">
-							<label for="department-new" class="form-label">Department</label>
+							<label for="department-new" class="form-label">Strand</label>
 							<select class="form-select" name="department" id="department-new" data-dept-select="#class-new" required>
 								<option value="None">None</option>
-								<?php foreach (array_keys($departmentClasses) as $dept): ?><option value="<?= admin_e($dept) ?>"><?= admin_e($dept) ?></option><?php endforeach; ?>
+								<?php foreach (array_keys($departmentClasses) as $dept): ?><option value="<?= admin_e($dept) ?>"><?= admin_e(shs_strand_label($dept)) ?></option><?php endforeach; ?>
 							</select>
 						</div>
 						<div class="col-md-6">
@@ -298,14 +297,14 @@ function teacher_name(array $t): string
 							</div>
 						</div>
 
-						<p class="ui-section-label">Department &amp; advisory</p>
+						<p class="ui-section-label">Strand &amp; advisory</p>
 						<div class="row g-3">
 							<div class="col-md-6">
-								<label for="department-<?= $id ?>" class="form-label">Department</label>
+								<label for="department-<?= $id ?>" class="form-label">Strand</label>
 								<select class="form-select" name="department" id="department-<?= $id ?>" data-dept-select="#class-<?= $id ?>" required>
 									<option value="None" <?= !isset($departmentClasses[$t['department']]) ? 'selected' : '' ?>>None</option>
 									<?php foreach (array_keys($departmentClasses) as $dept): ?>
-										<option value="<?= admin_e($dept) ?>" <?= $t['department'] === $dept ? 'selected' : '' ?>><?= admin_e($dept) ?></option>
+										<option value="<?= admin_e($dept) ?>" <?= $t['department'] === $dept ? 'selected' : '' ?>><?= admin_e(shs_strand_label($dept)) ?></option>
 									<?php endforeach; ?>
 								</select>
 							</div>
@@ -355,7 +354,7 @@ function teacher_name(array $t): string
 							<dd><?= admin_e($t['phone_number'] ?: '—') ?></dd>
 							<dt>Gender</dt>
 							<dd><?= admin_e($t['gender'] ?: '—') ?></dd>
-							<dt>Department</dt>
+							<dt>Strand</dt>
 							<dd><?= admin_e($t['department'] && $t['department'] !== 'None' ? $t['department'] : '—') ?></dd>
 							<dt>Classes taught</dt>
 							<dd><?= $teaching[$t['fullName']] ?? 0 ?> active class<?= ($teaching[$t['fullName']] ?? 0) === 1 ? '' : 'es' ?></dd>

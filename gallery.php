@@ -23,7 +23,7 @@ include __DIR__ . '/includes/site-header.php';
         </nav>
         <span class="au-eyebrow">Campus Life</span>
         <h1>Photo Gallery</h1>
-        <p>Scenes from our classrooms, laboratories, events and celebrations across the College.</p>
+        <p>Scenes from our classrooms, laboratories, events and celebrations across the school.</p>
     </div>
 </section>
 

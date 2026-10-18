@@ -1169,18 +1169,9 @@ $stmt->execute();
 							$year_level = $_SESSION['year_level'];
 							$student_id = $_SESSION['user_id'];
 
-							function yearLabelToNumber(string $year): string
-							{
-								return match ($year) {
-									'1st Year' => '1',
-									'2nd Year' => '2',
-									'3rd Year' => '3',
-									'4th Year' => '4',
-									default => 'Unknown'
-								};
-							}
-
-							$year_level_mapped = yearLabelToNumber($year_level);
+							require_once __DIR__ . '/../includes/academic.php';
+							// "Grade 11" -> "11", so STEM + Grade 11 matches STEM-11A, STEM-11B, ...
+							$year_level_mapped = shs_grade_number((string) $year_level) ?? 'Unknown';
 
 							$classPattern = $course . '-' . $year_level_mapped . '%';
 

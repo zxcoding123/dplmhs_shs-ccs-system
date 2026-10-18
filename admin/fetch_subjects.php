@@ -8,8 +8,8 @@ if (isset($_GET['class'])) {
     // Split the class into course and year_level
     $parts = explode('-', $selectedClass);
     if (count($parts) === 2) {
-        $course = $parts[0]; // BSIT or BSCS
-        $year_level = $parts[1]; // 1A, 2B, etc.
+        $course = $parts[0]; // strand, e.g. STEM
+        $year_level = $parts[1]; // grade + section, e.g. 11A
 
         // Fetch subjects based on the parsed course and year_level
         $stmt = $pdo->prepare("SELECT id, name, code, type FROM subjects WHERE course = :course AND year_level = :year_level");
@@ -25,7 +25,7 @@ if (isset($_GET['class'])) {
         echo json_encode($subjects);
     } else {
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid class format. Expected format: Course-YearLevel (e.g., BSIT-1A).']);
+        echo json_encode(['error' => 'Invalid class format. Expected format: Strand-GradeSection (e.g., STEM-11A).']);
     }
 } else {
     http_response_code(400);

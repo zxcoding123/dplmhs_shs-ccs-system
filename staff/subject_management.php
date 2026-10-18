@@ -688,26 +688,12 @@ WHERE teacher = :teacher_name AND status != 'pending';
                             <label for="class" class="form-label bold">Select Class:</label>
                             <select class="form-select" name="class" id="classSelect" required>
                                 <option selected disabled>Select a class</option>
-                                <optgroup label="Department of Information Technology">
-                                    <option value="BSIT-1A">BSIT - 1A</option>
-                                    <option value="BSIT-1B">BSIT - 1B</option>
-                                    <option value="BSIT-2A">BSIT - 2A</option>
-                                    <option value="BSIT-2B">BSIT - 2B</option>
-                                    <option value="BSIT-3A">BSIT - 3A</option>
-                                    <option value="BSIT-3B">BSIT - 3B</option>
-                                    <option value="BSIT-4A">BSIT - 4A</option>
-                                    <option value="BSIT-4B">BSIT - 4B</option>
-                                </optgroup>
-                                <optgroup label="Department of Computer Science">
-                                    <option value="BSCS-1A">BSCS - 1A</option>
-                                    <option value="BSCS-1B">BSCS - 1B</option>
-                                    <option value="BSCS-2A">BSCS - 2A</option>
-                                    <option value="BSCS-2B">BSCS - 2B</option>
-                                    <option value="BSCS-3A">BSCS - 3A</option>
-                                    <option value="BSCS-3B">BSCS - 3B</option>
-                                    <option value="BSCS-4A">BSCS - 4A</option>
-                                    <option value="BSCS-4B">BSCS - 4B</option>
-                                </optgroup>
+                                <?php require_once __DIR__ . '/../includes/academic.php'; ?>
+                                <?php foreach (shs_sections() as $strand => $list): ?>
+                                    <optgroup label="<?= htmlspecialchars(shs_strand_label($strand)) ?>">
+                                        <?php foreach ($list as $sec): ?><option value="<?= $sec ?>"><?= str_replace('-', ' - ', $sec) ?></option><?php endforeach; ?>
+                                    </optgroup>
+                                <?php endforeach; ?>
                             </select>
                         </div>
 
@@ -805,7 +791,7 @@ WHERE teacher = :teacher_name AND status != 'pending';
                         <div class="mb-3">
                             <label for="classSelect" class="form-label">Select Class:</label>
                             <select class="form-select" name="class" required>
-                                <option value="BSIT-1A">BSIT-1A - Introduction to IT</option>
+                                <option value="" selected disabled>Select a class</option>
                                 <!-- More options dynamically loaded -->
                             </select>
                         </div>

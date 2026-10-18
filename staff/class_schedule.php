@@ -20,21 +20,17 @@ $advisory_classes = $advisory_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Build student counts by course and year level
 $student_counts = [];
-$yearMap = [
-    '1' => '1st Year',
-    '2' => '2nd Year',
-    '3' => '3rd Year',
-    '4' => '4th Year',
-];
+require_once __DIR__ . '/../includes/academic.php';
+$yearMap = array_combine(shs_grades(), shs_grade_levels()); // '11' => 'Grade 11'
 
 foreach ($advisory_classes as $cls) {
     $class_id = $cls['class_advising'];
     $sa_id = $cls['id'];
 
-    if (preg_match('/^(?<course>[A-Z]+)-(?<year>[1-4])/', $class_id, $m)) {
+    if (preg_match('/^(?<course>[A-Z]+)-(?<year>\d{2})/', $class_id, $m)) {
         $course = $m['course'];
         $year = $m['year'];
-        $label = $yearMap[$year];
+        $label = $yearMap[$year] ?? 'Unknown';
 
         if (!isset($student_counts[$course][$label])) {
             $student_counts[$course][$label] = 0;
@@ -180,10 +176,10 @@ $current_class_id = $_GET['class_id'] ?? ($advisory_classes[0]['class_advising']
                                 <div class="list-group list-group-flush">
                                     <?php foreach ($advisory_classes as $class):
                                         $class_id = $class['class_advising'];
-                                        if (preg_match('/^(?<course>[A-Z]+)-(?<year>[1-4])/', $class_id, $m)) {
+                                        if (preg_match('/^(?<course>[A-Z]+)-(?<year>\d{2})/', $class_id, $m)) {
                                             $course = $m['course'];
                                             $year = $m['year'];
-                                            $label = $yearMap[$year];
+                                            $label = $yearMap[$year] ?? 'Unknown';
                                             $count = $student_counts[$course][$label] ?? 0;
                                         }
                                     ?>

@@ -119,15 +119,11 @@ include __DIR__ . '/../database/connection.php';
      * 2.  Build course  →  year level  →  total students
      * ------------------------------------------------------------ */
                             $student_counts = [];
-                            $yearMap = [
-                                '1' => '1st Year',
-                                '2' => '2nd Year',
-                                '3' => '3rd Year',
-                                '4' => '4th Year',
-                            ];
+                            require_once __DIR__ . '/../includes/academic.php';
+$yearMap = array_combine(shs_grades(), shs_grade_levels()); // '11' => 'Grade 11'
 
                             foreach ($advisory_classes as $cls) {
-                                $class_id  = $cls['class_advising'];   // e.g. "BSIT-1A"
+                                $class_id  = $cls['class_advising'];   // e.g. "STEM-11A"
                                 $sa_id     = $cls['id'];               // staff_advising.id
 
 
@@ -158,12 +154,12 @@ include __DIR__ . '/../database/connection.php';
                             <?php if (!empty($advisory_classes)): ?>
                                 <?php foreach ($advisory_classes as $class): ?>
                                     <?php
-                                    $class_id = $class['class_advising']; // e.g., BSIT-1A
+                                    $class_id = $class['class_advising']; // e.g., STEM-11A
 
                                     // Extract course and year level
-                                    if (preg_match('/^(?<course>[A-Z]+)-(?<year>[1-4])/', $class_id, $m)) {
+                                    if (preg_match('/^(?<course>[A-Z]+)-(?<year>\d{2})/', $class_id, $m)) {
                                         $course    = $m['course'];
-                                        $yearLabel = $yearMap[$m['year']];
+                                        $yearLabel = $yearMap[$m['year']] ?? 'Unknown';
                                         $stuTotal = $student_counts[$class_id] ?? 0;
                                     } else {
                                         $stuTotal = 0;
@@ -351,7 +347,7 @@ include __DIR__ . '/../database/connection.php';
                                         echo '</tr></thead>';
                                         echo '<tbody>';
                                         foreach ($advisory_classes as $cls) {
-                                            $classCode = $cls['class_advising']; // e.g. BSIT-4A
+                                            $classCode = $cls['class_advising']; // e.g. STEM-12A
                                             $schedStmt = $pdo->prepare("
                         SELECT
                             sch.meeting_days,

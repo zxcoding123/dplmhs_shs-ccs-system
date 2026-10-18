@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
+require_once __DIR__ . '/../includes/academic.php';
 
 // Get the search term and class ID from AJAX request
 $searchTerm = isset($_GET['searchTerm']) ? $_GET['searchTerm'] : '';
@@ -17,18 +18,9 @@ $class = $stmtClass->fetch(PDO::FETCH_ASSOC);
 if ($class) {
     $className = $class['name'];
 
-    // Step 2: Extract the year information from the class name (e.g., BSIT-1A → 1A)
-    preg_match('/(\d)[A-Z]/', $className, $matches);
-    $yearCode = isset($matches[1]) ? $matches[1] : null;
-
-    // Step 3: Map yearCode to year level (e.g., "1" → "1st Year", etc.)
-    $yearLevelMap = [
-        '1' => '1st Year',
-        '2' => '2nd Year',
-        '3' => '3rd Year',
-        '4' => '4th Year',
-    ];
-    $yearLevel = isset($yearLevelMap[$yearCode]) ? $yearLevelMap[$yearCode] : null;
+    // Step 2-3: Get the grade level from the section code (e.g., STEM-11A → "Grade 11")
+    $section = shs_parse_section($className);
+    $yearLevel = $section['grade_level'] ?? null;
 
     if ($yearLevel) {
         // Step 4: Query students based on year level, search term, and class_id

@@ -6,8 +6,10 @@ session_start();
 header('Location: index.php?create=1');
 exit;
 
+require_once __DIR__ . '/../includes/academic.php';
+
 $auth_heading = 'Begin your journey at <em>DPLMHS</em>';
-$auth_text = 'Create your student account to access your classes, attendance, grades and College announcements in one place.';
+$auth_text = 'Create your student account to access your classes, attendance, grades and school announcements in one place.';
 $auth_points = [
     ['bi-person-check', 'Register with your personal and academic details'],
     ['bi-envelope-check', 'Activate your account from the email we send you'],
@@ -99,21 +101,17 @@ $auth_points = [
                                         <input type="text" class="form-control" id="student_id" name="student_id" inputmode="numeric" pattern="\d+" placeholder="e.g. 202312345" required>
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="year_level" class="form-label">Year level</label>
+                                        <label for="year_level" class="form-label">Grade level</label>
                                         <select class="form-select" id="year_level" name="year_level" required>
-                                            <option value="" disabled selected>Select year level</option>
-                                            <option value="1st Year">1st Year</option>
-                                            <option value="2nd Year">2nd Year</option>
-                                            <option value="3rd Year">3rd Year</option>
-                                            <option value="4th Year">4th Year</option>
+                                            <option value="" disabled selected>Select grade level</option>
+                                            <?php foreach (shs_grade_levels() as $g): ?><option value="<?= $g ?>"><?= $g ?></option><?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-12">
-                                        <label for="course" class="form-label">Program</label>
+                                        <label for="course" class="form-label">Strand</label>
                                         <select class="form-select" id="course" name="course" required>
-                                            <option value="" disabled selected>Select your program</option>
-                                            <option value="BSCS">Bachelor of Science in Computer Science</option>
-                                            <option value="BSIT">Bachelor of Science in Information Technology</option>
+                                            <option value="" disabled selected>Select your strand</option>
+                                            <?php foreach (shs_strands() as $code => $name): ?><option value="<?= $code ?>"><?= $code ?> — <?= $name ?></option><?php endforeach; ?>
                                         </select>
                                     </div>
                                 </div>
@@ -152,7 +150,7 @@ $auth_points = [
                             <div class="form-check mt-4">
                                 <input class="form-check-input" type="checkbox" id="agree" required>
                                 <label class="form-check-label" for="agree">
-                                    I confirm the information above is accurate and agree to the College's <a href="../help.php" target="_blank">terms of use and privacy notice</a>.
+                                    I confirm the information above is accurate and agree to the school's <a href="../help.php" target="_blank">terms of use and privacy notice</a>.
                                 </label>
                             </div>
 

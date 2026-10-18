@@ -4,12 +4,10 @@ include __DIR__ . '/../database/connection.php';
 require '../app/helpers/auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/ui.php';
+require_once __DIR__ . '/../includes/academic.php';
 
-// Advisory sections, grouped the way the rest of the system names them (COURSE-YEAR+SECTION)
-$sections = [
-    'Department of Information Technology' => ['BSIT-1A', 'BSIT-1B', 'BSIT-2A', 'BSIT-2B', 'BSIT-3A', 'BSIT-3B', 'BSIT-4A', 'BSIT-4B'],
-    'Department of Computer Science' => ['BSCS-1A', 'BSCS-1B', 'BSCS-2A', 'BSCS-2B', 'BSCS-3A', 'BSCS-3B', 'BSCS-4A', 'BSCS-4B'],
-];
+// Advisory sections grouped by strand (STRAND-GRADE+SECTION, e.g. STEM-11A)
+$sections = shs_sections();
 
 $classes = $pdo->query("SELECT * FROM classes WHERE status IS NOT NULL
     ORDER BY is_archived, FIELD(status, 'pending', 'accepted', 'disapproved', 'rejected'), name")->fetchAll(PDO::FETCH_ASSOC);
@@ -229,7 +227,7 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
                             <select class="form-select" name="selectedClassAdd" id="newSection" required>
                                 <option value="" selected disabled>Select a section</option>
                                 <?php foreach ($sections as $dept => $list): ?>
-                                    <optgroup label="<?= admin_e($dept) ?>">
+                                    <optgroup label="<?= admin_e(shs_strand_label($dept)) ?>">
                                         <?php foreach ($list as $sec): ?><option value="<?= $sec ?>"><?= str_replace('-', ' – ', $sec) ?></option><?php endforeach; ?>
                                     </optgroup>
                                 <?php endforeach; ?>
@@ -426,7 +424,7 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
                                         <?php $known = in_array($c['name'], array_merge(...array_values($sections)), true); ?>
                                         <?php if (!$known): ?><option value="<?= admin_e($c['name']) ?>" selected><?= admin_e($c['name']) ?></option><?php endif; ?>
                                         <?php foreach ($sections as $dept => $list): ?>
-                                            <optgroup label="<?= admin_e($dept) ?>">
+                                            <optgroup label="<?= admin_e(shs_strand_label($dept)) ?>">
                                                 <?php foreach ($list as $sec): ?><option value="<?= $sec ?>" <?= $c['name'] === $sec ? 'selected' : '' ?>><?= str_replace('-', ' – ', $sec) ?></option><?php endforeach; ?>
                                             </optgroup>
                                         <?php endforeach; ?>

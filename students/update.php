@@ -17,23 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $emergencyContact = $_POST['emergencyContact'];
     $studentGender = $_POST['studentGender'];
 
-     // Check the selected value and assign the corresponding description
-     if ($courseYear == 'BSIT-1') {
-        $courseYearDescription = 'Bachelor of Science in Information Technology - 1st Year';
-    } elseif ($courseYear == 'BSIT-2') {
-        $courseYearDescription = 'Bachelor of Science in Information Technology - 2nd Year';
-    } elseif ($courseYear == 'BSIT-3') {
-        $courseYearDescription = 'Bachelor of Science in Information Technology - 3rd Year';
-    } elseif ($courseYear == 'BSIT-4') {
-        $courseYearDescription = 'Bachelor of Science in Information Technology - 4th Year';
-    } elseif ($courseYear == 'BSCS-1') {
-        $courseYearDescription = 'Bachelor of Science in Computer Science - 1st Year';
-    } elseif ($courseYear == 'BSCS-2') {
-        $courseYearDescription = 'Bachelor of Science in Computer Science - 2nd Year';
-    } elseif ($courseYear == 'BSCS-3') {
-        $courseYearDescription = 'Bachelor of Science in Computer Science - 3rd Year';
-    } elseif ($courseYear == 'BSCS-4') {
-        $courseYearDescription = 'Bachelor of Science in Computer Science - 4th Year';
+    // "STEM-11" -> "STEM — Science, Technology, Engineering and Mathematics - Grade 11"
+    require_once __DIR__ . '/../includes/academic.php';
+    $courseYearDescription = null;
+    if (preg_match('/^([A-Z]+)-(\d{2})$/', (string) $courseYear, $cy)
+        && isset(shs_strands()[$cy[1]]) && in_array($cy[2], shs_grades(), true)) {
+        $courseYearDescription = shs_strand_label($cy[1]) . ' - ' . shs_grade_label($cy[2]);
     }
 
     // Check if student already exists in the database
