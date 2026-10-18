@@ -24,7 +24,7 @@ include __DIR__ . '/includes/site-header.php';
                 <span class="au-eyebrow">Stand-Alone Senior High School</span>
                 <h1>Preparing learners for <em>college, careers</em> and life.</h1>
                 <p>Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School offers Grades 11 and 12 under the DepEd K to 12 curriculum, equipping every learner with the knowledge, skills and values to succeed beyond high school.</p>
-                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
                     <a href="programs.php" class="btn btn-au-gold btn-lg">Explore Tracks &amp; Strands</a>
                     <a href="news.php" class="btn btn-au-outline btn-lg">Latest News</a>
                 </div>

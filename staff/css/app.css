@@ -16425,13 +16425,14 @@ span.flatpickr-weekday {
         width: 260px;
         position: fixed;
         left: -260px;
+        margin-left: 0;
         top: 0;
         height: 100vh;
         z-index: 1030;
         background-color: #10177a !important;
     }
 
-    .sidebar.show {
+    .sidebar.collapsed {
         left: 0;
     }
 
@@ -16453,7 +16454,7 @@ span.flatpickr-weekday {
         background-color: #10177a !important;
     }
 
-    .sidebar.show {
+    .sidebar.collapsed {
         left: 0;
     }
 
@@ -16680,3 +16681,25 @@ span.flatpickr-weekday {
 }
 
 /*# sourceMappingURL=app.css.map*/
+
+/* Mobile sidebar: the toggle in js/app.js adds .collapsed to open it (on desktop .collapsed hides it).
+   Dim the page behind the open sidebar; tapping the dimmed area closes it (see end of js/app.js). */
+@media (max-width: 992px) {
+    /* Above the navbar's toggle (a flex item with z-index 1031) so the open sidebar covers it */
+    .sidebar {
+        z-index: 1040;
+    }
+
+    .sidebar.collapsed {
+        margin-left: 0;
+        box-shadow: 0 0 40px rgba(3, 18, 47, 0.45);
+    }
+
+    .sidebar.collapsed ~ .main::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 1035;
+        background: rgba(3, 18, 47, 0.45);
+    }
+}

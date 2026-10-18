@@ -30,8 +30,23 @@ foreach ($pdo->query("SELECT course, year_level, COUNT(*) AS total FROM subjects
     $subjectCounts[$row['course'] . '-' . $row['year_level']] = (int) $row['total'];
 }
 
-$gradeTotals = array_count_values(array_column($sections, 'grade'));
+// strand => grade => [sections]
+$grid = [];
+foreach ($sections as $s) {
+    $grid[$s['strand']][$s['grade']][] = $s;
+}
+
 $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['code']])));
+
+function plural(int $n, string $one, ?string $many = null): string
+{
+    return $n . ' ' . ($n === 1 ? $one : ($many ?? $one . 's'));
+}
+
+$subtitle = $sections
+    ? plural(count($sections), 'section') . ' across ' . plural(count($grid), 'strand')
+        . ($withoutAdviser ? ' · ' . $withoutAdviser . ' still need an adviser' : ' · every section has an adviser')
+    : 'Set up the Grade 11 and 12 sections for each strand';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,14 +61,54 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
     <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
     <link href="<?= admin_asset('css/admin-ui.css') ?>" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        .sec-code { font-weight: 700; color: var(--ui-navy); }
-        .sec-room { display: block; font-size: 0.8rem; color: var(--ui-muted); }
-        .sec-preview { font-weight: 700; color: var(--ui-navy); }
+        /* Toolbar */
+        html body .sec-toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+        html body .sec-search { position: relative; flex: 1 1 260px; max-width: 360px; }
+        html body .sec-search > i { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--ui-muted); pointer-events: none; }
+        html body .sec-search .form-control { padding-left: 2.2rem; }
+        html body .sec-toggle { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.42rem 0.8rem; border: 1px solid var(--ui-line); border-radius: 999px; background: var(--ui-surface); color: var(--ui-ink); font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        html body .sec-toggle:hover { border-color: var(--ui-gold); }
+        html body .sec-toggle[aria-pressed="true"] { background: var(--ui-navy); border-color: var(--ui-navy); color: #fff; }
+        html body .sec-toggle .sec-count { padding: 0 0.45rem; border-radius: 999px; background: var(--ui-soft); color: var(--ui-ink); font-size: 0.75rem; }
+        html body .sec-toggle[aria-pressed="true"] .sec-count { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+        /* One panel per strand, grades side by side */
+        html body .sec-strand { padding: 0; overflow: hidden; }
+        html body .sec-strand-head { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--ui-line); }
+        html body .sec-strand-head h2 { margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.02em; color: var(--ui-navy); }
+        html body .sec-strand-head p { margin: 0; font-size: 0.85rem; color: var(--ui-muted); }
+        html body .sec-grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        html body .sec-grade { padding: 0.9rem 1.25rem 1rem; }
+        html body .sec-grade + .sec-grade { border-left: 1px solid var(--ui-line); }
+        html body .sec-grade h3 { margin: 0 0 0.5rem; font-family: var(--au-sans, 'Source Sans 3', 'Segoe UI', sans-serif); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-muted); }
+
+        /* Section rows */
+        html body .sec-list { margin: 0; padding: 0; list-style: none; }
+        html body .sec-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0.25rem; border-bottom: 1px solid #f0ede4; }
+        html body .sec-item:last-child { border-bottom: 0; }
+        html body .sec-mark { flex: none; display: grid; place-items: center; min-width: 2.25rem; height: 2.25rem; padding: 0 0.4rem; border-radius: 8px; background: var(--ui-soft); color: var(--ui-navy); font-weight: 800; font-size: 0.95rem; }
+        html body .sec-body { flex: 1; min-width: 0; }
+        html body .sec-code { font-weight: 700; color: var(--ui-ink); }
+        html body .sec-room { margin-left: 0.4rem; font-size: 0.8rem; color: var(--ui-muted); }
+        html body .sec-meta { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.83rem; color: var(--ui-muted); }
+        html body .sec-meta.is-missing { color: var(--ui-amber); }
+        html body .sec-item .ui-acts { opacity: 0.55; transition: opacity 0.15s; }
+        html body .sec-item:hover .ui-acts,
+        html body .sec-item:focus-within .ui-acts { opacity: 1; }
+        html body .sec-item .ui-act { border-color: transparent; background: transparent; }
+        html body .sec-empty { margin: 0.25rem 0 0.5rem; font-size: 0.85rem; color: var(--ui-muted); }
+        html body .sec-add { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem; padding: 0.3rem 0.5rem; border: 0; border-radius: 6px; background: none; color: var(--ui-blue); font-size: 0.85rem; font-weight: 600; }
+        html body .sec-add:hover { background: rgba(47, 91, 183, 0.08); }
+        html body .sec-no-results { display: none; }
+        html body .sec-preview { font-weight: 700; color: var(--ui-navy); }
+
+        @media (max-width: 700px) {
+            html body .sec-grade + .sec-grade { border-left: 0; border-top: 1px solid var(--ui-line); }
+            html body .sec-strand-head { flex-direction: column; gap: 0.1rem; }
+        }
     </style>
 </head>
 
@@ -75,81 +130,80 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
 
             <main class="content">
                 <div class="container-fluid p-0">
-                    <?php admin_page_header('Sections', 'Grade 11 and 12 sections for each strand, used for advisers, classes and subjects', 'bi-grid-3x3-gap',
-                        '<button type="button" class="btn btn-ui-gold" data-bs-toggle="modal" data-bs-target="#createSectionModal"><i class="bi bi-plus-lg"></i> New section</button>'); ?>
+                    <?php admin_page_header('Sections', $subtitle, 'bi-grid-3x3-gap',
+                        '<button type="button" class="btn btn-ui-gold" data-new-section><i class="bi bi-plus-lg"></i> New section</button>'); ?>
 
-                    <?php
-                    $tiles = [['label' => 'Sections', 'value' => count($sections), 'icon' => 'bi-grid-3x3-gap', 'filter' => '']];
-                    foreach ($grades as $g) {
-                        $tiles[] = ['label' => shs_grade_label($g), 'value' => $gradeTotals[$g] ?? 0, 'icon' => 'bi-mortarboard', 'filter' => shs_grade_label($g), 'filter_col' => 'Grade'];
-                    }
-                    $tiles[] = ['label' => 'Without adviser', 'value' => $withoutAdviser, 'icon' => 'bi-person-x', 'tone' => $withoutAdviser ? 'alert' : 'ok', 'filter' => 'No adviser'];
-                    admin_stat_tiles($tiles);
-                    ?>
+                    <?php if ($sections): ?>
+                        <div class="sec-toolbar">
+                            <label class="sec-search mb-0">
+                                <i class="bi bi-search" aria-hidden="true"></i>
+                                <input type="search" class="form-control" id="sectionSearch" placeholder="Find a section, adviser or room" aria-label="Find a section, adviser or room">
+                            </label>
+                            <?php if ($withoutAdviser): ?>
+                                <button type="button" class="sec-toggle" id="needsAdviser" aria-pressed="false">
+                                    Needs adviser <span class="sec-count"><?= $withoutAdviser ?></span>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
 
-                    <section class="ui-panel">
-                        <?php if ($sections): ?>
-                            <div class="ui-filters mb-3">
-                                <select class="form-select form-select-sm" data-col-filter="1" aria-label="Filter by strand">
-                                    <option value="">All strands</option>
-                                    <?php foreach (array_keys($strands) as $code): ?><option value="<?= $code ?>"><?= $code ?></option><?php endforeach; ?>
-                                </select>
-                                <select class="form-select form-select-sm" data-col-filter="2" aria-label="Filter by grade">
-                                    <option value="">All grades</option>
-                                    <?php foreach ($grades as $g): ?><option value="<?= shs_grade_label($g) ?>"><?= shs_grade_label($g) ?></option><?php endforeach; ?>
-                                </select>
+                    <?php foreach ($strands as $strand => $strandName): ?>
+                        <section class="ui-panel sec-strand" data-strand-panel>
+                            <header class="sec-strand-head">
+                                <h2><?= $strand ?></h2>
+                                <p><?= admin_e($strandName) ?></p>
+                            </header>
+                            <div class="sec-grades">
+                                <?php foreach ($grades as $grade):
+                                    $list = $grid[$strand][$grade] ?? []; ?>
+                                    <div class="sec-grade">
+                                        <h3><?= shs_grade_label($grade) ?></h3>
+                                        <?php if ($list): ?>
+                                            <ul class="sec-list">
+                                                <?php foreach ($list as $s):
+                                                    $id = (int) $s['id'];
+                                                    $code = $s['code'];
+                                                    $names = $advisers[$code] ?? [];
+                                                    $students = $studentCounts[$code] ?? 0;
+                                                    $classes = $classCounts[$code] ?? 0;
+                                                    $inUse = $names || $classes || $students || !empty($subjectCounts[$s['strand'] . '-' . $s['grade'] . $s['name']]);
+                                                    $counts = array_filter([$students ? plural($students, 'student') : '', $classes ? plural($classes, 'class', 'classes') : '']);
+                                                    $search = strtolower(implode(' ', [$code, $s['room'], implode(' ', $names)])); ?>
+                                                    <li class="sec-item" data-search="<?= admin_e($search) ?>" data-missing="<?= $names ? '0' : '1' ?>">
+                                                        <span class="sec-mark" aria-hidden="true"><?= admin_e($s['name']) ?></span>
+                                                        <div class="sec-body">
+                                                            <span class="sec-code"><?= admin_e($code) ?></span>
+                                                            <?php if ($s['room']): ?><span class="sec-room"><?= admin_e($s['room']) ?></span><?php endif; ?>
+                                                            <?php if ($names): ?>
+                                                                <span class="sec-meta"><?= admin_e(implode(', ', $names)) ?><?= $counts ? ' · ' . implode(' · ', $counts) : '' ?></span>
+                                                            <?php else: ?>
+                                                                <span class="sec-meta is-missing">No adviser yet<?= $counts ? ' · ' . implode(' · ', $counts) : '' ?></span>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <div class="ui-acts">
+                                                            <button type="button" class="ui-act" data-bs-toggle="modal" data-bs-target="#editSection<?= $id ?>" title="Edit <?= admin_e($code) ?>" aria-label="Edit <?= admin_e($code) ?>"><i class="bi bi-pencil"></i></button>
+                                                            <button type="button" class="ui-act is-danger" onclick="deleteSection(<?= $id ?>, <?= admin_e(json_encode($code)) ?>, <?= $inUse ? 'true' : 'false' ?>)" title="Delete <?= admin_e($code) ?>" aria-label="Delete <?= admin_e($code) ?>"><i class="bi bi-trash"></i></button>
+                                                        </div>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        <?php else: ?>
+                                            <p class="sec-empty">No <?= shs_grade_label($grade) ?> sections yet.</p>
+                                        <?php endif; ?>
+                                        <button type="button" class="sec-add" data-new-section data-strand="<?= $strand ?>" data-grade="<?= $grade ?>">
+                                            <i class="bi bi-plus-lg"></i> Add section
+                                        </button>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                            <table id="sections" class="display">
-                                <thead>
-                                    <tr>
-                                        <th>Section</th>
-                                        <th>Strand</th>
-                                        <th>Grade</th>
-                                        <th>Adviser</th>
-                                        <th>Students</th>
-                                        <th>Classes</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($sections as $s):
-                                        $id = (int) $s['id'];
-                                        $code = $s['code'];
-                                        $inUse = !empty($advisers[$code]) || !empty($classCounts[$code]) || !empty($subjectCounts[$s['strand'] . '-' . $s['grade'] . $s['name']]); ?>
-                                        <tr>
-                                            <td>
-                                                <span class="sec-code"><?= admin_e($code) ?></span>
-                                                <?php if ($s['room']): ?><span class="sec-room"><i class="bi bi-door-open"></i> <?= admin_e($s['room']) ?></span><?php endif; ?>
-                                            </td>
-                                            <td><?= admin_e($s['strand']) ?></td>
-                                            <td><?= admin_e(shs_grade_label($s['grade'])) ?></td>
-                                            <td>
-                                                <?php if (!empty($advisers[$code])): ?>
-                                                    <?= admin_e(implode(', ', $advisers[$code])) ?>
-                                                <?php else: ?>
-                                                    <span class="ui-pill is-alert">No adviser</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><?= $studentCounts[$code] ?? 0 ?></td>
-                                            <td><?= $classCounts[$code] ?? 0 ?></td>
-                                            <td>
-                                                <div class="ui-acts">
-                                                    <button type="button" class="ui-act" data-bs-toggle="modal" data-bs-target="#editSection<?= $id ?>" title="Edit" aria-label="Edit"><i class="bi bi-pencil"></i></button>
-                                                    <button type="button" class="ui-act is-danger" onclick="deleteSection(<?= $id ?>, <?= admin_e(json_encode($code)) ?>, <?= $inUse ? 'true' : 'false' ?>)" title="Delete" aria-label="Delete"><i class="bi bi-trash"></i></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        <?php else: ?>
-                            <div class="ui-empty">
-                                <i class="bi bi-grid-3x3-gap"></i>
-                                <h3>No sections yet</h3>
-                                <p>Add the Grade 11 and 12 sections for each strand so advisers and classes can be assigned to them.</p>
-                            </div>
-                        <?php endif; ?>
-                    </section>
+                        </section>
+                    <?php endforeach; ?>
+
+                    <div class="ui-panel ui-empty sec-no-results" id="noResults">
+                        <i class="bi bi-search"></i>
+                        <h3>No matching sections</h3>
+                        <p>Try a section code like STEM-11A, an adviser's name or a room.</p>
+                    </div>
                 </div>
             </main>
         </div>
@@ -161,7 +215,7 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
     {
         ?>
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-sm-7">
                 <label for="<?= $prefix ?>Strand" class="form-label">Strand</label>
                 <select class="form-select" id="<?= $prefix ?>Strand" name="strand" required data-code-part>
                     <option value="" disabled <?= $s ? '' : 'selected' ?>>Select a strand</option>
@@ -170,7 +224,7 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-sm-5">
                 <label for="<?= $prefix ?>Grade" class="form-label">Grade</label>
                 <select class="form-select" id="<?= $prefix ?>Grade" name="grade" required data-code-part>
                     <option value="" disabled <?= $s ? '' : 'selected' ?>>Select a grade</option>
@@ -179,26 +233,25 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-sm-7">
                 <label for="<?= $prefix ?>Name" class="form-label">Section name</label>
                 <input type="text" class="form-control" id="<?= $prefix ?>Name" name="name" value="<?= admin_e($s['name'] ?? '') ?>"
-                    required maxlength="20" pattern="[A-Za-z0-9]{1,20}" placeholder="e.g. A or Rizal" data-code-part
-                    title="Letters and numbers only, no spaces">
-                <small class="text-muted">Letters and numbers only, no spaces.</small>
+                    required maxlength="20" pattern="[A-Za-z0-9]{1,20}" placeholder="A, B or a name like Rizal" data-code-part
+                    title="Letters and numbers only, no spaces" aria-describedby="<?= $prefix ?>Code">
             </div>
-            <div class="col-md-6">
+            <div class="col-sm-5">
                 <label for="<?= $prefix ?>Room" class="form-label">Room <span class="text-muted fw-normal">(optional)</span></label>
-                <input type="text" class="form-control" id="<?= $prefix ?>Room" name="room" value="<?= admin_e($s['room'] ?? '') ?>" maxlength="50" placeholder="e.g. Room 204">
+                <input type="text" class="form-control" id="<?= $prefix ?>Room" name="room" value="<?= admin_e($s['room'] ?? '') ?>" maxlength="50" placeholder="Room 204">
             </div>
         </div>
-        <p class="text-muted small mt-3 mb-0">Section code: <span class="sec-preview" data-code-preview><?= admin_e($s['code'] ?? '—') ?></span></p>
+        <p class="text-muted small mt-3 mb-0" id="<?= $prefix ?>Code">Saved as <span class="sec-preview" data-code-preview><?= admin_e($s['code'] ?? '—') ?></span> · letters and numbers only in the name</p>
         <?php
     }
     ?>
 
     <!-- Create section -->
     <div class="modal fade" id="createSectionModal" tabindex="-1" aria-labelledby="createSectionLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered">
             <form class="modal-content" method="POST" action="processes/admin/sections/add.php" data-section-form>
                 <div class="modal-header">
                     <span class="ui-modal-icon"><i class="bi bi-plus-lg"></i></span>
@@ -210,7 +263,7 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Create section</button>
+                    <button type="submit" class="btn btn-primary">Create section</button>
                 </div>
             </form>
         </div>
@@ -222,7 +275,7 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
             || !empty($subjectCounts[$s['strand'] . '-' . $s['grade'] . $s['name']]); ?>
         <!-- Edit section -->
         <div class="modal fade" id="editSection<?= $id ?>" tabindex="-1" aria-labelledby="editSectionLabel<?= $id ?>" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-dialog modal-dialog-centered">
                 <form class="modal-content" method="POST" action="processes/admin/sections/edit.php" data-section-form data-original-code="<?= admin_e($s['code']) ?>" data-in-use="<?= $used ? '1' : '0' ?>">
                     <div class="modal-header">
                         <span class="ui-modal-icon"><i class="bi bi-pencil"></i></span>
@@ -235,7 +288,7 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save changes</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
                     </div>
                 </form>
             </div>
@@ -251,42 +304,63 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
     <script>
         const existingCodes = <?= json_encode(array_column($sections, 'code')) ?>;
 
-        $(function () {
-            const table = $('#sections').DataTable({
-                order: [],
-                columnDefs: [{ targets: 6, orderable: false, searchable: false }]
-            });
-            document.querySelectorAll('[data-col-filter]').forEach(function (select) {
-                select.addEventListener('change', function () {
-                    const value = select.value ? '^' + $.fn.dataTable.util.escapeRegex(select.value) + '$' : '';
-                    table.column(+select.dataset.colFilter).search(value, true, false).draw();
+        // ---- Search + "needs adviser" filter ----
+        const search = document.getElementById('sectionSearch');
+        const needsAdviser = document.getElementById('needsAdviser');
+
+        function applyFilters() {
+            const term = (search?.value || '').trim().toLowerCase();
+            const onlyMissing = needsAdviser?.getAttribute('aria-pressed') === 'true';
+            const filtering = term !== '' || onlyMissing;
+            let shown = 0;
+
+            document.querySelectorAll('[data-strand-panel]').forEach(function (panel) {
+                let panelShown = 0;
+                panel.querySelectorAll('.sec-item').forEach(function (item) {
+                    const match = (!term || item.dataset.search.includes(term)) && (!onlyMissing || item.dataset.missing === '1');
+                    item.hidden = !match;
+                    if (match) panelShown++;
                 });
+                // While filtering, hide empty-state text, add buttons, and grades/strands with no matches
+                panel.querySelectorAll('.sec-empty, .sec-add').forEach(el => { el.hidden = filtering; });
+                panel.querySelectorAll('.sec-grade').forEach(function (grade) {
+                    grade.hidden = filtering && !grade.querySelector('.sec-item:not([hidden])');
+                });
+                panel.hidden = filtering && panelShown === 0;
+                shown += panelShown;
             });
+            document.getElementById('noResults').style.display = filtering && shown === 0 ? 'block' : 'none';
+        }
+
+        search?.addEventListener('input', applyFilters);
+        needsAdviser?.addEventListener('click', function () {
+            needsAdviser.setAttribute('aria-pressed', needsAdviser.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+            applyFilters();
         });
+
+        // ---- Section form: live code preview, duplicate check, rename confirmation ----
+        function sectionCode(form) {
+            const strand = form.querySelector('[name=strand]').value;
+            const grade = form.querySelector('[name=grade]').value;
+            const name = form.querySelector('[name=name]').value.trim();
+            return strand && grade && name ? strand + '-' + grade + name : '';
+        }
 
         document.querySelectorAll('form[data-section-form]').forEach(function (form) {
             const preview = form.querySelector('[data-code-preview]');
-            const code = () => {
-                const strand = form.querySelector('[name=strand]').value;
-                const grade = form.querySelector('[name=grade]').value;
-                const name = form.querySelector('[name=name]').value.trim();
-                return strand && grade && name ? strand + '-' + grade + name : '';
-            };
-
-            // Live preview of the code the section will be saved as
             form.querySelectorAll('[data-code-part]').forEach(function (input) {
-                input.addEventListener('input', () => { preview.textContent = code() || '—'; });
+                input.addEventListener('input', () => { preview.textContent = sectionCode(form) || '—'; });
             });
 
             form.addEventListener('submit', function (e) {
-                const newCode = code();
+                const newCode = sectionCode(form);
                 const original = form.dataset.originalCode || '';
                 if (newCode !== original && existingCodes.includes(newCode)) {
                     e.preventDefault();
                     Swal.fire('Section already exists', newCode + ' is already a section.', 'warning');
                     return;
                 }
-                // Renaming a section in use updates its advisers, classes and subjects too — confirm first
+                // Renaming a section in use moves its advisers, classes and subjects too — confirm first
                 if (original && newCode !== original && form.dataset.inUse === '1' && !form.dataset.confirmed) {
                     e.preventDefault();
                     Swal.fire({
@@ -306,14 +380,32 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
             });
         });
 
+        // "New section" and the per-grade "Add section" buttons share one modal;
+        // the per-grade ones fill in the strand and grade so only the name is left.
+        const createModalEl = document.getElementById('createSectionModal');
+        const createForm = createModalEl.querySelector('form');
+        document.querySelectorAll('[data-new-section]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                createForm.reset();
+                createForm.querySelector('[name=strand]').value = button.dataset.strand || '';
+                createForm.querySelector('[name=grade]').value = button.dataset.grade || '';
+                createForm.querySelector('[data-code-preview]').textContent = '—';
+                bootstrap.Modal.getOrCreateInstance(createModalEl).show();
+            });
+        });
+        createModalEl.addEventListener('shown.bs.modal', function () {
+            const first = ['strand', 'grade', 'name'].map(n => createForm.querySelector('[name=' + n + ']')).find(el => !el.value);
+            (first || createForm.querySelector('[name=name]')).focus();
+        });
+
         function deleteSection(id, code, inUse) {
             if (inUse) {
-                Swal.fire('Section in use', code + ' still has an adviser, classes or subjects. Move or remove those first, then delete the section.', 'info');
+                Swal.fire('Section in use', code + ' still has an adviser, students, classes or subjects. Move or remove those first, then delete the section.', 'info');
                 return;
             }
             Swal.fire({
                 title: 'Delete ' + code + '?',
-                text: 'This removes the section from every section list.',
+                text: 'It will no longer appear in any section list.',
                 icon: 'warning',
                 showCancelButton: true,
                 reverseButtons: true,
@@ -338,7 +430,7 @@ $withoutAdviser = count(array_filter($sections, fn($s) => empty($advisers[$s['co
         'ADMIN_SECTION_UPDATE_ERROR' => ['Error', 'The section could not be updated. Please try again.', 'error'],
         'ADMIN_SECTION_DELETE_SUCCESS' => ['Deleted', 'The section has been deleted.', 'success'],
         'ADMIN_SECTION_DELETE_ERROR' => ['Error', 'The section could not be deleted. Please try again.', 'error'],
-        'ADMIN_SECTION_IN_USE' => ['Section in use', 'Move or remove its adviser, classes and subjects before deleting it.', 'info'],
+        'ADMIN_SECTION_IN_USE' => ['Section in use', 'Move or remove its adviser, students, classes and subjects before deleting it.', 'info'],
     ];
     if (isset($_SESSION['STATUS'], $sectionAlerts[$_SESSION['STATUS']])) {
         [$title, $text, $icon] = $sectionAlerts[$_SESSION['STATUS']];
