@@ -383,6 +383,239 @@ html body .au-portal-avatar-placeholder {
     font-size: 2.6rem;
 }
 
+/* Profile view modal */
+html body .au-profile {
+    border: 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+html body .au-profile-banner {
+    position: relative;
+    text-align: center;
+    padding: 2rem 1.25rem 1.25rem;
+    background: linear-gradient(160deg, var(--au-navy-soft), var(--au-navy-deep));
+    border-bottom: 3px solid var(--au-gold);
+}
+
+html body .au-profile-close {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+}
+
+html body .au-profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #fff;
+    border: 3px solid var(--au-gold);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+html body .au-profile-initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--au-serif);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--au-navy);
+    background-color: var(--au-paper);
+}
+
+html body .au-profile-name {
+    font-family: var(--au-sans);
+    color: #fff !important;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0.85rem 0 0.4rem;
+    overflow-wrap: anywhere;
+}
+
+html body .au-profile-tags {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+html body .au-profile-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 2px;
+    padding: 0.1rem 0.5rem;
+}
+
+html body .au-profile-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #9aa3b5;
+}
+
+html body .au-profile-status.is-active::before {
+    background-color: #4cc38a;
+}
+
+html body .au-profile-body {
+    padding: 1.25rem;
+    background-color: #fff;
+}
+
+html body .au-profile-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+}
+
+html body .au-profile-detail {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.75rem;
+    border: 1px solid var(--au-line);
+    border-radius: 8px;
+    background-color: var(--au-paper);
+    min-width: 0;
+}
+
+html body .au-profile-detail > i {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: var(--au-navy);
+    background-color: rgba(194, 167, 77, 0.22);
+}
+
+html body .au-profile-detail > div {
+    min-width: 0;
+}
+
+html body .au-profile-detail dt {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--au-muted);
+}
+
+html body .au-profile-detail dd {
+    margin: 0.1rem 0 0;
+    color: var(--au-ink);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+html body .au-profile-detail dd a {
+    color: var(--au-navy);
+    text-decoration: none;
+}
+
+html body .au-profile-detail dd a:hover {
+    text-decoration: underline;
+}
+
+html body .au-profile-footer {
+    background-color: #fff;
+    border-top: 1px solid var(--au-line);
+}
+
+@media (max-width: 575.98px) {
+    html body .au-profile-details {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Profile edit modal */
+html body .au-profile-avatar-edit {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+html body .au-profile-avatar-edit:hover .au-profile-avatar,
+html body .au-profile-avatar-edit:focus-within .au-profile-avatar {
+    filter: brightness(0.85);
+}
+
+html body .au-profile-avatar-badge {
+    position: absolute;
+    right: 0;
+    bottom: 2px;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--au-navy);
+    background-color: var(--au-gold);
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+html body .au-profile-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+html body .au-profile-section {
+    padding: 1rem;
+    border: 1px solid var(--au-line);
+    border-radius: 8px;
+    background-color: var(--au-paper);
+}
+
+html body .au-profile-section + .au-profile-section {
+    margin-top: 1rem;
+}
+
+html body .au-profile-section legend {
+    float: none;
+    width: auto;
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--au-navy);
+}
+
+html body .au-profile-section .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--au-ink);
+}
+
+html body .au-profile-section .form-control,
+html body .au-profile-section .form-select {
+    background-color: #fff;
+}
+
+html body .au-profile-section .form-control:focus,
+html body .au-profile-section .form-select:focus {
+    border-color: var(--au-gold);
+    box-shadow: 0 0 0 0.2rem rgba(194, 167, 77, 0.25);
+}
+
 /* Buttons */
 html body .btn-csms,
 html body .btn-primary {

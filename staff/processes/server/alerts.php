@@ -254,6 +254,42 @@ break;
                 ";
             break;
 
+        case 'NEW_INFO_EMAIL_EXISTS':
+            echo "
+                    <script>
+                        Swal.fire({
+                            title: 'Email Already In Use',
+                            text: 'That email address belongs to another account. Please use a different one.',
+                            icon: 'warning'
+                        });
+                    </script>
+                ";
+            break;
+
+        case 'NEW_INFO_NAME_EXISTS':
+            echo "
+                    <script>
+                        Swal.fire({
+                            title: 'Name Already In Use',
+                            text: 'Another staff member already has this exact name. Please adjust it (for example, add a middle initial).',
+                            icon: 'warning'
+                        });
+                    </script>
+                ";
+            break;
+
+        case 'NEW_INFO_INVALID_AVATAR':
+            echo "
+                    <script>
+                        Swal.fire({
+                            title: 'Invalid Profile Picture',
+                            text: 'Please upload a JPG, PNG, GIF or WEBP image no larger than 2 MB.',
+                            icon: 'warning'
+                        });
+                    </script>
+                ";
+            break;
+
         case 'NEW_INFO_ERROR':
             echo "
                     <script>

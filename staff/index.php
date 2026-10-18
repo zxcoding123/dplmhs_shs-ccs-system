@@ -1161,9 +1161,7 @@ if (isset($_SESSION['teacher_id'])) {
 				$message = implode('<br>', $absentWarnings);
 				showAlert('Teacher Warning: Excessive Absences', $message);
 			}
-		} else {
-			echo "<p>No active classes found for this teacher.</p>";
-		}
+		} 
 	} catch (PDOException $e) {
 		echo "<p class='error'>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
 	}

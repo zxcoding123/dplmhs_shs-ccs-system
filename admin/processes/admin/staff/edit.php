@@ -2,6 +2,7 @@
 include __DIR__ . '/../../../../database/connection.php';
 session_start();
 require_once __DIR__ . '/../../../includes/guard.php';
+require_once __DIR__ . '/../../../../app/helpers/StaffNameHelper.php';
 
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
@@ -68,6 +69,8 @@ if (isset($_GET['id'])) {
             exit;
         }
 
+        $oldFullName = StaffNameHelper::currentName($pdo, (int) $id);
+
         $pdo->beginTransaction();
 
         // Step 2: Prepare the SQL update statement for staff_accounts
@@ -103,40 +106,32 @@ if (isset($_GET['id'])) {
                 $userStmt->bindParam(':password', $password);
             }
             $userStmt->execute();
-            // Step 4: If 'None' is selected, clear the class advising for the teacher
-            if (in_array("None", $classAdvising)) {
-                // Delete all current class advising assignments for this teacher
-                $deleteClassSql = "DELETE FROM staff_advising WHERE fullName = :fullName";
-                $deleteClassStmt = $pdo->prepare($deleteClassSql);
-                $deleteClassStmt->bindParam(':fullName', $fullName);
-                $deleteClassStmt->execute();
 
-                $_SESSION['STATUS'] = "STAFF_ACCOUNT_UPDATED_CLEARED_CLASSES";
-            } else {
-                // Ensure that only selected classes are processed (if "None" is not in array)
-                // First, delete all previous class assignments
-                $deleteClassSql = "DELETE FROM staff_advising WHERE fullName = :fullName";
-                $deleteClassStmt = $pdo->prepare($deleteClassSql);
-                $deleteClassStmt->bindParam(':fullName', $fullName);
-                $deleteClassStmt->execute();
+            // Move classes, advisory sections, notes, etc. over to the new name
+            if ($oldFullName !== null) {
+                StaffNameHelper::renameEverywhere($pdo, (int) $id, $oldFullName, $fullName);
+            }
 
-                // Insert new class assignments
-                foreach ($classAdvising as $className) {
-                    // Step 4.1: Check if the teacher is already advising this class
-                    $checkClassSql = "SELECT * FROM staff_advising WHERE fullName = :fullName AND class_advising = :class_advising";
-                    $checkClassStmt = $pdo->prepare($checkClassSql);
-                    $checkClassStmt->bindParam(':fullName', $fullName);
-                    $checkClassStmt->bindParam(':class_advising', $className);
-                    $checkClassStmt->execute();
+            // Step 4: Sync advisory sections. Only touch sections that changed:
+            // deleting a staff_advising row also deletes its students_advising rows
+            // (ON DELETE CASCADE), which would drop every advisee in that section.
+            $selectedClasses = in_array("None", $classAdvising) ? [] : array_values(array_unique($classAdvising));
 
-                    // If no result exists, insert the new class advising
-                    if ($checkClassStmt->rowCount() === 0) {
-                        $query = "INSERT INTO staff_advising (fullName, class_advising) VALUES (:fullName, :class_advising)";
-                        $stmt = $pdo->prepare($query);
-                        $stmt->bindParam(':fullName', $fullName);
-                        $stmt->bindParam(':class_advising', $className);
-                        $stmt->execute();
-                    }
+            $currentStmt = $pdo->prepare("SELECT id, class_advising FROM staff_advising WHERE fullName = :fullName");
+            $currentStmt->execute(['fullName' => $fullName]);
+            $currentClasses = $currentStmt->fetchAll(PDO::FETCH_KEY_PAIR); // id => class_advising
+
+            $deleteClassStmt = $pdo->prepare("DELETE FROM staff_advising WHERE id = :id");
+            foreach ($currentClasses as $advisingId => $className) {
+                if (!in_array($className, $selectedClasses, true)) {
+                    $deleteClassStmt->execute(['id' => $advisingId]);
+                }
+            }
+
+            $insertClassStmt = $pdo->prepare("INSERT INTO staff_advising (fullName, class_advising) VALUES (:fullName, :class_advising)");
+            foreach ($selectedClasses as $className) {
+                if (!in_array($className, $currentClasses, true)) {
+                    $insertClassStmt->execute(['fullName' => $fullName, 'class_advising' => $className]);
                 }
             }
 

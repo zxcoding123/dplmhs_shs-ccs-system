@@ -22,6 +22,12 @@ try {
     $phone_number = $teacher['phone_number'];
     $gender = $teacher['gender'];
     $avatar = $teacher['avatar'] ?? '';
+    $avatarUrl = '';
+    if (!empty($avatar)) {
+        // The file name stays the same when the picture changes, so bust the browser cache
+        $avatarPath = __DIR__ . '/../uploads/profile_pictures/' . $avatar;
+        $avatarUrl = '../uploads/profile_pictures/' . rawurlencode($avatar) . (is_file($avatarPath) ? '?v=' . filemtime($avatarPath) : '');
+    }
 } catch (PDOException $e) {
     echo "An error occurred while fetching the teacher's data: " . $e->getMessage();
 }
@@ -35,7 +41,7 @@ try {
         </a>
 
         <div class="au-portal-user">
-            <img src="<?php echo !empty($avatar) ? '../uploads/profile_pictures/' . htmlspecialchars($avatar) : '../external/img/AU_CCS_Logo.png'; ?>" class="au-portal-avatar" alt="">
+            <img src="<?php echo !empty($avatarUrl) ? htmlspecialchars($avatarUrl) : '../external/img/AU_CCS_Logo.png'; ?>" class="au-portal-avatar" alt="">
             <h1 class="au-portal-name"><?php echo htmlspecialchars(!empty($fullName) ? $fullName : 'Faculty Member'); ?></h1>
             <span class="au-portal-role">Faculty</span>
             <?php if (!empty($department)): ?>
@@ -87,158 +93,224 @@ try {
     </div>
 </nav>
 
+<?php
+$profileInitials = strtoupper(substr((string) $firstName, 0, 1) . substr((string) $lastName, 0, 1));
+$departmentOptions = ['Department of Information Technology', 'Department of Computer Science'];
+if (!empty($department) && !in_array($department, $departmentOptions, true)) {
+    // Keep a department set elsewhere (e.g. by an admin) selectable
+    array_unshift($departmentOptions, $department);
+}
+$genderOptions = ['Male', 'Female', 'Other'];
+?>
 <!-- Modal for Editing Staff Information -->
 <div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editStaffModalLabel">Edit Staff Information</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <form class="modal-content au-profile" method="POST" action="update_details.php" enctype="multipart/form-data">
+            <div class="au-profile-banner">
+                <button type="button" class="btn-close btn-close-white au-profile-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                <label class="au-profile-avatar-edit" for="profileAvatarInput" title="Change profile picture">
+                    <?php if (!empty($avatar)): ?>
+                        <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="" class="au-profile-avatar" id="profileAvatarPreview">
+                    <?php else: ?>
+                        <img src="" alt="" class="au-profile-avatar d-none" id="profileAvatarPreview">
+                        <span class="au-profile-avatar au-profile-initials" id="profileAvatarInitials" aria-hidden="true"><?php echo htmlspecialchars($profileInitials ?: '?'); ?></span>
+                    <?php endif; ?>
+                    <span class="au-profile-avatar-badge"><i class="bi bi-camera-fill" aria-hidden="true"></i></span>
+                    <span class="visually-hidden">Change profile picture</span>
+                </label>
+                <input type="file" class="d-none" id="profileAvatarInput" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp">
+
+                <h5 class="au-profile-name" id="editStaffModalLabel">Edit Profile</h5>
+                <p class="au-profile-hint" id="profileAvatarHint">Click the photo to upload a new one (JPG, PNG, GIF or WEBP, max 2 MB)</p>
             </div>
-            <div class="modal-body">
-                <form method="POST" action="update_details.php" enctype="multipart/form-data">
 
-                    <!-- Profile Picture -->
-                    <div class="mb-3 text-center">
-                        <?php if (!empty($avatar)): ?>
-                            <img src="../uploads/profile_pictures/<?php echo htmlspecialchars($avatar); ?>" alt="Profile Picture" class="rounded-circle mb-2" width="100" height="100">
-                        <?php else: ?>
-                            <img src="https://via.placeholder.com/100" alt="Profile Picture" class="rounded-circle mb-2">
-                        <?php endif; ?>
-                        <input class="form-control mt-2" type="file" name="avatar" accept="image/*">
-                        <small class="text-muted">Choose a new profile picture (optional)</small>
+            <div class="modal-body au-profile-body">
+                <fieldset class="au-profile-section">
+                    <legend><i class="bi bi-person" aria-hidden="true"></i> Personal Information</legend>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="profileFirstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="profileFirstName" name="firstName"
+                                value="<?php echo htmlspecialchars($firstName); ?>" autocomplete="given-name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="profileMiddleName" class="form-label">Middle Name</label>
+                            <input type="text" class="form-control" id="profileMiddleName" name="middleName"
+                                value="<?php echo htmlspecialchars($middleName); ?>" autocomplete="additional-name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="profileLastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="profileLastName" name="lastName"
+                                value="<?php echo htmlspecialchars($lastName); ?>" autocomplete="family-name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="profileGender" class="form-label">Gender</label>
+                            <select class="form-select" id="profileGender" name="gender" required>
+                                <?php foreach ($genderOptions as $option): ?>
+                                    <option value="<?php echo $option; ?>" <?php echo ($gender === $option) ? 'selected' : ''; ?>><?php echo $option; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="profileDepartment" class="form-label">Department</label>
+                            <select class="form-select" id="profileDepartment" name="department" required>
+                                <?php foreach ($departmentOptions as $option): ?>
+                                    <option value="<?php echo htmlspecialchars($option); ?>" <?php echo ($department === $option) ? 'selected' : ''; ?>><?php echo htmlspecialchars($option); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
+                </fieldset>
 
-                    <!-- Full Name -->
-                    <div class="mb-3">
-                        <label for="firstName" class="form-label">First Name</label>
-                        <input type="text" class="form-control" id="firstName" name="firstName"
-                            value="<?php echo htmlspecialchars($firstName); ?>" required>
+                <fieldset class="au-profile-section">
+                    <legend><i class="bi bi-telephone" aria-hidden="true"></i> Contact</legend>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="profileEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="profileEmail" name="email"
+                                value="<?php echo htmlspecialchars($email); ?>" autocomplete="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="profilePhone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="profilePhone" name="phone_number"
+                                value="<?php echo htmlspecialchars($phone_number); ?>" autocomplete="tel" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="middleName" class="form-label">Middle Name</label>
-                        <input type="text" class="form-control" id="middleName" name="middleName"
-                            value="<?php echo htmlspecialchars($middleName); ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="lastName" class="form-label">Last Name</label>
-                        <input type="text" class="form-control" id="lastName" name="lastName"
-                            value="<?php echo htmlspecialchars($lastName); ?>" required>
-                    </div>
+                </fieldset>
 
-                    <!-- Email -->
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email"
-                            value="<?php echo htmlspecialchars($email); ?>" required>
+                <fieldset class="au-profile-section">
+                    <legend><i class="bi bi-shield-lock" aria-hidden="true"></i> Security</legend>
+                    <label for="profilePassword" class="form-label">New Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="profilePassword" name="password"
+                            autocomplete="new-password" placeholder="Leave blank to keep your current password">
+                        <button type="button" class="btn btn-outline-secondary" id="profilePasswordToggle" aria-label="Show password">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
                     </div>
-
-                    <!-- Password -->
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password">
-                        <small class="text-muted">Leave blank to keep current password</small>
-                    </div>
-
-                    <!-- Department -->
-                    <div class="mb-3">
-                        <label for="department" class="form-label">Department</label>
-                        <select class="form-select" id="department" name="department" required>
-                            <option value="Department of Information Technology" <?php echo ($department == 'Department of Information Technology') ? 'selected' : ''; ?>>Department of Information Technology</option>
-                            <option value="Department of Computer Science" <?php echo ($department == 'Department of Computer Science') ? 'selected' : ''; ?>>Department of Computer Science</option>
-                        </select>
-                    </div>
-
-                    <!-- Phone Number -->
-                    <div class="mb-3">
-                        <label for="phone_number" class="form-label">Phone Number</label>
-                        <input type="text" class="form-control" id="phone_number" name="phone_number"
-                            value="<?php echo htmlspecialchars($phone_number); ?>" required>
-                    </div>
-
-                    <!-- Gender -->
-                    <div class="mb-3">
-                        <label for="gender" class="form-label">Gender</label>
-                        <select class="form-select" id="gender" name="gender" required>
-                            <option value="Male" <?php echo ($gender == 'Male') ? 'selected' : ''; ?>>Male</option>
-                            <option value="Female" <?php echo ($gender == 'Female') ? 'selected' : ''; ?>>Female</option>
-                            <option value="Other" <?php echo ($gender == 'Other') ? 'selected' : ''; ?>>Other</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </form>
+                    <div class="form-text">This also changes the password you log in with.</div>
+                </fieldset>
             </div>
-        </div>
+
+            <div class="modal-footer au-profile-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-csms"><i class="bi bi-check2-circle"></i> Save Changes</button>
+            </div>
+        </form>
     </div>
 </div>
 
+<script>
+    (function () {
+        var input = document.getElementById('profileAvatarInput');
+        var preview = document.getElementById('profileAvatarPreview');
+        var initials = document.getElementById('profileAvatarInitials');
+        var hint = document.getElementById('profileAvatarHint');
+        var hintText = hint.textContent;
 
+        // Show the chosen picture right away
+        input.addEventListener('change', function () {
+            var file = input.files[0];
+            if (!file) return;
+            if (!/^image\/(jpeg|png|gif|webp)$/.test(file.type) || file.size > 2 * 1024 * 1024) {
+                input.value = '';
+                hint.textContent = 'Please choose a JPG, PNG, GIF or WEBP image no larger than 2 MB.';
+                return;
+            }
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('d-none');
+            if (initials) initials.classList.add('d-none');
+            hint.textContent = 'New photo selected: ' + file.name;
+        });
+
+        var password = document.getElementById('profilePassword');
+        var toggle = document.getElementById('profilePasswordToggle');
+        toggle.addEventListener('click', function () {
+            var show = password.type === 'password';
+            password.type = show ? 'text' : 'password';
+            toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            toggle.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+
+        // Reset unsaved changes when the modal is closed
+        document.getElementById('editStaffModal').addEventListener('hidden.bs.modal', function () {
+            this.querySelector('form').reset();
+            password.type = 'password';
+            toggle.querySelector('i').className = 'bi bi-eye';
+            hint.textContent = hintText;
+            <?php if (!empty($avatar)): ?>
+            preview.src = <?php echo json_encode($avatarUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            <?php else: ?>
+            preview.classList.add('d-none');
+            initials.classList.remove('d-none');
+            <?php endif; ?>
+        });
+    })();
+</script>
+
+
+<?php
+$profileInitials = strtoupper(substr((string) $firstName, 0, 1) . substr((string) $lastName, 0, 1));
+$profileStatus = strtolower(trim((string) ($teacher['status'] ?? '')));
+$profileSince = !empty($teacher['date_created']) ? date('F j, Y', strtotime($teacher['date_created'])) : '';
+$profileDetails = [
+    ['icon' => 'bi-envelope', 'label' => 'Email', 'value' => $email, 'href' => 'mailto:' . $email],
+    ['icon' => 'bi-telephone', 'label' => 'Phone Number', 'value' => $phone_number, 'href' => 'tel:' . preg_replace('/[^\d+]/', '', (string) $phone_number)],
+    ['icon' => 'bi-building', 'label' => 'Department', 'value' => $department],
+    ['icon' => 'bi-gender-ambiguous', 'label' => 'Gender', 'value' => $gender],
+    ['icon' => 'bi-person-lines-fill', 'label' => 'Full Name', 'value' => trim($firstName . ' ' . $middleName . ' ' . $lastName)],
+    ['icon' => 'bi-calendar-check', 'label' => 'Member Since', 'value' => $profileSince],
+];
+?>
 <div class="modal fade" id="viewStaffModal" tabindex="-1" aria-labelledby="viewStaffModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="viewStaffModalLabel">Staff Information</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content au-profile">
+            <div class="au-profile-banner">
+                <button type="button" class="btn-close btn-close-white au-profile-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <?php if (!empty($avatar)): ?>
+                    <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="" class="au-profile-avatar">
+                <?php else: ?>
+                    <span class="au-profile-avatar au-profile-initials" aria-hidden="true"><?php echo htmlspecialchars($profileInitials ?: '?'); ?></span>
+                <?php endif; ?>
+                <h5 class="au-profile-name" id="viewStaffModalLabel"><?php echo htmlspecialchars(!empty($fullName) ? $fullName : 'Faculty Member'); ?></h5>
+                <div class="au-profile-tags">
+                    <span class="au-portal-role">Faculty</span>
+                    <?php if ($profileStatus !== ''): ?>
+                        <span class="au-profile-status <?php echo $profileStatus === 'active' ? 'is-active' : 'is-inactive'; ?>">
+                            <?php echo htmlspecialchars(ucfirst($profileStatus)); ?>
+                        </span>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="modal-body">
-                <div class="mb-3 text-center">
-                        <?php if (!empty($avatar)): ?>
-                            <img src="../uploads/profile_pictures/<?php echo htmlspecialchars($avatar); ?>" alt="Profile Picture" class="rounded-circle mb-2" width="100" height="100">
-                        <?php else: ?>
-                            <img src="https://via.placeholder.com/100" alt="Profile Picture" class="rounded-circle mb-2">
-                        <?php endif; ?>
-                        <br>
-                        <small class="text-muted">Profile picture </small>
-                    </div>
-                <!-- Full Name -->
-                <div class="mb-3">
-                    <label class="form-label"><b>First Name</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($firstName); ?></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label"><b>Middle Name</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($middleName); ?></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label"><b>Last Name</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($lastName); ?></p>
-                </div>
 
-                <!-- Email -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Email</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($email); ?></p>
-                </div>
+            <div class="modal-body au-profile-body">
+                <dl class="au-profile-details">
+                    <?php foreach ($profileDetails as $detail): ?>
+                        <div class="au-profile-detail">
+                            <i class="bi <?php echo $detail['icon']; ?>" aria-hidden="true"></i>
+                            <div>
+                                <dt><?php echo $detail['label']; ?></dt>
+                                <dd>
+                                    <?php if (empty($detail['value'])): ?>
+                                        <span class="text-muted">Not set</span>
+                                    <?php elseif (!empty($detail['href'])): ?>
+                                        <a href="<?php echo htmlspecialchars($detail['href']); ?>"><?php echo htmlspecialchars($detail['value']); ?></a>
+                                    <?php else: ?>
+                                        <?php echo htmlspecialchars($detail['value']); ?>
+                                    <?php endif; ?>
+                                </dd>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </dl>
+            </div>
 
-                <!-- Password (optional, display placeholder text for security) -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Password</b></label>
-                    <p class="form-control-plaintext">********</p>
-                </div>
-
-                <!-- Department -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Department</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($department); ?></p>
-                </div>
-
-                <!-- Phone Number -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Phone Number</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($phone_number); ?></p>
-                </div>
-
-                <!-- Gender -->
-                <div class="mb-3">
-                    <label class="form-label"><b>Gender</b></label>
-                    <p class="form-control-plaintext"><?php echo htmlspecialchars($gender); ?></p>
-                </div>
-
-                <!-- Close Button -->
-                <div class="text-end">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            <div class="modal-footer au-profile-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-csms" data-bs-toggle="modal" data-bs-target="#editStaffModal">
+                    <i class="bi bi-pencil-square"></i> Edit Profile
+                </button>
             </div>
         </div>
     </div>
