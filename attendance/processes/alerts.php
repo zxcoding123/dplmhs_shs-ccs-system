@@ -28,7 +28,7 @@ if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'ADMIN_NOT_LOGGED_IN') 
     <script>
         Swal.fire({
           title: 'Email creation error!',
-        text: 'The email you have used isn't accredited to ADDU. Please use your ADDU email for registering as a student!',
+        text: 'The email you have used isn't accredited to DPLMHS. Please use your school email for registering as a student!',
         icon: 'error'
         });
     </script>

@@ -57,7 +57,7 @@ include __DIR__ . '/includes/site-header.php';
                     <h1><?= au_e($post['title']) ?></h1>
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pb-3 border-bottom">
                         <span class="au-meta">
-                            <i class="bi bi-person me-1"></i> <?= au_e($post['author_name'] ?: 'Office of the Dean') ?>
+                            <i class="bi bi-person me-1"></i> <?= au_e($post['author_name'] ?: 'Office of the Principal') ?>
                             <span class="mx-2">·</span>
                             <i class="bi bi-calendar3 me-1"></i> <?= au_post_date($post) ?>
                             <span class="mx-2">·</span>

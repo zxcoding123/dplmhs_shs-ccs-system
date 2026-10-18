@@ -2,7 +2,7 @@
 include('processes/server/alert_system.php');
 
 $page_title = 'Contact Us';
-$page_description = 'Contact the Office of the Dean, College of Computer Studies, Aurelius University.';
+$page_description = 'Contact the Office of the Principal, Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School.';
 $active_page = 'contact';
 include __DIR__ . '/includes/site-header.php';
 ?>
@@ -17,7 +17,7 @@ include __DIR__ . '/includes/site-header.php';
         </nav>
         <span class="au-eyebrow">Get in Touch</span>
         <h1>Contact Us</h1>
-        <p>Have questions about our programs or services? Reach the Office of the Dean through any of the channels below.</p>
+        <p>Have questions about enrollment, our strands or services? Reach the Office of the Principal through any of the channels below.</p>
     </div>
 </section>
 
@@ -28,21 +28,21 @@ include __DIR__ . '/includes/site-header.php';
                 <div class="au-card text-center">
                     <i class="bi bi-geo-alt au-card-icon"></i>
                     <h3>Our Address</h3>
-                    <p class="mb-0">College of Computer Studies, Aurelius University<br>Bagumbayan Sur, Naga City, Philippines</p>
+                    <p class="mb-0">Don Pablo Lorenzo Memorial High School<br>Stand-Alone Senior High School, Zamboanga City, Philippines</p>
                 </div>
             </div>
             <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
                 <div class="au-card text-center">
                     <i class="bi bi-telephone au-card-icon"></i>
                     <h3>Call Us</h3>
-                    <p class="mb-0">(054) 472-2368 local 4201<br>Monday – Friday, 8:00 AM – 5:00 PM</p>
+                    <p class="mb-0">(062) 000-0000<br>Monday – Friday, 8:00 AM – 5:00 PM</p>
                 </div>
             </div>
             <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="au-card text-center">
                     <i class="bi bi-envelope au-card-icon"></i>
                     <h3>Email Us</h3>
-                    <p class="mb-0"><a href="mailto:ccs@au.edu.ph">ccs@au.edu.ph</a></p>
+                    <p class="mb-0"><a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a></p>
                 </div>
             </div>
         </div>
@@ -56,8 +56,8 @@ include __DIR__ . '/includes/site-header.php';
             <h2 class="au-section-title">Find us on campus</h2>
             <hr class="au-rule">
         </div>
-        <iframe class="au-map" style="height: 420px;" title="Map of Aurelius University"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3931.3575875530817!2d123.19364561427916!3d13.621204787658985!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33a18d5b68a5fc3f%3A0x18ffb84d435af41!2sAteneo%20de%20Naga%20University!5e0!3m2!1sen!2sph!4v1620372951307!5m2!1sen!2sph"
+        <iframe class="au-map" style="height: 420px;" title="Map of Don Pablo Lorenzo Memorial High School"
+            src="https://www.google.com/maps?q=Don+Pablo+Lorenzo+Memorial+High+School,+Zamboanga+City&output=embed"
             allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
 </section>

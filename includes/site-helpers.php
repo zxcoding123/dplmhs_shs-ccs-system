@@ -106,8 +106,8 @@ function au_gallery_images(?PDO $pdo = null)
         }
     }
 
-    $add('external/img/Kanto-TDRI-DMOC-4.webp', 'Aurelius University Campus', 'Campus');
-    $add('external/img/4-Pillars-III-COLOR-MODIFIED-2048x1365-1.jpg', 'The Four Pillars of Aurelius', 'Campus');
+    $add('external/img/Kanto-TDRI-DMOC-4.webp', 'Don Pablo Lorenzo Memorial High School Campus', 'Campus');
+    $add('external/img/4-Pillars-III-COLOR-MODIFIED-2048x1365-1.jpg', 'Learners and Teachers of DPLMHS', 'Campus');
 
     return $images;
 }

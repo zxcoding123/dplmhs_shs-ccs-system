@@ -1,7 +1,12 @@
 <?php
 session_start();
 
-$auth_heading = 'Begin your journey at <em>CCS</em>';
+// Self-registration is closed: accounts are created by an admin or sub-admin.
+// Send visitors to the login page, which explains this in a modal.
+header('Location: index.php?create=1');
+exit;
+
+$auth_heading = 'Begin your journey at <em>DPLMHS</em>';
 $auth_text = 'Create your student account to access your classes, attendance, grades and College announcements in one place.';
 $auth_points = [
     ['bi-person-check', 'Register with your personal and academic details'],
@@ -15,7 +20,7 @@ $auth_points = [
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Create an Account | College of Computer Studies – Aurelius University</title>
+    <title>Create an Account | Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School</title>
     <meta name="theme-color" content="#061E4E">
     <?php
     $favicon_base_path = '../';
@@ -39,10 +44,10 @@ $auth_points = [
         <main class="au-auth-main">
             <nav class="au-auth-topnav" aria-label="Page">
                 <a class="au-brand au-auth-mobile-brand" href="../index.php">
-                    <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
+                    <img src="../external/img/dp_logo.avif" alt="Don Pablo Lorenzo Memorial High School seal">
                     <span class="au-brand-text">
-                        <span class="au-brand-university">Aurelius University</span>
-                        <span class="au-brand-college">College of Computer Studies</span>
+                        <span class="au-brand-university">Don Pablo Lorenzo Memorial High School</span>
+                        <span class="au-brand-college">Stand-Alone Senior High School</span>
                     </span>
                 </a>
                 <a href="index.php"><i class="bi bi-arrow-left me-1"></i> Back to sign in</a>
@@ -121,7 +126,7 @@ $auth_points = [
                                         <label for="email" class="form-label">Email address</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                            <input type="email" class="form-control" id="email" name="email" placeholder="you@au.edu.ph" autocomplete="email" required>
+                                            <input type="email" class="form-control" id="email" name="email" placeholder="you@dplmhs-shs.edu.ph" autocomplete="email" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -159,12 +164,12 @@ $auth_points = [
 
                     <div class="au-auth-note mt-4">
                         <i class="bi bi-info-circle"></i>
-                        <span>Faculty and staff accounts are issued by the Office of the Dean. Already have an account? <a href="index.php">Sign in</a>.</span>
+                        <span>Faculty and staff accounts are issued by the Office of the Principal. Already have an account? <a href="index.php">Sign in</a>.</span>
                     </div>
                 </div>
             </div>
 
-            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Aurelius University – College of Computer Studies</p>
+            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School</p>
         </main>
     </div>
 

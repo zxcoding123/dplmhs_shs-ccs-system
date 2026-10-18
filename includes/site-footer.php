@@ -12,11 +12,11 @@
                 <div class="row g-5">
                     <div class="col-lg-4">
                         <a class="au-footer-brand" href="index.php">
-                            <img src="external/img/AU_CCS_Logo.png" alt="College of Computer Studies seal">
-                            <span>Aurelius University<small>College of Computer Studies</small></span>
+                            <img src="external/img/AU_CCS_Logo.png" alt="Stand-Alone Senior High School seal">
+                            <span>Don Pablo Lorenzo Memorial High School<small>Stand-Alone Senior High School</small></span>
                         </a>
-                        <p>Forming competent, conscientious and compassionate computing professionals through excellence in teaching, research and community engagement.</p>
-                        <p class="au-footer-motto mb-0">“Scientia et Virtus — Knowledge and Virtue.”</p>
+                        <p>Forming competent, responsible and future-ready senior high school learners prepared for college, employment and life.</p>
+                        <p class="au-footer-motto mb-0">Maka-Diyos · Maka-tao · Makakalikasan · Makabansa</p>
                         <div class="au-social">
                             <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                             <a href="#" aria-label="X (Twitter)"><i class="bi bi-twitter-x"></i></a>
@@ -29,8 +29,8 @@
                     <div class="col-6 col-md-4 col-lg-2">
                         <h5>Explore</h5>
                         <ul>
-                            <li><a href="about_us.php">About the College</a></li>
-                            <li><a href="programs.php">Academic Programs</a></li>
+                            <li><a href="about_us.php">About the School</a></li>
+                            <li><a href="programs.php">Tracks &amp; Strands</a></li>
                             <li><a href="news.php">News &amp; Events</a></li>
                             <li><a href="gallery.php">Photo Gallery</a></li>
                             <li><a href="contact_us.php">Contact Us</a></li>
@@ -42,7 +42,7 @@
                         <ul>
                             <li><a href="login/index.php">Student Portal</a></li>
                             <li><a href="login/index.php">Faculty Portal</a></li>
-                            <li><a href="login/create_account.php">Create an Account</a></li>
+                            <li><a href="login/index.php?create=1">Create an Account</a></li>
                             <li><a href="news.php?category=Academic">Academic Calendar</a></li>
                             <li><a href="help.php">Help Center</a></li>
                         </ul>
@@ -51,9 +51,9 @@
                     <div class="col-md-4 col-lg-4">
                         <h5>Get in Touch</h5>
                         <ul class="au-footer-contact">
-                            <li><i class="bi bi-geo-alt-fill"></i><span>Office of the Dean, College of Computer Studies<br>Aurelius University, Bagumbayan Sur, Naga City<br>Camarines Sur 4400, Philippines</span></li>
-                            <li><i class="bi bi-telephone-fill"></i><span>(054) 472-2368 local 4201</span></li>
-                            <li><i class="bi bi-envelope-fill"></i><a href="mailto:ccs@au.edu.ph">ccs@au.edu.ph</a></li>
+                            <li><i class="bi bi-geo-alt-fill"></i><span>Office of the Principal, Stand-Alone Senior High School<br>Don Pablo Lorenzo Memorial High School<br>Zamboanga City, Philippines</span></li>
+                            <li><i class="bi bi-telephone-fill"></i><span>(062) 000-0000</span></li>
+                            <li><i class="bi bi-envelope-fill"></i><a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a></li>
                             <li><i class="bi bi-clock-fill"></i><span>Mon – Fri, 8:00 AM – 5:00 PM</span></li>
                         </ul>
                     </div>
@@ -63,7 +63,7 @@
 
         <div class="au-footer-bottom">
             <div class="container">
-                <span>&copy; <?= date('Y') ?> Aurelius University – College of Computer Studies. All rights reserved.</span>
+                <span>&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School. All rights reserved.</span>
                 <ul>
                     <li><a href="help.php">Privacy Notice</a></li>
                     <li><a href="help.php">Terms of Use</a></li>

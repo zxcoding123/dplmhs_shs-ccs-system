@@ -1,10 +1,10 @@
 # Student Management System
 
-### Ateneo de Davao University
+### Don Pablo Lorenzo Memorial High School
 
 ## Overview
 
-The **Student Management System (SMS)** is a web-based platform designed to manage and organize student records at **Ateneo de Davao University**. The system allows administrators and authorized personnel to efficiently store, update, and retrieve student information in a centralized database.
+The **Student Management System (SMS)** is a web-based platform designed to manage and organize student records at **Don Pablo Lorenzo Memorial High School**. The system allows administrators and authorized personnel to efficiently store, update, and retrieve student information in a centralized database.
 
 The goal of this system is to simplify administrative processes, improve data accuracy, and reduce the need for manual record management.
 
@@ -165,12 +165,12 @@ http://localhost/student-management-system
 
 ## License
 
-This project was developed for **academic and institutional purposes** for Ateneo de Davao University.
+This project was developed for **academic and institutional purposes** for Don Pablo Lorenzo Memorial High School.
 All rights goes to Ahmad Pandaog Aquino
 
 ---
 
 ## Author
 
-Developed as part of a **Student Management System project** for Ateneo de Davao University.
+Developed as part of a **Student Management System project** for Don Pablo Lorenzo Memorial High School.
 All rights goes to Ahmad Pandaog Aquino

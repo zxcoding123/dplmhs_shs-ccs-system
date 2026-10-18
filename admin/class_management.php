@@ -14,7 +14,7 @@ include('processes/server/conn.php');
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>AU - CCS | Student Management System</title>
+    <title>DPLMHS-SHS | Student Management System</title>
     <?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -62,7 +62,7 @@ include('processes/server/conn.php');
                 <a class="sidebar-toggle js-sidebar-toggle">
                     <i class="hamburger align-self-center"></i>
                 </a>
-            <img src="external/img/AU_Logo.png" class="logo-small">
+            <img src="external/img/dp_logo.avif" class="logo-small">
 				<span class="text-white"><b>AU</b> - Student Management System </span>
                 <div class="navbar-collapse collapse">
                     <?php

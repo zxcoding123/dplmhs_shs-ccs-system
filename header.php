@@ -2,7 +2,7 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid d-flex">
             <a class="navbar-brand" href="#">
-                <img src="external/img/AU_Logo.png" class="img-fluid logo">
+                <img src="external/img/dp_logo.avif" class="img-fluid logo">
             </a>
             <div class="mx-auto ">
                 Student Management System

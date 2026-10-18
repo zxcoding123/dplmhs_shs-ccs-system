@@ -24,8 +24,8 @@ if (isset($_SESSION['student_id'])) {
 <nav id="sidebar" class="sidebar js-sidebar">
     <div class="sidebar-content js-simplebar">
         <a class="au-portal-brand" href="student_dashboard.php">
-            <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
-            <span><strong>Aurelius University</strong><small>CCS Student Portal</small></span>
+            <img src="../external/img/dp_logo.avif" alt="Don Pablo Lorenzo Memorial High School seal">
+            <span><strong>DPLMHS</strong><small>SHS Student Portal</small></span>
         </a>
 
         <div class="au-portal-user">

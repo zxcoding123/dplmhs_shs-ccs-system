@@ -8,5 +8,5 @@ return [
     'password' => $_ENV['MAIL_PASSWORD'] ?? '',
     'encryption' => $_ENV['MAIL_ENCRYPTION'] ?? 'tls',
     'from_email' => $_ENV['MAIL_FROM_EMAIL'] ?? '',
-    'from_name' => $_ENV['MAIL_FROM_NAME'] ?? 'CCS - Aurelius University',
+    'from_name' => $_ENV['MAIL_FROM_NAME'] ?? 'DPLMHS - Stand-Alone Senior High School',
 ];

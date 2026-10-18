@@ -17,7 +17,7 @@ $stmt->execute();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign In | College of Computer Studies – Aurelius University</title>
+    <title>Sign In | Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School</title>
     <meta name="theme-color" content="#061E4E">
     <?php
     $favicon_base_path = '../';
@@ -41,21 +41,21 @@ $stmt->execute();
         <main class="au-auth-main">
             <nav class="au-auth-topnav" aria-label="Page">
                 <a class="au-brand au-auth-mobile-brand" href="../index.php">
-                    <img src="../external/img/AU_Logo.png" alt="Aurelius University seal">
+                    <img src="../external/img/dp_logo.avif" alt="Don Pablo Lorenzo Memorial High School seal">
                     <span class="au-brand-text">
-                        <span class="au-brand-university">Aurelius University</span>
-                        <span class="au-brand-college">College of Computer Studies</span>
+                        <span class="au-brand-university">Don Pablo Lorenzo Memorial High School</span>
+                        <span class="au-brand-college">Stand-Alone Senior High School</span>
                     </span>
                 </a>
                 <a href="../index.php"><i class="bi bi-arrow-left me-1"></i> Back to website</a>
-                <span class="au-auth-hide-mobile text-muted">New here? <a href="create_account.php">Create an account</a></span>
+                <span class="au-auth-hide-mobile text-muted">New here? <a href="#" data-bs-toggle="modal" data-bs-target="#accountInfoModal">Create an account</a></span>
             </nav>
 
             <div class="au-auth-center">
                 <div class="au-auth-card">
                     <span class="au-eyebrow">Student &amp; Faculty Portal</span>
                     <h2>Sign in to your account</h2>
-                    <p class="au-lead">Use the email address registered with the College.</p>
+                    <p class="au-lead">Use the email address registered with the school.</p>
 
                     <div class="au-auth-panel">
                         <form action="processes/login.php" method="POST" id="loginForm" novalidate>
@@ -64,7 +64,7 @@ $stmt->execute();
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                                     <input type="email" class="form-control" id="email" name="email"
-                                        placeholder="you@au.edu.ph" autocomplete="username" required autofocus>
+                                        placeholder="you@dplmhs-shs.edu.ph" autocomplete="username" required autofocus>
                                 </div>
                                 <div class="invalid-feedback d-block d-none" id="emailError">Please enter a valid email address.</div>
                             </div>
@@ -92,18 +92,42 @@ $stmt->execute();
                         </form>
 
                         <div class="au-auth-divider">New to the portal?</div>
-                        <a href="create_account.php" class="btn btn-outline-secondary w-100 fw-semibold">Create a student account</a>
+                        <button type="button" class="btn btn-outline-secondary w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#accountInfoModal">Create an account</button>
                     </div>
 
                     <div class="au-auth-note mt-4">
                         <i class="bi bi-info-circle"></i>
-                        <span>Faculty and staff accounts are issued by the Office of the Dean. Having trouble? Visit the <a href="../help.php">Help Center</a>.</span>
+                        <span>All student and faculty accounts are created by the school's admin or sub-admin. Having trouble? Visit the <a href="../help.php">Help Center</a>.</span>
                     </div>
                 </div>
             </div>
 
-            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Aurelius University – College of Computer Studies</p>
+            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School</p>
         </main>
+    </div>
+
+    <!-- Account creation notice: accounts are issued by an admin, not self-registered -->
+    <div class="modal fade" id="accountInfoModal" tabindex="-1" aria-labelledby="accountInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountInfoModalLabel"><i class="bi bi-person-lock me-2"></i>Account creation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Accounts cannot be created online. <strong>All accounts are created and accredited by the respective admin or sub-admin</strong> of Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School.</p>
+                    <ul class="mb-3">
+                        <li><strong>Students</strong> — ask your class adviser or the school's admin or sub-admin for your account.</li>
+                        <li><strong>Teachers and staff</strong> — ask the school admin to create your account.</li>
+                    </ul>
+                    <p class="text-muted small mb-0">Once your account is created, you will receive your login details at your registered email address.</p>
+                </div>
+                <div class="modal-footer">
+                    <a href="../contact_us.php" class="btn btn-outline-secondary">Contact the school</a>
+                    <button type="button" class="btn btn-au-navy" data-bs-dismiss="modal">Got it</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Reset password -->
@@ -120,7 +144,7 @@ $stmt->execute();
                         <label for="resetEmail" class="form-label">Email address</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                            <input type="email" class="form-control" id="resetEmail" name="email" placeholder="you@au.edu.ph" required>
+                            <input type="email" class="form-control" id="resetEmail" name="email" placeholder="you@dplmhs-shs.edu.ph" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -135,6 +159,11 @@ $stmt->execute();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
+        // Links to the old sign-up page land here with ?create=1
+        if (new URLSearchParams(location.search).has('create')) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('accountInfoModal')).show();
+        }
+
         // Show / hide password
         document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
             btn.addEventListener('click', function () {

@@ -10,7 +10,7 @@
 require_once __DIR__ . '/site-helpers.php';
 
 $page_title = $page_title ?? '';
-$page_description = $page_description ?? 'The College of Computer Studies of Aurelius University forms competent and compassionate computing professionals through excellence in teaching, research and service.';
+$page_description = $page_description ?? 'Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School forms competent, responsible and future-ready learners through quality basic education.';
 $active_page = $active_page ?? '';
 $favicon_base_path = './';
 
@@ -29,7 +29,7 @@ $au_nav = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $page_title !== '' ? au_e($page_title) . ' | ' : '' ?>College of Computer Studies – Aurelius University</title>
+    <title><?= $page_title !== '' ? au_e($page_title) . ' | ' : '' ?>Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School</title>
     <meta name="description" content="<?= au_e($page_description) ?>">
     <meta name="theme-color" content="#061E4E">
     <?php include __DIR__ . '/favicon-links.php'; ?>
@@ -49,8 +49,8 @@ $au_nav = [
     <div class="au-topbar">
         <div class="container">
             <ul class="au-topbar-info">
-                <li><i class="bi bi-telephone me-1"></i> (054) 472-2368 loc. 4201</li>
-                <li><i class="bi bi-envelope me-1"></i> <a href="mailto:ccs@au.edu.ph">ccs@au.edu.ph</a></li>
+                <li><i class="bi bi-telephone me-1"></i> (062) 000-0000</li>
+                <li><i class="bi bi-envelope me-1"></i> <a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a></li>
             </ul>
             <ul class="au-topbar-links">
                 <li><a href="login/index.php">Student Portal</a></li>
@@ -64,10 +64,10 @@ $au_nav = [
         <nav class="navbar navbar-expand-lg" aria-label="Main navigation">
             <div class="container">
                 <a class="au-brand" href="index.php">
-                    <img src="external/img/AU_Logo.png" alt="Aurelius University seal">
+                    <img src="external/img/dp_logo.avif" alt="Don Pablo Lorenzo Memorial High School seal">
                     <span class="au-brand-text">
-                        <span class="au-brand-university">Aurelius University</span>
-                        <span class="au-brand-college">College of Computer Studies</span>
+                        <span class="au-brand-university">Don Pablo Lorenzo Memorial High School</span>
+                        <span class="au-brand-college">Stand-Alone Senior High School</span>
                     </span>
                 </a>
 

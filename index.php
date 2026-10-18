@@ -21,51 +21,51 @@ include __DIR__ . '/includes/site-header.php';
     <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-7" data-aos="fade-right">
-                <span class="au-eyebrow">College of Computer Studies</span>
-                <h1>Shaping the <em>future</em> of computing, rooted in purpose.</h1>
-                <p>For generations, Aurelius University has formed leaders of competence and conscience. Our College of Computer Studies carries that tradition into artificial intelligence, software, data and networks.</p>
+                <span class="au-eyebrow">Stand-Alone Senior High School</span>
+                <h1>Preparing learners for <em>college, careers</em> and life.</h1>
+                <p>Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School offers Grades 11 and 12 under the DepEd K to 12 curriculum, equipping every learner with the knowledge, skills and values to succeed beyond high school.</p>
                 <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
-                    <a href="programs.php" class="btn btn-au-gold btn-lg">Explore Programs</a>
+                    <a href="programs.php" class="btn btn-au-gold btn-lg">Explore Tracks &amp; Strands</a>
                     <a href="news.php" class="btn btn-au-outline btn-lg">Latest News</a>
                 </div>
-                <p class="au-hero-motto">“Scientia et Virtus” — Knowledge and virtue in the service of others.</p>
+                <p class="au-hero-motto">Maka-Diyos · Maka-tao · Makakalikasan · Makabansa</p>
             </div>
             <div class="col-lg-5 text-center d-none d-lg-block" data-aos="zoom-in" data-aos-delay="150">
-                <img src="external/img/AU_Logo.png" class="au-hero-crest" alt="Aurelius University seal">
+                <img src="external/img/dp_logo.avif" class="au-hero-crest" alt="Don Pablo Lorenzo Memorial High School seal">
             </div>
         </div>
     </div>
 </section>
 
 <!-- Stats ribbon -->
-<section class="au-stats" aria-label="The college at a glance">
+<section class="au-stats" aria-label="The school at a glance">
     <div class="container">
         <div class="row g-0">
-            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">4</span><span class="au-stat-label">Degree Programs</span></div>
-            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">1,200+</span><span class="au-stat-label">Students</span></div>
-            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">60+</span><span class="au-stat-label">Faculty &amp; Staff</span></div>
-            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">10,000+</span><span class="au-stat-label">Alumni</span></div>
+            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">11–12</span><span class="au-stat-label">Grade Levels</span></div>
+            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">2</span><span class="au-stat-label">Tracks Offered</span></div>
+            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">4</span><span class="au-stat-label">Academic Strands</span></div>
+            <div class="col-6 col-md-3 au-stat"><span class="au-stat-number">K to 12</span><span class="au-stat-label">DepEd Curriculum</span></div>
         </div>
     </div>
 </section>
 
-<!-- Welcome from the Dean -->
+<!-- Welcome from the Principal -->
 <section class="au-section">
     <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-6" data-aos="fade-right">
                 <div class="au-split-img">
-                    <img src="external/img/4-Pillars-III-COLOR-MODIFIED-2048x1365-1.jpg" alt="Students and faculty of Aurelius University">
+                    <img src="external/img/4-Pillars-III-COLOR-MODIFIED-2048x1365-1.jpg" alt="Learners and teachers of Don Pablo Lorenzo Memorial High School">
                 </div>
             </div>
             <div class="col-lg-6" data-aos="fade-left">
-                <span class="au-eyebrow">Welcome from the Dean</span>
-                <h2 class="au-section-title">An education that forms the whole person</h2>
+                <span class="au-eyebrow">Welcome from the Principal</span>
+                <h2 class="au-section-title">An education that forms the whole learner</h2>
                 <hr class="au-rule">
-                <p>At the College of Computer Studies, technical mastery is only half of the story. We prepare students to design systems that matter — and to ask who those systems serve.</p>
-                <p class="au-quote">“We do not simply train programmers. We form professionals who use technology with integrity, creativity and care for the community.”</p>
-                <p class="au-meta mb-4">Office of the Dean, College of Computer Studies</p>
-                <a href="about_us.php" class="au-link-arrow">Learn more about the College <i class="bi bi-arrow-right"></i></a>
+                <p>Senior high school is where learners choose their path. At DPLMHS, we help every learner discover their strengths, master the competencies of their strand and grow in character.</p>
+                <p class="au-quote">“We do not simply prepare learners for examinations. We prepare them for higher education, meaningful work and responsible citizenship.”</p>
+                <p class="au-meta mb-4">Office of the Principal, Stand-Alone Senior High School</p>
+                <a href="about_us.php" class="au-link-arrow">Learn more about the school <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -75,8 +75,8 @@ include __DIR__ . '/includes/site-header.php';
 <section class="au-section au-section-paper">
     <div class="container">
         <div class="text-center mb-5" data-aos="fade-up">
-            <span class="au-eyebrow">Why Aurelius</span>
-            <h2 class="au-section-title">The four pillars of an Aurelian education</h2>
+            <span class="au-eyebrow">Why DPLMHS</span>
+            <h2 class="au-section-title">What we commit to every learner</h2>
             <hr class="au-rule">
         </div>
         <div class="row g-4">
@@ -84,28 +84,28 @@ include __DIR__ . '/includes/site-header.php';
                 <div class="au-pillar">
                     <span class="au-pillar-icon"><i class="bi bi-mortarboard-fill"></i></span>
                     <h3>Academic Excellence</h3>
-                    <p>The only autonomous university in Bicol, offering programs from pre-school through graduate and law school.</p>
+                    <p>A strong K to 12 curriculum that prepares learners for college entrance and lifelong learning.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
                 <div class="au-pillar">
-                    <span class="au-pillar-icon"><i class="bi bi-people-fill"></i></span>
-                    <h3>Social Involvement</h3>
-                    <p>Scholarships and outreach programs that give priority to the marginalized and serve the wider community.</p>
+                    <span class="au-pillar-icon"><i class="bi bi-tools"></i></span>
+                    <h3>Career Readiness</h3>
+                    <p>Work immersion and skills training that connect classroom learning to real workplaces.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
                 <div class="au-pillar">
                     <span class="au-pillar-icon"><i class="bi bi-heart-fill"></i></span>
                     <h3>Values Formation</h3>
-                    <p>Retreats and formation programs for personal and spiritual growth, open to students and alumni alike.</p>
+                    <p>Guidance and homeroom programs that nurture character, wellbeing and good citizenship.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
                 <div class="au-pillar">
-                    <span class="au-pillar-icon"><i class="bi bi-lightbulb-fill"></i></span>
-                    <h3>Research</h3>
-                    <p>A prime venue for research in Bicol, backed by facilities, partnerships and training programs.</p>
+                    <span class="au-pillar-icon"><i class="bi bi-people-fill"></i></span>
+                    <h3>Community</h3>
+                    <p>Partnerships with parents, local government and industry that support every learner.</p>
                 </div>
             </div>
         </div>
@@ -118,7 +118,7 @@ include __DIR__ . '/includes/site-header.php';
         <div class="au-section-head" data-aos="fade-up">
             <div>
                 <span class="au-eyebrow">News &amp; Announcements</span>
-                <h2 class="au-section-title mb-0">From the College</h2>
+                <h2 class="au-section-title mb-0">From the School</h2>
             </div>
             <a href="news.php" class="au-link-arrow">View all news <i class="bi bi-arrow-right"></i></a>
         </div>
@@ -161,51 +161,51 @@ include __DIR__ . '/includes/site-header.php';
     </div>
 </section>
 
-<!-- Academic programs -->
+<!-- Tracks and strands -->
 <section class="au-section au-section-navy">
     <div class="container">
         <div class="au-section-head" data-aos="fade-up">
             <div>
                 <span class="au-eyebrow">Academics</span>
-                <h2 class="au-section-title mb-0">Programs of study</h2>
+                <h2 class="au-section-title mb-0">Tracks and strands</h2>
             </div>
-            <a href="programs.php" class="au-link-arrow" style="color: var(--au-gold-light);">All programs <i class="bi bi-arrow-right"></i></a>
+            <a href="programs.php" class="au-link-arrow" style="color: var(--au-gold-light);">All strands <i class="bi bi-arrow-right"></i></a>
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-3" data-aos="fade-up">
                 <div class="au-program">
                     <i class="bi bi-cpu"></i>
-                    <span class="au-program-level">Undergraduate</span>
-                    <h3>BS Computer Science</h3>
-                    <p>Algorithms, software engineering, artificial intelligence and data science on a rigorous theoretical foundation.</p>
-                    <a href="programs.php#bscs" class="au-link-arrow">Program details <i class="bi bi-arrow-right"></i></a>
+                    <span class="au-program-level">Academic Track</span>
+                    <h3>STEM</h3>
+                    <p>Science, Technology, Engineering and Mathematics for learners headed to science, engineering, health and IT courses.</p>
+                    <a href="programs.php#stem" class="au-link-arrow">Strand details <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
                 <div class="au-program">
-                    <i class="bi bi-hdd-network"></i>
-                    <span class="au-program-level">Undergraduate</span>
-                    <h3>BS Information Technology</h3>
-                    <p>Web and mobile systems, networking, cybersecurity and IT infrastructure, with industry internships.</p>
-                    <a href="programs.php#bsit" class="au-link-arrow">Program details <i class="bi bi-arrow-right"></i></a>
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span class="au-program-level">Academic Track</span>
+                    <h3>ABM</h3>
+                    <p>Accountancy, Business and Management for future entrepreneurs, accountants and business leaders.</p>
+                    <a href="programs.php#abm" class="au-link-arrow">Strand details <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
                 <div class="au-program">
-                    <i class="bi bi-mortarboard"></i>
-                    <span class="au-program-level">Graduate</span>
-                    <h3>MS Computer Science</h3>
-                    <p>A research-focused degree in machine learning, systems or theory, with evening and weekend classes.</p>
-                    <a href="programs.php#mscs" class="au-link-arrow">Program details <i class="bi bi-arrow-right"></i></a>
+                    <i class="bi bi-chat-quote"></i>
+                    <span class="au-program-level">Academic Track</span>
+                    <h3>HUMSS</h3>
+                    <p>Humanities and Social Sciences for learners drawn to education, law, communication and public service.</p>
+                    <a href="programs.php#humss" class="au-link-arrow">Strand details <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
                 <div class="au-program">
-                    <i class="bi bi-bar-chart-line"></i>
-                    <span class="au-program-level">Professional</span>
-                    <h3>Certificate in Data Analytics</h3>
-                    <p>A six-month program in Python, SQL and data storytelling designed for working professionals.</p>
-                    <a href="programs.php#data-analytics" class="au-link-arrow">Program details <i class="bi bi-arrow-right"></i></a>
+                    <i class="bi bi-wrench-adjustable"></i>
+                    <span class="au-program-level">TVL Track</span>
+                    <h3>Technical-Vocational-Livelihood</h3>
+                    <p>Hands-on specializations that lead to TESDA National Certificates and job-ready skills.</p>
+                    <a href="programs.php#tvl" class="au-link-arrow">Strand details <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
         </div>
@@ -218,7 +218,7 @@ include __DIR__ . '/includes/site-header.php';
         <div class="au-section-head" data-aos="fade-up">
             <div>
                 <span class="au-eyebrow">Campus Life</span>
-                <h2 class="au-section-title mb-0">Moments at the College</h2>
+                <h2 class="au-section-title mb-0">Moments at DPLMHS</h2>
             </div>
             <a href="gallery.php" class="au-link-arrow">Open the gallery <i class="bi bi-arrow-right"></i></a>
         </div>
@@ -241,22 +241,22 @@ include __DIR__ . '/includes/site-header.php';
                 <div class="carousel-item active">
                     <figure class="au-testimonial">
                         <i class="bi bi-quote"></i>
-                        <blockquote>CCS helped me build the skills I now use every day in the tech industry — and the values that guide how I use them.</blockquote>
-                        <cite>Althea<span>BS Computer Science, Class of 2022</span></cite>
+                        <blockquote>The STEM strand prepared me for my college entrance exams — and my teachers taught me how to keep going when things got hard.</blockquote>
+                        <cite>Alumna<span>STEM Strand</span></cite>
                     </figure>
                 </div>
                 <div class="carousel-item">
                     <figure class="au-testimonial">
                         <i class="bi bi-quote"></i>
-                        <blockquote>The professors and laboratories are world-class. I found my passion here, and mentors who believed in it.</blockquote>
-                        <cite>Miguel<span>BS Information Technology Student</span></cite>
+                        <blockquote>Work immersion showed me what a real workplace is like. I found my passion here, and teachers who believed in it.</blockquote>
+                        <cite>Grade 12 Learner<span>TVL Track</span></cite>
                     </figure>
                 </div>
                 <div class="carousel-item">
                     <figure class="au-testimonial">
                         <i class="bi bi-quote"></i>
-                        <blockquote>More than technology, I learned to lead and to serve. That is what an Aurelian education gave me.</blockquote>
-                        <cite>Rachel<span>BS Computer Science Alumna</span></cite>
+                        <blockquote>More than lessons, I learned to lead and to serve. That is what DPLMHS gave me.</blockquote>
+                        <cite>Alumnus<span>HUMSS Strand</span></cite>
                     </figure>
                 </div>
             </div>
@@ -274,8 +274,8 @@ include __DIR__ . '/includes/site-header.php';
     <div class="container">
         <div class="row align-items-center g-4">
             <div class="col-lg-6" data-aos="fade-right">
-                <h2 class="mb-2">Stay connected with CCS</h2>
-                <p class="mb-0">Receive news on programs, events, research and opportunities from the College.</p>
+                <h2 class="mb-2">Stay connected with DPLMHS</h2>
+                <p class="mb-0">Receive news on enrollment, events and opportunities from the school.</p>
             </div>
             <div class="col-lg-6" data-aos="fade-left">
                 <form class="d-flex flex-column flex-sm-row gap-2" onsubmit="event.preventDefault(); this.innerHTML = '<p class=&quot;mb-0 fw-semibold&quot;><i class=&quot;bi bi-check-circle-fill me-2&quot;></i>Thank you for subscribing!</p>';">
@@ -294,19 +294,19 @@ include __DIR__ . '/includes/site-header.php';
         <div class="row g-5">
             <div class="col-lg-5" data-aos="fade-right">
                 <span class="au-eyebrow">Visit Us</span>
-                <h2 class="au-section-title">Office of the Dean</h2>
+                <h2 class="au-section-title">Office of the Principal</h2>
                 <hr class="au-rule">
                 <div class="au-contact-item">
                     <i class="bi bi-building"></i>
-                    <div><strong>College of Computer Studies</strong>Aurelius University, Bagumbayan Sur, Naga City, Philippines</div>
+                    <div><strong>Stand-Alone Senior High School</strong>Don Pablo Lorenzo Memorial High School, Zamboanga City, Philippines</div>
                 </div>
                 <div class="au-contact-item">
                     <i class="bi bi-envelope"></i>
-                    <div><strong>Email</strong><a href="mailto:ccs@au.edu.ph">ccs@au.edu.ph</a></div>
+                    <div><strong>Email</strong><a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a></div>
                 </div>
                 <div class="au-contact-item">
                     <i class="bi bi-telephone"></i>
-                    <div><strong>Phone</strong>(054) 472-2368 local 4201</div>
+                    <div><strong>Phone</strong>(062) 000-0000</div>
                 </div>
                 <div class="au-contact-item">
                     <i class="bi bi-clock"></i>
@@ -314,8 +314,8 @@ include __DIR__ . '/includes/site-header.php';
                 </div>
             </div>
             <div class="col-lg-7" data-aos="fade-left">
-                <iframe class="au-map" title="Map of Aurelius University"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3931.3575875530817!2d123.19364561427916!3d13.621204787658985!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33a18d5b68a5fc3f%3A0x18ffb84d435af41!2sAteneo%20de%20Naga%20University!5e0!3m2!1sen!2sph!4v1620372951307!5m2!1sen!2sph"
+                <iframe class="au-map" title="Map of Don Pablo Lorenzo Memorial High School"
+                    src="https://www.google.com/maps?q=Don+Pablo+Lorenzo+Memorial+High+School,+Zamboanga+City&output=embed"
                     allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>

@@ -8,7 +8,7 @@ $images = au_gallery_images($pdo);
 $albums = array_values(array_unique(array_column($images, 'album')));
 
 $page_title = 'Gallery';
-$page_description = 'Photos of campus life, events and milestones at the College of Computer Studies, Aurelius University.';
+$page_description = 'Photos of campus life, events and milestones at the Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School.';
 $active_page = 'gallery';
 include __DIR__ . '/includes/site-header.php';
 ?>

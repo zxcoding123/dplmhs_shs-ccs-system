@@ -12,7 +12,7 @@ class TemplateHelper
                 
                 <tr>
                     <td style='background:#2d3748;padding:20px;text-align:center;color:#ffffff;'>
-                        <h2 style='margin:0;'>CSMS System</h2>
+                        <h2 style='margin:0;'>DPLMHS Student Management System</h2>
                     </td>
                 </tr>
 
@@ -50,7 +50,7 @@ class TemplateHelper
 
                 <tr>
                     <td style='background:#f9fafb;padding:15px;text-align:center;font-size:12px;color:#888;'>
-                        © " . date('Y') . " CSMS System. All rights reserved.
+                        © " . date('Y') . " DPLMHS Student Management System. All rights reserved.
                     </td>
                 </tr>
 

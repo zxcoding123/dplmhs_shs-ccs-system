@@ -15,7 +15,7 @@ include('processes/server/conn.php');
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>AU - CCS | Student Management System</title>
+    <title>DPLMHS-SHS | Student Management System</title>
     <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -428,13 +428,13 @@ include('processes/server/conn.php');
                                         <!-- Header Section -->
                                         <div style="text-align: center; margin-bottom: 20px; font-family: Arial;"">
         <div style=" display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                            <img src="external/img/ADDU_logo-removebg-preview.png" alt="ADDU Logo"
+                                            <img src="external/img/ADDU_logo-removebg-preview.png" alt="DPLMHS Logo"
                                                 style="height: 80px; width: auto;">
                                             <div>
-                                                <h3 style="margin: 0;">Aurelius University</h3>
-                                                <h4 style="margin: 0;">College of Computer Studies</h4>
+                                                <h3 style="margin: 0;">Don Pablo Lorenzo Memorial High School</h3>
+                                                <h4 style="margin: 0;">Stand-Alone Senior High School</h4>
                                             </div>
-                                            <img src="external/img/ccs_logo-removebg-preview.png" alt="CCS Logo"
+                                            <img src="external/img/ccs_logo-removebg-preview.png" alt="SHS Logo"
                                                 style="height: 80px; width: auto;">
                                         </div>
                                     </div>

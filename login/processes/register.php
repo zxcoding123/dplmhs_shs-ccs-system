@@ -31,7 +31,7 @@ try {
         'EMPTY_FIELDS' => 'Please fill in all required fields.',
         'PASSWORD_NOT_SAME' => 'Passwords do not match.',
         'EMAIL_ALREADY_EXISTS' => 'Email is already registered.',
-        'EMAIL_NOT_ADDU' => 'Use your ADDU email.',
+        'EMAIL_NOT_ADDU' => 'Use your school email.',
         'NOT_SAME_ID' => 'Student ID does not match email.',
         'STUDENT_ID_EXISTS' => 'Student ID already exists.',
         'INVALID_ROLE' => 'Invalid role selected.',

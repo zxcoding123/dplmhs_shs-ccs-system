@@ -2,7 +2,7 @@
 include('processes/server/alert_system.php');
 
 $page_title = 'Help Center';
-$page_description = 'Answers to common questions about the College of Computer Studies Student Management System.';
+$page_description = 'Answers to common questions about the Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School Student Management System.';
 $active_page = 'help';
 include __DIR__ . '/includes/site-header.php';
 ?>
@@ -45,7 +45,7 @@ include __DIR__ . '/includes/site-header.php';
                 </h2>
                 <div id="faq2" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
                     <div class="accordion-body">
-                        Email us at <a href="mailto:ccs@au.edu.ph">ccs@au.edu.ph</a> or call <strong>(054) 472-2368 local 4201</strong>, Monday to Friday, 8:00 AM – 5:00 PM.
+                        Email us at <a href="mailto:info@dplmhs-shs.edu.ph">info@dplmhs-shs.edu.ph</a> or call <strong>(062) 000-0000</strong>, Monday to Friday, 8:00 AM – 5:00 PM.
                     </div>
                 </div>
             </div>

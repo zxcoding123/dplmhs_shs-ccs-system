@@ -97,7 +97,7 @@ The include file automatically detects paths. Use these `$favicon_base_path` val
 👍 **Quick Reactions** - Like button for quick feedback
 📱 **Mobile Optimized** - Touch-friendly interface
 🔔 **Unread Badge** - Shows message count
-🎨 **Brand Colored** - Uses your AU CCS colors
+🎨 **Brand Colored** - Uses your DPLMHS SHS colors
 
 ### Quick Integration
 

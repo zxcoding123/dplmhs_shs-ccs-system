@@ -35,7 +35,7 @@ if ($userId) {
 	<a class="sidebar-toggle js-sidebar-toggle">
 		<i class="hamburger align-self-center"></i>
 	</a>
-	<img src="external/img/AU_Logo.png" class="logo-small">
+	<img src="external/img/dp_logo.avif" class="logo-small">
 	<span class="text-white"><b>AU</b> - Student Management System </span>
 	<div class="navbar-collapse collapse">
 		<ul class="navbar-nav navbar-align">

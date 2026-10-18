@@ -1,7 +1,7 @@
 {
-  "name": "Aurelius University - College of Computer Studies",
-  "short_name": "AU CCS",
-  "description": "Aurelius University College of Computer Studies Management System",
+  "name": "Don Pablo Lorenzo Memorial High School - Stand-Alone Senior High School",
+  "short_name": "DPLMHS SHS",
+  "description": "Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School Student Management System",
   "start_url": "/index.php",
   "display": "standalone",
   "scope": "/",

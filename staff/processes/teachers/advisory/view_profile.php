@@ -28,7 +28,7 @@ if (!$student) {
                 style="width: 200px; height: 200px; object-fit: cover;"
                 alt="Student Photo">
         <?php else: ?>
-            <img src="../external/img/AU_Logo.png"
+            <img src="../external/img/dp_logo.avif"
                 class="img-fluid rounded-circle mb-3"
                 style="width: 200px; height: 200px; object-fit: cover;"
                 alt="Default Photo">

@@ -43,7 +43,7 @@ function au_news_url(array $overrides = [])
 }
 
 $page_title = 'News & Events';
-$page_description = 'News, announcements, events and academic updates from the College of Computer Studies, Aurelius University.';
+$page_description = 'News, announcements, events and academic updates from the Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School.';
 $active_page = 'news';
 include __DIR__ . '/includes/site-header.php';
 ?>
@@ -56,9 +56,9 @@ include __DIR__ . '/includes/site-header.php';
                 <li class="breadcrumb-item active" aria-current="page">News &amp; Events</li>
             </ol>
         </nav>
-        <span class="au-eyebrow">The CCS Newsroom</span>
+        <span class="au-eyebrow">The DPLMHS Newsroom</span>
         <h1>News &amp; Events</h1>
-        <p>Announcements, stories and updates from the Office of the Dean, our faculty and our students.</p>
+        <p>Announcements, stories and updates from the Office of the Principal, our faculty and our students.</p>
     </div>
 </section>
 

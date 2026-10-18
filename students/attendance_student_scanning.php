@@ -63,7 +63,7 @@ if (!isset($_SESSION['student_id'])) {
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>AU - CCS | Student Management System</title>
+            <title>DPLMHS-SHS | Student Management System</title>
             <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
                 integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">

@@ -48,7 +48,7 @@ if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'TOO_MANY_ATTEMPTS') {
     <script>
         Swal.fire({
           title: 'Email creation error!',
-        text: 'The email you have used is not accredited to ADDU. Please use your ADDU email for registering as a student!',
+        text: 'The email you have used is not accredited to DPLMHS. Please use your school email for registering as a student!',
         icon: 'error'
         });
     </script>

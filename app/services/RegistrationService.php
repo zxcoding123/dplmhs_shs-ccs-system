@@ -186,7 +186,7 @@ class RegistrationService
             $data['email'],
             "Activate Your Account",
             $body,
-            "CSMS System"
+            "DPLMHS Student Management System"
         );
 
         $sent = $this->mailService->send($emailDTO);
