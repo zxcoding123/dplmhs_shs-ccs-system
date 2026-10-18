@@ -5,7 +5,7 @@ if (!isset($_SESSION['admin_id'])) {
     header("Location: admin_login_page.php");
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">

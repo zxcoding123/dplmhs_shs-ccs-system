@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php'; // Ensure correct path
+require_once __DIR__ . '/../../../../database/connection.php'; // Ensure correct path
 
 if (isset($_GET['resource_id'])) {
     $resource_id = intval($_GET['resource_id']); // Ensure it's an integer

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php';
+require_once __DIR__ . '/../../../../database/connection.php';
 
 header('Content-Type: application/json');
 

@@ -1,6 +1,6 @@
 <?php
 // notify_submission.php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 header('Content-Type: application/json');
 
 try {

@@ -1,5 +1,5 @@
 <?php
-include('../../server/conn.php'); 
+include __DIR__ . '/../../../../database/connection.php'; 
 session_start();
 
 if (isset($_GET['id'])) {

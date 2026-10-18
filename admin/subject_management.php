@@ -4,7 +4,7 @@ if (!isset($_SESSION['admin_id'])) {
     $_SESSION['STATUS'] = "ADMIN_NOT_LOGGED_IN";
     header("Location: admin_login_page.php");
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 ?>
 
   
@@ -83,7 +83,7 @@ td {
 </style>
 
 <?php
-include 'processes/server/conn.php';
+include __DIR__ . '/../database/connection.php';
 
 // Fetch all subjects
 $query = "SELECT id, name, type, code, semester, course, year_level, is_archived FROM subjects";
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     <?php
-    require 'processes/server/conn.php';
+    require __DIR__ . '/../database/connection.php';
 
     $staffQuery = "SELECT id, fullName FROM staff_accounts";
     $staffStmt = $pdo->query($staffQuery);

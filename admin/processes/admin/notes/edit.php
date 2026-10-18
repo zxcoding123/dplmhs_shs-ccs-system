@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-include('../..//server/conn.php');
+include __DIR__ . '/../../../../database/connection.php';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $note_id = $_GET['id'];
     $title = $_POST['title'];

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 
 // Assuming you have a function to check if the user is authenticated
 if (!isset($_SESSION['user_id'])) {

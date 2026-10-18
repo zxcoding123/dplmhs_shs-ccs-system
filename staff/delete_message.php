@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 
 try {
     $messageId = $_POST['id'];

@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Adjust the path as needed
+require __DIR__ . '/../database/connection.php'; // Adjust the path as needed
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $notif_name = $_POST['notif_name'];

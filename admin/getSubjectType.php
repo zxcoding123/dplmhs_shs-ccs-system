@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 
 // Check if subjectId is provided in the GET request
 if (isset($_GET['subjectId'])) {

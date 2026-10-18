@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure database connection is correctly loaded
+require __DIR__ . '/../database/connection.php'; // Ensure database connection is correctly loaded
 session_start();
 
 // Validate request method and parameters

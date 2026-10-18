@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once('processes/server/conn.php');
+require_once __DIR__ . '/../database/connection.php';
 
 // Check if user is logged in as teacher/adviser
 if (!isset($_SESSION['teacher_id'])) {

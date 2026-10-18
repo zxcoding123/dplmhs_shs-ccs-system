@@ -1,5 +1,5 @@
 <?php
-include('../../server/conn.php');
+include __DIR__ . '/../../../../database/connection.php';
 session_start(); 
 date_default_timezone_set('Asia/Manila');
 
@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     try {
         // Create a new PDO connection
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $pdo = Database::getConnection();
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Prepare SQL to check if the username or email exists

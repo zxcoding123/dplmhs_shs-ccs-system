@@ -1,5 +1,5 @@
 <?php
-require_once 'processes/server/conn.php'; // Ensure the correct path
+require_once __DIR__ . '/../database/connection.php'; // Ensure the correct path
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $class_id = $_POST['class_id'];

@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-include('../../server/conn.php');
+include __DIR__ . '/../../../../database/connection.php';
 
 // Get POST data
 $post_id = $_POST['post_id'] ?? 0;

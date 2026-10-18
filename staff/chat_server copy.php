@@ -1,6 +1,6 @@
 <?php
 require '../vendor/autoload.php';
-require "processes/server/conn.php";  // Include database connection
+require __DIR__ . '/../database/connection.php';  // Include database connection
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;

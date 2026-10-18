@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../server/conn.php';
+require __DIR__ . '/../../../database/connection.php';
 
 try {
     $query = "UPDATE admin_auto_notifications SET status = 'false'";

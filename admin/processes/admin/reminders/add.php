@@ -1,7 +1,7 @@
 <?php
 session_start();
 date_default_timezone_set('Asia/Manila');
-include('../../server/conn.php');
+include __DIR__ . '/../../../../database/connection.php';
 
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {

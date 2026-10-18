@@ -6,7 +6,7 @@ if (!isset($_SESSION['teacher_id'])) {
     exit();
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 
 $class_name = $_GET['class_id'] ?? '';            // e.g. "BSIT-1A"
 $teacher    = $_SESSION['full_name'];             // matches staff_advising.fullName

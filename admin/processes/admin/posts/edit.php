@@ -4,7 +4,7 @@ if (!isset($_SESSION['admin_id'])) {
     die("Unauthorized access");
 }
 
-include('../../server/conn.php');
+include __DIR__ . '/../../../../database/connection.php';
 
 // Check if form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

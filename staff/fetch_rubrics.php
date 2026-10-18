@@ -1,5 +1,5 @@
 <?php
-require_once 'processes/server/conn.php'; // Database connection
+require_once __DIR__ . '/../database/connection.php'; // Database connection
 
 $class_id = $_GET['class_id'] ?? null;
 $subject_id = $_GET['subject_id'] ?? null;

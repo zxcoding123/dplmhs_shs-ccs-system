@@ -1,5 +1,5 @@
 <?php
-require_once '../../server/conn.php'; // Adjust the path based on your folder structure
+require_once __DIR__ . '/../../../../database/connection.php'; // Adjust the path based on your folder structure
 
 session_start(); // Start the session to access session variables
 $student_id = isset($_SESSION['student_id']) ? $_SESSION['student_id'] : null;

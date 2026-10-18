@@ -1,6 +1,6 @@
 <?php
 session_start();
-require "processes/server/conn.php";
+require __DIR__ . '/../database/connection.php';
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(["error" => "User not logged in"]);

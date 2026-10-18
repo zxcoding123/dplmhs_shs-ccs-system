@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 
 // Get the date and class ID from the query string
 $date = $_GET['date'];

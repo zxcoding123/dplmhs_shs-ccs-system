@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 date_default_timezone_set('Asia/Manila');
 $user_id = $_SESSION['user_id'];
 $query = "SELECT * FROM admin_notifications ORDER BY id DESC ";

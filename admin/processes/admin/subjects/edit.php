@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../../server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['id'], $_POST['name'], $_POST['code'], $_POST['type'], $_POST['semester'], $_POST['course'], $_POST['year_level'])) {

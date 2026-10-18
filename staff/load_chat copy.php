@@ -1,6 +1,6 @@
 <?php
 session_start();
-require "processes/server/conn.php";
+require __DIR__ . '/../database/connection.php';
 
 $receiverId = $_GET['receiver_id'];
 $receiverType = $_GET['receiver_type'];

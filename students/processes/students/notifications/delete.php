@@ -1,7 +1,7 @@
 <?php 
 // delete.php
 session_start();
-require '../../server/conn.php'; // Adjust the path based on your directory structure
+require __DIR__ . '/../../../../database/connection.php'; // Adjust the path based on your directory structure
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     $id = intval($_POST['id']);

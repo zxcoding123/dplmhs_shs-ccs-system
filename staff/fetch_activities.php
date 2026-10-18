@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 
 $class_id = $_GET['class_id']; // Get the class ID from the request
 $subject_id = $_GET['subject_id']; // Get the subject ID from the request

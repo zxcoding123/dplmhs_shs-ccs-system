@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php';
+require_once __DIR__ . '/../../../../database/connection.php';
 
 try {
     $class_id = $_POST['class_id'];

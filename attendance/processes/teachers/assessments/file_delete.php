@@ -1,7 +1,7 @@
 <?php
 // Start session and include database connection
 session_start();
-require_once '../../server/conn.php';
+require_once __DIR__ . '/../../../../database/connection.php';
 
 // Get the 'id' parameter from the URL (the assessment ID)
 $assessment_id = isset($_GET['id']) ? $_GET['id'] : null;

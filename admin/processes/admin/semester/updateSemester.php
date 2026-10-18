@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../../server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 
 // Check if the form is submitted via POST and ID is provided
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {

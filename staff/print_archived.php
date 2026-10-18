@@ -1,5 +1,5 @@
 ﻿<?php
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 ?>
 
 <!DOCTYPE html>

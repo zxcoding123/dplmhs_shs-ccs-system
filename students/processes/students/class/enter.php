@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php'; // Ensure this path is correct
+require_once __DIR__ . '/../../../../database/connection.php'; // Ensure this path is correct
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Retrieve the entered class code and current student ID from the session

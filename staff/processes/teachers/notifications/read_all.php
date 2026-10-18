@@ -1,5 +1,5 @@
 <?php
-require '../../server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 session_start();
 
 // Ensure `user_id` is available

@@ -1,6 +1,6 @@
 <?php
 // fetch_schedule_events.php
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 

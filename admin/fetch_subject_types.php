@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 
 // Get the subject from the query string
 $subject = $_GET['subject'] ?? '';

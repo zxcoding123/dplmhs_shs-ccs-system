@@ -4,7 +4,7 @@ if (!isset($_SESSION['student_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
     SET status = 'Finished'
@@ -310,7 +310,7 @@ $stmt->execute();
                                         <div id="activity" class="accordion-collapse collapse"
                                             data-bs-parent="#navlinkers">
                                             <?php
-                                            require_once 'processes/server/conn.php'; // Database connection
+                                            require_once __DIR__ . '/../database/connection.php'; // Database connection
 
                                             $class_id = isset($_GET['class_id']) ? $_GET['class_id'] : null; // Get the class_id from the URL
 
@@ -869,7 +869,7 @@ $stmt->execute();
                                             <div class="accordion-body">
                                                 <?php
                                                 // Include the database connection
-                                                require_once 'processes/server/conn.php';
+                                                require_once __DIR__ . '/../database/connection.php';
 
                                                 // Get the logged-in student's ID
                                                 $studentId = $_SESSION['student_id'] ?? null;
@@ -1329,7 +1329,7 @@ $stmt->execute();
                                             <h1 class="bold text-center mb-4">Attendance</h1>
                                             <?php
                                             // Include the database connection
-                                            require_once 'processes/server/conn.php';
+                                            require_once __DIR__ . '/../database/connection.php';
 
                                             // Get the logged-in student's ID
                                             $studentId = $_SESSION['student_id'] ?? null;
@@ -1400,7 +1400,7 @@ $stmt->execute();
                                             <h1 class="bold text-center mb-4">Grades</h1>
                                             <?php
                                             // Include the database connection
-                                            require_once 'processes/server/conn.php';
+                                            require_once __DIR__ . '/../database/connection.php';
 
                                             // Get the logged-in student's ID
                                             $studentId = $_SESSION['student_id'] ?? null;

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php'; // Ensure correct path
+require_once __DIR__ . '/../../../../database/connection.php'; // Ensure correct path
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $class_id = $_GET['class_id'];

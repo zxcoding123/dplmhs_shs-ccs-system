@@ -6,7 +6,7 @@ if (!isset($_SESSION['teacher_id'])) {
     exit();
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 
 // Get teacher's advisory classes
 $teacher_name = $_SESSION['full_name'];

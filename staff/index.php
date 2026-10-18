@@ -7,7 +7,7 @@ if (!isset($_SESSION['teacher_id'])) {
 }
 
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
@@ -420,8 +420,8 @@ WHERE teacher = :teacher_name AND status != 'pending';
 					$total_document_count = 0; // Initialize the total document count
 
 					try {
-						require_once 'processes/server/conn2.php'; // Ensure the path is correct
-						$conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+						require_once __DIR__ . '/../database/connection.php'; // Ensure the path is correct
+						$conn = Database::getConnection();
 
 						// Set the PDO error mode to exception
 						$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -498,7 +498,7 @@ WHERE teacher = :teacher_name AND status != 'pending';
 
 										try {
 											// Create a new PDO instance (with error handling)
-											$conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+											$conn = Database::getConnection();
 
 											// Set the PDO error mode to exception
 											$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -603,7 +603,7 @@ WHERE teacher = :teacher_name AND status != 'pending';
 
 									try {
 										// Create a new PDO instance (assuming $servername, $dbname, $username, $password are defined)
-										$conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+										$conn = Database::getConnection();
 
 										// Set the PDO error mode to exception
 										$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -682,7 +682,7 @@ WHERE teacher = :teacher_name AND status != 'pending';
 										$teacher_name = $_SESSION['teacher_name'];
 										try {
 											// Create a new PDO instance (with error handling)
-											$conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+											$conn = Database::getConnection();
 
 											// Set the PDO error mode to exception
 											$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

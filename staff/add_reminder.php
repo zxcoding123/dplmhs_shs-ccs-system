@@ -1,6 +1,6 @@
 <?php
 session_Start();
-require_once 'processes/server/conn.php'; // Make sure the path is correct
+require_once __DIR__ . '/../database/connection.php'; // Make sure the path is correct
 
 
 

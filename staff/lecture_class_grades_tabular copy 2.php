@@ -4,7 +4,7 @@ if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,7 +83,7 @@ include('processes/server/conn.php');
                 <!-- Grading Modal -->
                 <?php
                 // Include the database connection
-                include('processes/server/conn.php');
+                include __DIR__ . '/../database/connection.php';
 
                 $class_id = $_GET['id']; // Get the class_id from the URL or form
 

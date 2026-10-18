@@ -5,7 +5,7 @@ if (!isset($_SESSION['student_id'])) {
 	header("Location: ../login/index.php");
 	exit;
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
     SET status = 'Finished'
@@ -1746,7 +1746,7 @@ $stmt->execute();
 										<h1 class="bold text-center mb-4">Attendance</h1>
 										<?php
 										// Include the database connection
-										require_once 'processes/server/conn.php';
+										require_once __DIR__ . '/../database/connection.php';
 
 										// Get the logged-in student's ID
 										$studentId = $_SESSION['student_id'] ?? null;
@@ -1817,7 +1817,7 @@ $stmt->execute();
 										<h1 class="bold text-center mb-4">Grades</h1>
 										<?php
 										// Include the database connection
-										require_once 'processes/server/conn.php';
+										require_once __DIR__ . '/../database/connection.php';
 
 										// Get the logged-in student's ID
 										$studentId = $_SESSION['student_id'] ?? null;

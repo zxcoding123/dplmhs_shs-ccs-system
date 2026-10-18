@@ -1,5 +1,5 @@
 <?php
-require_once '../../server/conn.php'; // Database connection
+require_once __DIR__ . '/../../../../database/connection.php'; // Database connection
 
 session_start(); // Start the session to access $_SESSION variables
 

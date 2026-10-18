@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 
 // Get the search term and class ID from the AJAX request
 $searchTerm = isset($_GET['searchTerm']) ? $_GET['searchTerm'] : '';

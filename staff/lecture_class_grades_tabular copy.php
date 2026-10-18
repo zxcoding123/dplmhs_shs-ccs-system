@@ -1,5 +1,5 @@
 <?php
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 // Assuming PDO connection is already established
 $class_id = $_GET['id'] ?? null;
 

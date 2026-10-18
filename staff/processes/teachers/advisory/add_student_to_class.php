@@ -6,7 +6,7 @@ if (!isset($_SESSION['teacher_id'])) {
     exit();
 }
 
-require '../../../processes/server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 
 
 

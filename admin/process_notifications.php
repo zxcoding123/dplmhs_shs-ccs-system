@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'processes/server/conn.php'; // Adjust the path
+require __DIR__ . '/../database/connection.php'; // Adjust the path
 
 if ($_POST['action'] === 'set_all_false') {
     $query = "UPDATE admin_notifications SET status = 'false'";

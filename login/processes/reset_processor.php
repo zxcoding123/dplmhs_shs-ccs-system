@@ -1,5 +1,5 @@
 <?php
-require_once 'conn.php'; // Database connection
+require_once __DIR__ . '/../../database/connection.php'; // Database connection
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['token']) && isset($_POST['password'])) {

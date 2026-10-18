@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../../server/conn.php'; // Adjust the path based on your directory structure
+require __DIR__ . '/../../../../database/connection.php'; // Adjust the path based on your directory structure
 
 // Assuming you have a `status` column in your `admin_notifications` table
 try {

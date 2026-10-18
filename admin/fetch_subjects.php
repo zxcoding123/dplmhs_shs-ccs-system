@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 
 if (isset($_GET['class'])) {
     $selectedClass = $_GET['class'];

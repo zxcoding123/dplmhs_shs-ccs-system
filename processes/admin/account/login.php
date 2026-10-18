@@ -1,5 +1,5 @@
 <?php
-include('../../server/conn.php');
+include __DIR__ . '/../../../database/connection.php';
 session_start();
 date_default_timezone_set('Asia/Manila');
 
@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password_account = $_POST['password'];
 
     try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $pdo = Database::getConnection();
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $sql = "SELECT * FROM admin WHERE username = :username_or_email OR email = :username_or_email LIMIT 1";

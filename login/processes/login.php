@@ -1,5 +1,5 @@
 <?php
-require 'conn.php';
+require __DIR__ . '/../../database/connection.php';
 require '../../app/services/AuthService.php';
 
 $pdo = Database::getConnection();

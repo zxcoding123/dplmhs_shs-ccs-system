@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../../server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

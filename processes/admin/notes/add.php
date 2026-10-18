@@ -2,10 +2,10 @@
 session_start();
 header('Content-Type: application/json');
 
-include('../../server/conn.php');
+include __DIR__ . '/../../../database/connection.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo = Database::getConnection();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $title = htmlspecialchars($_POST['title']);

@@ -1,5 +1,5 @@
 <?php
-require_once 'conn.php'; // Database connection
+require_once __DIR__ . '/../../database/connection.php'; // Database connection
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 

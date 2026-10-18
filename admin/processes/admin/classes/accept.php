@@ -1,5 +1,5 @@
 <?php
-require '../../../processes/server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {

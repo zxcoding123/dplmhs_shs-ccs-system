@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 $data = json_decode(file_get_contents("php://input"), true);
 $date = $data['date'] ?? null;
 

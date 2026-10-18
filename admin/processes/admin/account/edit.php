@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php'; 
+require_once __DIR__ . '/../../../../database/connection.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $admin_id = $_POST['id']; // It's safer to use POST to send the admin_id

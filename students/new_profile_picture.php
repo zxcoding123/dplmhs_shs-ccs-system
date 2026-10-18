@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 
 session_start(); // Start the session to access session variables
 

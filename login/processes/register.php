@@ -1,5 +1,5 @@
 <?php
-require_once 'conn.php';
+require_once __DIR__ . '/../../database/connection.php';
 require_once '../../app/services/RegistrationService.php';
 
 require_once '../../app/bootstrap.php';

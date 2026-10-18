@@ -9,7 +9,7 @@ if (!isset($_SESSION['student_id'])) {
 $class_id = $_GET['class_id'];
 $classAttendanceId = $_GET['classAttendanceId'];
 $semester_id = $_GET['semesterId'];
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
     SET status = 'Finished'
@@ -692,7 +692,7 @@ alt="Class Attendance QR Code" style="width: 200px; height: auto;">
                                         <h1 class="bold text-center mb-4">Attendance</h1>
                                         <?php
                                         // Include the database connection
-                                        require_once 'processes/server/conn.php';
+                                        require_once __DIR__ . '/../database/connection.php';
 
                                         // Get the logged-in student's ID
                                         $studentId = $_SESSION['student_id'] ?? null;
@@ -759,7 +759,7 @@ alt="Class Attendance QR Code" style="width: 200px; height: auto;">
                                         <h1 class="bold text-center mb-4">Grades</h1>
                                         <?php
                                         // Include the database connection
-                                        require_once 'processes/server/conn.php';
+                                        require_once __DIR__ . '/../database/connection.php';
 
                                         // Get the logged-in student's ID
                                         $studentId = $_SESSION['student_id'] ?? null;

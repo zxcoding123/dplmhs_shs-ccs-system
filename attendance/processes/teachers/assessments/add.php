@@ -1,5 +1,5 @@
 <?php
-require '../../server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../../../../database/connection.php'; // Ensure this points to your database connection file
 
 session_start();
 

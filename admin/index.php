@@ -1,6 +1,6 @@
 ﻿<?php
 session_start();
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 require '../app/helpers/auth.php'; // adjust path to your file
 requireRole('admin'); // ensures only admins can access
 ?>
@@ -54,7 +54,7 @@ requireRole('admin'); // ensures only admins can access
 											<div class="card-body">
 												<?php
 												// Include the database connection
-												require_once 'processes/server/conn.php';
+												require_once __DIR__ . '/../database/connection.php';
 
 												// Query to get the total number of students
 												$stmt = $pdo->query("SELECT COUNT(*) AS total_students FROM students");
@@ -417,7 +417,7 @@ requireRole('admin'); // ensures only admins can access
 
 
 	<?php
-	include('processes/server/conn.php');
+	include __DIR__ . '/../database/connection.php';
 	date_default_timezone_set('Asia/Manila');
 
 	$notes = [];

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 
 if (isset($_POST['user_id']) && isset($_POST['new_status'])) {
     $user_id = $_POST['user_id'];

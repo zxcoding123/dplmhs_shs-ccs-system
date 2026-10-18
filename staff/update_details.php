@@ -10,7 +10,7 @@ if (!isset($_SESSION['teacher_id'])) {
     exit;
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 
 try {
     // Get the teacher's ID

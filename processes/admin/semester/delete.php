@@ -1,6 +1,6 @@
 <?php
 session_start();
-include('../../server/conn.php');
+include __DIR__ . '/../../../database/connection.php';
     if (isset($_GET['id'])) {
         $id = htmlspecialchars($_GET['id']);
         $sql = "DELETE FROM semester WHERE id = :id";

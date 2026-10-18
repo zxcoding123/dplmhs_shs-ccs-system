@@ -1,5 +1,5 @@
 <?php
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 session_start();
 
 if (!isset($_SESSION['student_id'])) {

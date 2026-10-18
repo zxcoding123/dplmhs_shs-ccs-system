@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 
 if (isset($_GET['id'])) {
     $id = $_GET['id'];

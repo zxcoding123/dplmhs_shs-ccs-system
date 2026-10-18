@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 
 $classId = $_GET['class_id'] ?? null;
 $meetingId = $_GET['meeting_id'] ?? null;

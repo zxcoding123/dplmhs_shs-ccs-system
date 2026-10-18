@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php';
+require_once __DIR__ . '/../../../database/connection.php';
 
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = 'UNAUTHORIZED';

@@ -4,7 +4,7 @@ if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
     SET status = 'Finished'
@@ -117,7 +117,7 @@ $stmt->execute();
                                 </a>
 
                                 <?php
-                                require 'processes/server/conn.php';
+                                require __DIR__ . '/../database/connection.php';
 
                                 $archive_status = "";
                                 $class_id = $_GET['class_id'] ?? null;

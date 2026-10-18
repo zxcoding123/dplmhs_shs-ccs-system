@@ -1,6 +1,6 @@
 <?php
 session_start();
-require "processes/server/conn.php";
+require __DIR__ . '/../database/connection.php';
 
 $searchTerm = $_GET['query'] ?? '';
 

@@ -1,5 +1,5 @@
 <?php
-require '../../server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 session_start(); // Start session for status messages
 
 if (isset($_GET['id']) && $_SERVER['REQUEST_METHOD'] == 'POST') {

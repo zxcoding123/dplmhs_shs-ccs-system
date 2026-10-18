@@ -1,5 +1,5 @@
 <?php
-require_once '../../processes/server/conn.php';
+require_once __DIR__ . '/../../database/connection.php';
 session_start();
 
 if (!isset($_GET['token'])) {

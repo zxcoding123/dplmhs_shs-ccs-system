@@ -1,8 +1,8 @@
 <?php
 session_start();
-include('../../server/conn.php');
+include __DIR__ . '/../../../database/connection.php';
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo = Database::getConnection();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     if (isset($_GET['id'])) {
         $id = htmlspecialchars($_GET['id']);

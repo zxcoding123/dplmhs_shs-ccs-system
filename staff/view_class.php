@@ -5,7 +5,7 @@ if (!isset($_SESSION['teacher_id'])) {
     header("Location: ../login/index.php");
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 ?>
 
 <?php

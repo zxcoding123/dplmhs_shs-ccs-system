@@ -1,6 +1,6 @@
 <?php
 date_default_timezone_set('Asia/Singapore'); // or 'Asia/Manila'
-require 'conn.php'; // Adjust the path based on your directory structure
+require __DIR__ . '/../../database/connection.php'; // Adjust the path based on your directory structure
 session_start();
 
 // Get today's date in 'Y-m-d' format

@@ -5,7 +5,7 @@ if (!isset($_SESSION['teacher_id'])) {
     exit();
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 
 $class_name = $_GET['class_id'] ?? '';
 $teacher = $_SESSION['full_name'];

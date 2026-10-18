@@ -1,5 +1,5 @@
 <?php
-require_once 'processes/server/conn.php'; // Database connection
+require_once __DIR__ . '/../database/connection.php'; // Database connection
 session_start();
 
 header('Content-Type: application/json'); // Set response type to JSON

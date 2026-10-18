@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../server/conn.php'; // Assumes this file defines $pdo
+require_once __DIR__ . '/../../../../database/connection.php'; // Assumes this file defines $pdo
 
 try {
     if (!isset($pdo) || !$pdo instanceof PDO) {

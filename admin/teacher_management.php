@@ -1,6 +1,6 @@
 ﻿<?php
 session_start();
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 require '../app/helpers/auth.php'; // adjust path to your file
 requireRole('admin'); // ensures only admins can access
 ?>

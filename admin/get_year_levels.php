@@ -1,6 +1,6 @@
 <?php
 // Include your database connection
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 
 // Check if the 'course' parameter is provided
 if (isset($_GET['course'])) {

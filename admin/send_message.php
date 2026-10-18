@@ -1,5 +1,5 @@
 <?php
-require "processes/server/conn.php";  // Ensure this file correctly sets up $pdo
+require __DIR__ . '/../database/connection.php';  // Ensure this file correctly sets up $pdo
 session_start();
 date_default_timezone_set('Asia/Manila');
 

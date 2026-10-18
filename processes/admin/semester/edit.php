@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-include('../..//server/conn.php');
+include __DIR__ . '/../../../database/connection.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = htmlspecialchars($_GET['id']);
@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $end_date = htmlspecialchars($_POST['semEndDate']);
     $description = htmlspecialchars($_POST['semDesc']);
 
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo = Database::getConnection();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     try {

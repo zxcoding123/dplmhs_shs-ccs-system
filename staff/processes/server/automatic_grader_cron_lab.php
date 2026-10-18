@@ -1,5 +1,5 @@
 <?php
-include('conn.php');
+include __DIR__ . '/../../../database/connection.php';
 $class_id = $_GET['class_id']; // Example class ID (change as needed)
 // Fetch students
 $stmt = $pdo->prepare("SELECT id, fullName FROM students WHERE gender = 'Male'");

@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../includes/gallery-store.php';
 
 au_gallery_ensure_table($pdo);

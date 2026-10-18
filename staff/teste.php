@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure this points to the correct database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to the correct database connection file
 
 $class_id = $_GET['class_id'] ?? null;
 $startTime = $endTime = '';

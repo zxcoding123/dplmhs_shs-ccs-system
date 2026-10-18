@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php';
+require __DIR__ . '/../database/connection.php';
 
 $query = $_GET['query'] ?? '';
 if (strlen($query) < 2) {

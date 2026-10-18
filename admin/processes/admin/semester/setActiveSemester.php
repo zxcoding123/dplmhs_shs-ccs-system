@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../../server/conn.php';
+require __DIR__ . '/../../../../database/connection.php';
 
 // Check if semester ID is passed in URL
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {

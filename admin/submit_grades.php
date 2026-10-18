@@ -1,6 +1,6 @@
 <?php
 session_start();
-require "processes/server/conn.php"; // Ensure this file correctly sets up $pdo
+require __DIR__ . '/../database/connection.php'; // Ensure this file correctly sets up $pdo
 
 try {
     // Check if required POST parameters are set

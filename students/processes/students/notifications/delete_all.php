@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../../server/conn.php'; // Adjust the path based on your directory structure
+require __DIR__ . '/../../../../database/connection.php'; // Adjust the path based on your directory structure
 try {
     $user_id = $_SESSION['student_id'];
     $stmt = $pdo->prepare("DELETE FROM student_notifications WHERE user_id = :user_id");

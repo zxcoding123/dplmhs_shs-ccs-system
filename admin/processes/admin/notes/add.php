@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-include('../../server/conn.php');
+include __DIR__ . '/../../../../database/connection.php';
 
 
     $title = htmlspecialchars($_POST['title']);

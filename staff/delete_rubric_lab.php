@@ -1,6 +1,6 @@
 <?php
 // delete_rubric.php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 
 if (isset($_POST['class_id'])) {
     $class_id = $_POST['class_id'];

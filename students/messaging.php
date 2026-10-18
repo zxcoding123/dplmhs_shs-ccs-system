@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 header('Content-Type: application/json');
 session_start();
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 $action = $_GET['action'] ?? null;
 
 if ($action === 'search_users') {

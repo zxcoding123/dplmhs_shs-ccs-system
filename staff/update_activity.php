@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get activity ID and other data from the request

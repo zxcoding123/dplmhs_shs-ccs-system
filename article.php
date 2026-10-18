@@ -1,6 +1,6 @@
 <?php
 session_start();
-include('login/processes/conn.php');
+include __DIR__ . '/database/connection.php';
 require_once __DIR__ . '/includes/site-helpers.php';
 $pdo = Database::getConnection();
 

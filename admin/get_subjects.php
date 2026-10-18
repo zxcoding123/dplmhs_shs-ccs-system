@@ -1,6 +1,6 @@
 <?php
 // Assuming you already have the database connection set up.
-require 'processes/server/conn.php'; // Include your PDO connection setup
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection setup
 
 // Get course and year_level from the POST request
 $course = isset($_GET['course']) ? $_GET['course'] : '';

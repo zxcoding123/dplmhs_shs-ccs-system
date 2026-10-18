@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-include('../..//server/conn.php');
+include __DIR__ . '/../../../database/connection.php';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $note_id = $_GET['id'];
     $title = $_POST['title'];
     $description = $_POST['description'];
 
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo = Database::getConnection();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     try {

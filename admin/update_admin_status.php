@@ -2,7 +2,7 @@
 
 <?php
 session_start();
-require 'processes/server/conn.php'; // Adjust the path as needed
+require __DIR__ . '/../database/connection.php'; // Adjust the path as needed
 if (isset($_POST['admin_id']) && isset($_POST['new_status'])) {
     $admin_id = $_POST['admin_id'];
     $new_status = $_POST['new_status'];

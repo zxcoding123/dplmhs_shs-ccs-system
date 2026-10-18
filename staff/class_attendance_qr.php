@@ -10,7 +10,7 @@ if (!isset($_SESSION['teacher_id'])) {
 $class_id = $_GET['class_id'];
 $classAttendanceId = $_GET['classAttendanceId'];
 $semester_id = $_GET['semesterId'];
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
     SET status = 'Finished'

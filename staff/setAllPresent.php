@@ -2,7 +2,7 @@
 session_start();
 $class_id = $_GET['class_id'];
 $meeting_id = $_GET['meeting_id'];
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 $stmt = $pdo->prepare("UPDATE attendance SET status = 'Present' WHERE class_id = :class_id AND meeting_id = :meeting_id");
 
 // Bind parameters to the query

@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *'); // Adjust this for security in production
 session_start();
-require_once 'processes/server/conn.php'; // Assumes this file defines $pdo or connection details
+require_once __DIR__ . '/../database/connection.php'; // Assumes this file defines $pdo or connection details
 
 // Get parameters
 $classId = isset($_GET['class_id']) ? $_GET['class_id'] : null;

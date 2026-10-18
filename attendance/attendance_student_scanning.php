@@ -1,7 +1,7 @@
 <?php
 session_start();
 include('processes/server/alerts.php');
-require_once 'processes/server/conn.php'; // Make sure the path is correct
+require_once __DIR__ . '/../database/connection.php'; // Make sure the path is correct
 date_default_timezone_set('Asia/Manila'); // Set the timezone for the script
 
 // Destroy any existing session on page load to force login again

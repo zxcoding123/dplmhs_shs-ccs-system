@@ -1,5 +1,5 @@
 <?php
-require 'conn.php'; // Adjust the path based on your directory structure
+require __DIR__ . '/../../database/connection.php'; // Adjust the path based on your directory structure
 // Get today's date in 'Y-m-d' format
 $today = (new DateTime())->format('Y-m-d');
 try {

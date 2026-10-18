@@ -4,7 +4,7 @@ if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 $stmt = $pdo->prepare("
     UPDATE classes_meetings
     SET status = 'Finished'
@@ -250,7 +250,7 @@ include('processes/server/automatic_grader_cron.php');
 
                                 <hr>
                                 <?php
-                                require_once 'processes/server/conn.php';
+                                require_once __DIR__ . '/../database/connection.php';
 
                                 $class_id = isset($_GET['class_id']) ? (int)$_GET['class_id'] : null;
                                 $subject_id = isset($_GET['subject_id']) ? $_GET['subject_id'] : null;

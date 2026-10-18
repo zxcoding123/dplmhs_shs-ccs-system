@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Include your PDO connection file
+require __DIR__ . '/../database/connection.php'; // Include your PDO connection file
 
 header('Content-Type: application/json');
 

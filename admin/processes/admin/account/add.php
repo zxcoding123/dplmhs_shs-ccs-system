@@ -1,5 +1,5 @@
 <?php
-require '../../server/conn.php'; // Ensure this sets up $pdo as a PDO object
+require __DIR__ . '/../../../../database/connection.php'; // Ensure this sets up $pdo as a PDO object
 session_start();
 
 // Enable error reporting for debugging (remove in production)

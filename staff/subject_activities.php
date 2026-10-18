@@ -7,7 +7,7 @@ if (!isset($_SESSION['teacher_id'])) {
 
 
 
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 // include('processes/server/automatic_grader_cron.php');
 ?>
 <!DOCTYPE html>
@@ -173,7 +173,7 @@ include('processes/server/conn.php');
                                 </a>
                                 <h2 class="bold">Subjects / <?php echo $subject ?> </h2>
                                 <?php
-                                require 'processes/server/conn.php';
+                                require __DIR__ . '/../database/connection.php';
                                 // Set class_id and semester (these could come from URL parameters or form inputs)
                                 $class_id = $_GET['class_id'] ?? null;
                                 $semester = $_GET['semester'] ?? null;

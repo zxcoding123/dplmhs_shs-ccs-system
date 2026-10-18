@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 // Check if the necessary GET parameters are present
 if (isset($_GET['class_id']) && isset($_GET['meeting_id']) && isset($_GET['action'])) {
     $classId = $_GET['class_id'];

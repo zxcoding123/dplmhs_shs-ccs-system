@@ -1,5 +1,5 @@
 <?php
-require '../../../../server/conn.php'; // Adjust path based on directory structure
+require __DIR__ . '/../../../database/connection.php'; // Adjust path based on directory structure
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

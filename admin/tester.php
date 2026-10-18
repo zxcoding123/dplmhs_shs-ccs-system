@@ -4,7 +4,7 @@ if (!isset($_SESSION['admin_id'])) {
     $_SESSION['STATUS'] = "ADMIN_NOT_LOGGED_IN";
     header("Location: admin_login_page.php");
 }
-include('processes/server/conn.php');
+include __DIR__ . '/../database/connection.php';
 
 ?>
 <!DOCTYPE html>
@@ -222,7 +222,7 @@ include('processes/server/conn.php');
                                                                         <select class="form-select" name="teacher"
                                                                             required>
                                                                             <?php
-                                                                            require 'processes/server/conn.php';
+                                                                            require __DIR__ . '/../database/connection.php';
                                                                             $sql = "SELECT id, fullName FROM staff_accounts";
                                                                             $stmt = $pdo->query($sql);
                                                                             if ($stmt->rowCount() > 0) {
@@ -496,7 +496,7 @@ include('processes/server/conn.php');
                                 </div>
                                 <div class="card-body">
                                     <?php
-                                    require 'processes/server/conn.php';
+                                    require __DIR__ . '/../database/connection.php';
 
 
                                     try {
@@ -1319,7 +1319,7 @@ END;
                             <label for="teacher" class="form-label bold">Select Teacher: </label>
                             <select class="form-select" name="teacher" required>
                                 <?php
-                                require 'processes/server/conn.php';
+                                require __DIR__ . '/../database/connection.php';
                                 $sql = "SELECT id, fullName FROM staff_accounts";
                                 $stmt = $pdo->query($sql);
                                 if ($stmt->rowCount() > 0) {

@@ -1,5 +1,5 @@
 <?php
-require 'processes/server/conn.php'; // Ensure this points to your database connection file
+require __DIR__ . '/../database/connection.php'; // Ensure this points to your database connection file
 
 // Get the search term and class ID from AJAX request
 $searchTerm = isset($_GET['searchTerm']) ? $_GET['searchTerm'] : '';
