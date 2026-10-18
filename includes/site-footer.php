@@ -63,7 +63,7 @@
 
         <div class="au-footer-bottom">
             <div class="container">
-                <span>&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School. All rights reserved.</span>
+                <span>&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School. All rights reserved. System developed by Ahmad Aquino.</span>
                 <ul>
                     <li><a href="help.php">Privacy Notice</a></li>
                     <li><a href="help.php">Terms of Use</a></li>

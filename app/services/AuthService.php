@@ -181,6 +181,9 @@ class AuthService
             $fullName = $row['fullName'] ?? null;
             $usersTableId = $user['id'];
             $_SESSION['teacher_id'] = $roleTableId;
+            // Staff pages read the teacher's name under these keys
+            $_SESSION['teacher_name'] = $fullName;
+            $_SESSION['full_name'] = $fullName;
         } elseif ($user['role'] === 'student') {
             $stmt = $this->pdo->prepare("SELECT student_id, first_name, middle_name, last_name FROM students WHERE user_id = ?");
             $stmt->execute([$user['id']]);
@@ -295,9 +298,7 @@ class AuthService
 
     private function autoLogin(): void
     {
-        echo "test";
         if (!isset($_COOKIE['remember_me'])) {
-            echo "test";
             return;
         }
 

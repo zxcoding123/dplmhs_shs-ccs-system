@@ -1,2 +1,4 @@
 SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause'
 SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause'
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'sa.user_id' in 'on clause'
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'sa.user_id' in 'on clause'

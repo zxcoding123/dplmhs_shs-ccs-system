@@ -1,4 +1,6 @@
 <?php
+require __DIR__ . '/../../../includes/login-success-alert.php';
+
 if (isset($_SESSION['STATUS'])) {
     switch ($_SESSION['STATUS']) {
         case 'TEACHER_LOGIN_SUCCESSFUL':

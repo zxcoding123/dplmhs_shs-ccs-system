@@ -11,7 +11,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link href="external/css/login_staff.css" rel="stylesheet">
+    <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('external/css/login_staff.css', __DIR__); ?>" rel="stylesheet">
 
     <link rel="icon" type="image/png" sizes="32x32" href="external/img/favicon-32x32.png">
 

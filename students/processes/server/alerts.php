@@ -1,5 +1,5 @@
 <?php
-
+require __DIR__ . '/../../../includes/login-success-alert.php';
 
 if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'STUDENT_LOGIN_SUCCESFUL') {
     echo "

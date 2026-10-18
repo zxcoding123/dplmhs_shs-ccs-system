@@ -199,6 +199,8 @@ elseif (isset($_SESSION['STATUS']) && strpos($_SESSION['STATUS'], 'ADMIN_CREATE_
 
 
 <?php
+require __DIR__ . '/../../../includes/login-success-alert.php';
+
 if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'ADMIN_LOGIN_SUCCESFUL') {
     echo "
     <script>

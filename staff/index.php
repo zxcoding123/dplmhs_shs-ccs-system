@@ -28,7 +28,7 @@ $stmt->execute();
 	<?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
 		integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-	<link href="css/app.css" rel="stylesheet">
+	<link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
@@ -205,6 +205,9 @@ $stmt->execute();
 									exit;
 								}
 
+								// Used by the excessive absences modal below, even when there are no classes
+								$excessive_absences = [];
+
 								try {
 									// Get teacher name
 									$teacher_id = $_SESSION['teacher_id'];
@@ -236,11 +239,10 @@ WHERE teacher = :teacher_name AND status != 'pending';
 									echo '<div class="card-body">';
 									echo '<h5 class="card-title">Attendance Summary</h5>';
 
+									// Don't exit here: the rest of the page (scripts, modals, alerts) still has to render
 									if ($classes_handling === 0) {
 										echo '<p>You haven\'t been assigned to any active classes yet!</p>';
-										echo '</div>';
-										exit;
-									}
+									} else {
 
 									// Display list of classes handled
 									echo '<p><b>Classes Handling (' . $classes_handling . '):</b></p>';
@@ -286,8 +288,6 @@ WHERE teacher = :teacher_name AND status != 'pending';
 									}
 
 									// Fetch students with excessive absences (<75%) or 3+ absences
-									$excessive_absences = [];
-
 									foreach ($classes as $class) {
 										$class_id = $class['id'];
 
@@ -345,6 +345,7 @@ WHERE teacher = :teacher_name AND status != 'pending';
 											}
 										}
 									}
+									} // end: teacher has classes
 									echo '</div>';
 								} catch (PDOException $e) {
 									error_log("Error fetching attendance summary: " . $e->getMessage());
@@ -956,7 +957,7 @@ WHERE teacher = :teacher_name AND status != 'pending';
 	</div>
 
 
-	<script src="js/app.js"></script>
+	<script src="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('js/app.js', __DIR__); ?>"></script>
 	<?php
 	include('processes/server/modals.php');
 	?>

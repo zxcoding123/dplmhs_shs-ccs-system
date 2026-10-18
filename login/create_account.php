@@ -32,8 +32,8 @@ $auth_points = [
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="../external/css/site.css" rel="stylesheet">
-    <link href="../external/css/auth.css" rel="stylesheet">
+    <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('../external/css/site.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('../external/css/auth.css', __DIR__); ?>" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -169,7 +169,7 @@ $auth_points = [
                 </div>
             </div>
 
-            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School</p>
+            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School<br>System developed by Ahmad Aquino</p>
         </main>
     </div>
 

@@ -56,7 +56,7 @@ $statusPill = ['active' => 'is-ok', 'inactive' => 'is-warn', 'archived' => ''];
 	<?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
 		integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-	<link href="css/app.css" rel="stylesheet">
+	<link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
 	<link href="<?= admin_asset('css/admin-ui.css') ?>" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
@@ -386,7 +386,7 @@ $statusPill = ['active' => 'is-ok', 'inactive' => 'is-warn', 'archived' => ''];
 		</div>
 	</div>
 
-	<script src="js/app.js"></script>
+	<script src="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('js/app.js', __DIR__); ?>"></script>
 	<script src="<?= admin_asset('js/admin-ui.js') ?>"></script>
 	<script>
 		const activeSemester = <?= json_encode($active ? ['id' => (int) $active['id'], 'name' => $active['name']] : null) ?>;

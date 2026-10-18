@@ -1,12 +1,3 @@
 <?php
-session_start();
-
-$_SESSION = array();
-
-session_destroy();
-
-session_start();
-$_SESSION['STATUS'] = "LOG_OUT_SUCCESFUL";
-header("Location: ../../../../login/index.php");
-exit();
-?>
+require_once __DIR__ . '/../../../../app/logout.php';
+csms_logout('../../../../login/index.php', 'LOG_OUT_SUCCESFUL');

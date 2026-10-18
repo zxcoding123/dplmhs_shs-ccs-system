@@ -24,7 +24,7 @@ unset($_SESSION['status_message']);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
-    <link href="../external/css/index.css" rel="stylesheet">
+    <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('../external/css/index.css', __DIR__); ?>" rel="stylesheet">
 </head>
 
 <body>
