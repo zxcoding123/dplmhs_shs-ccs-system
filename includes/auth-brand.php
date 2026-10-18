@@ -22,7 +22,6 @@ $auth_points = $auth_points ?? [
     </a>
 
     <div class="au-auth-brand-body">
-        <img src="../external/img/AU_CCS_Logo.png" class="au-auth-crest" alt="Stand-Alone Senior High School seal">
         <h1><?= $auth_heading ?></h1>
         <p><?= htmlspecialchars($auth_text) ?></p>
         <ul class="au-auth-points">
