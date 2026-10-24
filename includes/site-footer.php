@@ -43,7 +43,7 @@
                             <li><a href="login/index.php">Student Portal</a></li>
                             <li><a href="login/index.php">Faculty Portal</a></li>
                             <li><a href="login/index.php?create=1">Create an Account</a></li>
-                            <li><a href="news.php?category=Academic">Academic Calendar</a></li>
+                            <li><a href="calendar.php">School Calendar</a></li>
                             <li><a href="help.php">Help Center</a></li>
                         </ul>
                     </div>
@@ -63,7 +63,7 @@
 
         <div class="au-footer-bottom">
             <div class="container">
-                <span>&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School. All rights reserved. System developed by Ahmad Aquino.</span>
+                <span>&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School. All rights reserved. System developed by <a href="#" class="au-dev-link" data-bs-toggle="modal" data-bs-target="#developerModal">Ahmad Aquino</a>.</span>
                 <ul>
                     <li><a href="help.php">Privacy Notice</a></li>
                     <li><a href="help.php">Terms of Use</a></li>
@@ -72,6 +72,8 @@
             </div>
         </div>
     </footer>
+
+    <?php include __DIR__ . '/developer-modal.php'; ?>
 
     <button type="button" class="au-back-to-top" id="auBackToTop" aria-label="Back to top">
         <i class="bi bi-arrow-up"></i>

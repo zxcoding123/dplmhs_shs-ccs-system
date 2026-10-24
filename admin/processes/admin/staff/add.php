@@ -69,7 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Create the shared login record in `users` first, so the staff member can sign in
         // through the main login page (AuthService authenticates against `users`, not staff_accounts).
-        $userSql = "INSERT INTO users (email, password, role, status, date_created) VALUES (:email, :password, 'staff', 'inactive', NOW())";
+        // Accounts made by an admin are ready to use straight away; deactivate them from the list if needed.
+        $userSql = "INSERT INTO users (email, password, role, status, date_created) VALUES (:email, :password, 'staff', 'active', NOW())";
         $userStmt = $pdo->prepare($userSql);
         $userStmt->bindParam(':email', $email);
         $userStmt->bindParam(':password', $hashed_password);
@@ -78,8 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userId = $pdo->lastInsertId();
 
         // SQL query to insert a new staff account
-        $sql = "INSERT INTO staff_accounts (user_id, first_name, middle_name, last_name, fullName, department, email, password, phone_number, gender)
-                VALUES (:user_id, :first_name, :middle_name, :last_name, :fullName, :department, :email, :password, :phone_number, :gender)";
+        $sql = "INSERT INTO staff_accounts (user_id, first_name, middle_name, last_name, fullName, department, email, password, phone_number, gender, status)
+                VALUES (:user_id, :first_name, :middle_name, :last_name, :fullName, :department, :email, :password, :phone_number, :gender, 'Active')";
 
         // Prepare statement
         $stmt = $pdo->prepare($sql);

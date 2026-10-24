@@ -5,13 +5,13 @@
  *   GET  ?action=unread
  *   GET  ?action=conversations
  *   GET  ?action=search&q=...
- *   GET  ?action=messages&partner_id=..&partner_type=..[&after=..]
- *   POST action=send            partner_id, partner_type, message
+ *   GET  ?action=messages&partner_id=..&partner_type=..[&after=..]   (+ partner: {status, name})
+ *   POST action=send            partner_id, partner_type, message [, file]
  *   POST action=delete          id
  *   GET  ?action=groups
  *   GET  ?action=group_messages&group_id=..[&after=..]
  *   GET  ?action=group_info&group_id=..
- *   POST action=group_send      group_id, message
+ *   POST action=group_send      group_id, message [, file]
  *   POST action=group_create    name, description, members (JSON [{id,type}])
  *   POST action=group_leave     group_id
  *
@@ -45,7 +45,13 @@ if ($chat === null) {
 }
 
 $isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
-$action = $isPost ? ($_POST['action'] ?? '') : ($_GET['action'] ?? '');
+
+// A body over post_max_size arrives with $_POST and $_FILES emptied by PHP
+if ($isPost && !$_POST && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    chat_respond(['ok' => false, 'error' => 'That file is too large (max ' . ChatAttachments::maxLabel() . ').', 'code' => 'file_too_large'], 413);
+}
+
+$action =$isPost ? ($_POST['action'] ?? '') : ($_GET['action'] ?? '');
 $in = $isPost ? $_POST : $_GET;
 
 $postActions = ['send', 'delete', 'group_send', 'group_create', 'group_leave'];
@@ -60,6 +66,8 @@ if (in_array($action, $postActions, true)) {
 
 $int = static fn(string $key): int => max(0, (int) ($in[$key] ?? 0));
 $str = static fn(string $key): string => (string) ($in[$key] ?? '');
+$file = isset($_FILES['file']) && is_array($_FILES['file']) && !is_array($_FILES['file']['name'])
+    && $_FILES['file']['error'] !== UPLOAD_ERR_NO_FILE ? $_FILES['file'] : null;
 
 try {
     switch ($action) {
@@ -83,12 +91,14 @@ try {
                 'ok' => true,
                 'messages' => $chat->conversation($partnerId, $partnerType, $int('after')),
                 'receipts' => $chat->readReceipts($partnerId, $partnerType),
+                // Current state of the other person: active, deactivated or deleted
+                'partner' => $chat->accountStatuses([[$partnerId, $partnerType]])[$partnerType . ':' . $partnerId] ?? null,
             ]);
 
         case 'send':
             chat_respond([
                 'ok' => true,
-                'message' => $chat->sendMessage($int('partner_id'), $str('partner_type'), $str('message')),
+                'message' => $chat->sendMessage($int('partner_id'), $str('partner_type'), $str('message'), $file),
             ]);
 
         case 'delete':
@@ -107,7 +117,7 @@ try {
             chat_respond(['ok' => true, 'group' => $chat->groupInfo($int('group_id'))]);
 
         case 'group_send':
-            chat_respond(['ok' => true, 'message' => $chat->sendGroupMessage($int('group_id'), $str('message'))]);
+            chat_respond(['ok' => true, 'message' => $chat->sendGroupMessage($int('group_id'), $str('message'), $file)]);
 
         case 'group_create':
             $members = json_decode($str('members'), true);

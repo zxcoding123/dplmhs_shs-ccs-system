@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(git check-ignore -v uploads/chat/.htaccess uploads/.htaccess)"
+    ]
+  }
+}

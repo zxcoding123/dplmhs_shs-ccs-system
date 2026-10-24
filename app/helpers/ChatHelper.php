@@ -9,7 +9,11 @@
  *
  * Ids are only unique WITHIN a role table, so every query here matches on
  * BOTH id and type. Never compare a chat participant by id alone.
+ *
+ * Messages may carry one file or photo (see ChatAttachments); the text is then optional.
  */
+require_once __DIR__ . '/ChatAttachments.php';
+
 class ChatHelper
 {
     public const TYPES = ['admin', 'staff', 'student'];
@@ -27,6 +31,7 @@ class ChatHelper
         $this->pdo = $pdo;
         $this->userId = $userId;
         $this->userType = $userType;
+        ChatAttachments::ensureTable($pdo);
     }
 
     /** Build a helper for the logged-in user, or null if nobody is logged in. */
@@ -81,6 +86,53 @@ class ChatHelper
         return $name === false ? null : trim((string) $name);
     }
 
+    public const DELETED_NAME = 'Deleted account';
+
+    /**
+     * Current state of chat participants, so old conversations show who is gone.
+     *
+     * @param array $people list of [id, type]
+     * @return array "type:id" => ['status' => 'active'|'deactivated'|'deleted', 'name' => current name or DELETED_NAME]
+     */
+    public function accountStatuses(array $people): array
+    {
+        $byType = [];
+        foreach ($people as [$id, $type]) {
+            if (self::isValidType($type)) {
+                $byType[$type][(int) $id] = true;
+            }
+        }
+
+        // The login record (users.status) decides whether someone can sign in;
+        // the role table's own status is the fallback for rows without one.
+        $sql = [
+            'admin' => "SELECT a.id, a.fullName AS name, COALESCE(u.status, a.status) AS status
+                        FROM admin a LEFT JOIN users u ON u.id = a.user_id WHERE a.id IN (%s)",
+            'staff' => "SELECT s.id, s.fullName AS name, COALESCE(u.status, s.status) AS status
+                        FROM staff_accounts s LEFT JOIN users u ON u.id = s.user_id WHERE s.id IN (%s)",
+            'student' => "SELECT st.student_id AS id, CONCAT_WS(' ', st.first_name, NULLIF(st.middle_name, ''), st.last_name) AS name,
+                          COALESCE(u.status, st.status) AS status
+                          FROM students st LEFT JOIN users u ON u.id = st.user_id WHERE st.student_id IN (%s)",
+        ];
+
+        $result = [];
+        foreach ($byType as $type => $ids) {
+            $ids = array_keys($ids);
+            foreach ($ids as $id) {
+                $result["$type:$id"] = ['status' => 'deleted', 'name' => self::DELETED_NAME];
+            }
+            $stmt = $this->pdo->prepare(sprintf($sql[$type], implode(',', array_fill(0, count($ids), '?'))));
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $result[$type . ':' . (int) $row['id']] = [
+                    'status' => strtolower(trim((string) $row['status'])) === 'active' ? 'active' : 'deactivated',
+                    'name' => trim((string) $row['name']),
+                ];
+            }
+        }
+        return $result;
+    }
+
     /** Search every role table by name (and email / student number). Excludes the current user. */
     public function searchUsers(string $term, int $limitPerType = 8): array
     {
@@ -113,6 +165,10 @@ class ChatHelper
                 $results[] = ['id' => (int) $row['id'], 'type' => $type, 'name' => trim((string) $row['name'])];
             }
         }
+        $statuses = $this->accountStatuses(array_map(fn($r) => [$r['id'], $r['type']], $results));
+        foreach ($results as &$r) {
+            $r['account_status'] = $statuses[$r['type'] . ':' . $r['id']]['status'] ?? 'active';
+        }
         return $results;
     }
 
@@ -124,12 +180,14 @@ class ChatHelper
     public function recentConversations(int $limit = 30): array
     {
         $stmt = $this->pdo->prepare("
-            SELECT id, sender_id, sender_type, receiver_id, receiver_type,
-                   message, timestamp, sender_name, receiver_name, status
-            FROM messages
-            WHERE (sender_id = :id AND sender_type = :type)
-               OR (receiver_id = :id2 AND receiver_type = :type2)
-            ORDER BY id DESC
+            SELECT m.id, m.sender_id, m.sender_type, m.receiver_id, m.receiver_type,
+                   m.message, m.timestamp, m.sender_name, m.receiver_name, m.status,
+                   a.kind AS att_kind, a.original_name AS att_name
+            FROM messages m
+            LEFT JOIN chat_attachments a ON a.scope = 'dm' AND a.message_id = m.id
+            WHERE (m.sender_id = :id AND m.sender_type = :type)
+               OR (m.receiver_id = :id2 AND m.receiver_type = :type2)
+            ORDER BY m.id DESC
             LIMIT 1000
         ");
         $stmt->execute([
@@ -152,7 +210,7 @@ class ChatHelper
                     'partner_id' => $partnerId,
                     'partner_type' => $partnerType,
                     'name' => $isMine ? $row['receiver_name'] : $row['sender_name'],
-                    'last_message' => $row['message'],
+                    'last_message' => ChatAttachments::preview($row['att_kind'], $row['att_name'], (string) $row['message']),
                     'last_from_me' => $isMine,
                     'timestamp' => $this->isoTime($row['timestamp']),
                     'unread' => 0,
@@ -161,6 +219,14 @@ class ChatHelper
             if (!$isMine && $row['status'] === 'unread') {
                 $conversations[$key]['unread']++;
             }
+        }
+
+        // Show current names, and mark people whose accounts are deactivated or deleted
+        $statuses = $this->accountStatuses(array_map(fn($c) => [$c['partner_id'], $c['partner_type']], $conversations));
+        foreach ($conversations as $key => &$c) {
+            $account = $statuses[$key] ?? ['status' => 'active', 'name' => $c['name']];
+            $c['account_status'] = $account['status'];
+            $c['name'] = $account['name'] ?: $c['name'];
         }
         return array_values($conversations);
     }
@@ -199,6 +265,7 @@ class ChatHelper
                 'status' => $row['status'],
             ];
         }
+        $this->withAttachments('dm', $messages);
 
         $this->markRead($partnerId, $partnerType);
         return $messages;
@@ -218,10 +285,11 @@ class ChatHelper
         return ['last_read_id' => $id === false ? null : (string) $id];
     }
 
-    public function sendMessage(int $partnerId, string $partnerType, string $message): array
+    /** @param array|null $file one $_FILES entry to attach */
+    public function sendMessage(int $partnerId, string $partnerType, string $message, ?array $file = null): array
     {
         $this->assertType($partnerType);
-        $message = $this->cleanMessage($message);
+        $message = $this->cleanMessage($message, $file !== null);
 
         if ($partnerId === $this->userId && $partnerType === $this->userType) {
             throw new ChatException('You cannot message yourself.', 'invalid_receiver');
@@ -236,27 +304,51 @@ class ChatHelper
             throw new ChatException("This contact's account no longer exists.", 'receiver_not_found');
         }
 
-        $stmt = $this->pdo->prepare("
-            INSERT INTO messages (sender_id, sender_type, receiver_id, receiver_type, message, sender_name, receiver_name, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'unread')
-        ");
-        $stmt->execute([$this->userId, $this->userType, $partnerId, $partnerType, $message, $senderName, $receiverName]);
+        $id = $this->insertWithAttachment('dm', $file, function () use ($partnerId, $partnerType, $message, $senderName, $receiverName) {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO messages (sender_id, sender_type, receiver_id, receiver_type, message, sender_name, receiver_name, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'unread')
+            ");
+            $stmt->execute([$this->userId, $this->userType, $partnerId, $partnerType, $message, $senderName, $receiverName]);
+            return (int) $this->pdo->lastInsertId();
+        }, $attachment);
 
         return [
-            'id' => (string) $this->pdo->lastInsertId(),
+            'id' => (string) $id,
             'message' => $message,
             'mine' => true,
             'timestamp' => date('c'),
             'status' => 'unread',
+            'attachment' => $attachment,
         ];
     }
 
-    /** Delete one of MY messages. Returns false if it doesn't exist or isn't mine. */
+    /** Delete one of MY messages (and its file). Returns false if it doesn't exist or isn't mine. */
     public function deleteMessage(int $messageId): bool
     {
         $stmt = $this->pdo->prepare("DELETE FROM messages WHERE id = ? AND sender_id = ? AND sender_type = ?");
         $stmt->execute([$messageId, $this->userId, $this->userType]);
-        return $stmt->rowCount() > 0;
+        if ($stmt->rowCount() === 0) {
+            return false;
+        }
+        ChatAttachments::deleteFor($this->pdo, 'dm', $messageId);
+        return true;
+    }
+
+    /** Can I see this attachment? (I'm in the direct conversation, or a member of the group.) */
+    public function canAccessAttachment(array $attachment): bool
+    {
+        if ($attachment['scope'] === 'dm') {
+            $stmt = $this->pdo->prepare("SELECT 1 FROM messages WHERE id = ?
+                AND ((sender_id = ? AND sender_type = ?) OR (receiver_id = ? AND receiver_type = ?))");
+            $stmt->execute([$attachment['message_id'], $this->userId, $this->userType, $this->userId, $this->userType]);
+        } else {
+            $stmt = $this->pdo->prepare("SELECT 1 FROM group_messages gm
+                JOIN group_members m ON m.group_id = gm.group_id AND m.user_id = ? AND m.user_type = ?
+                WHERE gm.id = ?");
+            $stmt->execute([$this->userId, $this->userType, $attachment['message_id']]);
+        }
+        return (bool) $stmt->fetchColumn();
     }
 
     public function unreadCount(): int
@@ -288,12 +380,14 @@ class ChatHelper
             SELECT g.id, g.name, g.description,
                    (SELECT COUNT(*) FROM group_members m2 WHERE m2.group_id = g.id) AS member_count,
                    lm.message AS last_message, lm.created_at AS last_at,
-                   lm.sender_id AS last_sender_id, lm.sender_type AS last_sender_type
+                   lm.sender_id AS last_sender_id, lm.sender_type AS last_sender_type,
+                   la.kind AS att_kind, la.original_name AS att_name
             FROM `groups` g
             JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = ? AND gm.user_type = ?
             LEFT JOIN group_messages lm ON lm.id = (
                 SELECT MAX(id) FROM group_messages WHERE group_id = g.id
             )
+            LEFT JOIN chat_attachments la ON la.scope = 'group' AND la.message_id = lm.id
             ORDER BY COALESCE(lm.created_at, g.created_at) DESC
         ");
         $stmt->execute([$this->userId, $this->userType]);
@@ -305,7 +399,9 @@ class ChatHelper
                 'name' => $row['name'],
                 'description' => $row['description'],
                 'member_count' => (int) $row['member_count'],
-                'last_message' => $row['last_message'],
+                'last_message' => $row['last_message'] !== null
+                    ? ChatAttachments::preview($row['att_kind'], $row['att_name'], (string) $row['last_message'])
+                    : null,
                 'last_from_me' => $row['last_sender_id'] !== null
                     && (int) $row['last_sender_id'] === $this->userId
                     && $row['last_sender_type'] === $this->userType,
@@ -340,11 +436,12 @@ class ChatHelper
                 'id' => (string) $row['id'],
                 'message' => $row['message'],
                 'mine' => (int) $row['sender_id'] === $this->userId && $row['sender_type'] === $this->userType,
-                'sender_name' => $row['sender_name'] ?: 'Former member',
+                'sender_name' => $row['sender_name'] ?: self::DELETED_NAME,
                 'sender_type' => $row['sender_type'],
                 'timestamp' => $this->isoTime($row['created_at']),
             ];
         }
+        $this->withAttachments('group', $messages);
         return $messages;
     }
 
@@ -358,12 +455,16 @@ class ChatHelper
 
         $stmt = $this->pdo->prepare("SELECT user_id, user_type FROM group_members WHERE group_id = ? ORDER BY joined_at");
         $stmt->execute([$groupId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $statuses = $this->accountStatuses(array_map(fn($m) => [(int) $m['user_id'], $m['user_type']], $rows));
         $members = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) {
+        foreach ($rows as $m) {
+            $account = $statuses[$m['user_type'] . ':' . (int) $m['user_id']] ?? ['status' => 'deleted', 'name' => self::DELETED_NAME];
             $members[] = [
                 'id' => (int) $m['user_id'],
                 'type' => $m['user_type'],
-                'name' => $this->getUserName((int) $m['user_id'], $m['user_type']) ?? 'Former member',
+                'name' => $account['name'],
+                'account_status' => $account['status'],
                 'me' => (int) $m['user_id'] === $this->userId && $m['user_type'] === $this->userType,
             ];
         }
@@ -376,24 +477,29 @@ class ChatHelper
         ];
     }
 
-    public function sendGroupMessage(int $groupId, string $message): array
+    /** @param array|null $file one $_FILES entry to attach */
+    public function sendGroupMessage(int $groupId, string $message, ?array $file = null): array
     {
         $this->assertMember($groupId);
-        $message = $this->cleanMessage($message);
+        $message = $this->cleanMessage($message, $file !== null);
 
-        $stmt = $this->pdo->prepare("
-            INSERT INTO group_messages (group_id, sender_id, sender_type, message, status)
-            VALUES (?, ?, ?, ?, 'sent')
-        ");
-        $stmt->execute([$groupId, $this->userId, $this->userType, $message]);
+        $id = $this->insertWithAttachment('group', $file, function () use ($groupId, $message) {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO group_messages (group_id, sender_id, sender_type, message, status)
+                VALUES (?, ?, ?, ?, 'sent')
+            ");
+            $stmt->execute([$groupId, $this->userId, $this->userType, $message]);
+            return (int) $this->pdo->lastInsertId();
+        }, $attachment);
 
         return [
-            'id' => (string) $this->pdo->lastInsertId(),
+            'id' => (string) $id,
             'message' => $message,
             'mine' => true,
             'sender_name' => $this->getUserName($this->userId, $this->userType),
             'sender_type' => $this->userType,
             'timestamp' => date('c'),
+            'attachment' => $attachment,
         ];
     }
 
@@ -489,9 +595,53 @@ class ChatHelper
         }
     }
 
-    private function cleanMessage(string $message): string
+    /**
+     * Saves the file (if any), runs $insert to save the message, then links the two.
+     * If anything fails the saved file is removed again. $attachment gets the public info.
+     */
+    private function insertWithAttachment(string $scope, ?array $file, callable $insert, ?array &$attachment): int
+    {
+        $attachment = null;
+        if ($file === null) {
+            return $insert();
+        }
+        $meta = ChatAttachments::store($file);
+        $ownTransaction = !$this->pdo->inTransaction();
+        try {
+            if ($ownTransaction) {
+                $this->pdo->beginTransaction();
+            }
+            $id = $insert();
+            ChatAttachments::link($this->pdo, $scope, $id, $meta);
+            if ($ownTransaction) {
+                $this->pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($ownTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            ChatAttachments::discard($meta);
+            throw $e;
+        }
+        $attachment = ChatAttachments::forMessages($this->pdo, $scope, [$id])[$id] ?? null;
+        return $id;
+    }
+
+    /** Adds 'attachment' (or null) to each message row. */
+    private function withAttachments(string $scope, array &$messages): void
+    {
+        $map = ChatAttachments::forMessages($this->pdo, $scope, array_column($messages, 'id'));
+        foreach ($messages as &$m) {
+            $m['attachment'] = $map[(int) $m['id']] ?? null;
+        }
+    }
+
+    private function cleanMessage(string $message, bool $hasAttachment = false): string
     {
         $message = trim(str_replace("\r\n", "\n", $message));
+        if ($message === '' && $hasAttachment) {
+            return '';
+        }
         if ($message === '') {
             throw new ChatException('Message cannot be empty.', 'empty_message');
         }

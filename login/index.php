@@ -102,9 +102,11 @@ $stmt->execute();
                 </div>
             </div>
 
-            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School<br>System developed by Ahmad Aquino</p>
+            <p class="au-auth-legal mb-0">&copy; <?= date('Y') ?> Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School<br>System developed by <a href="#" class="au-dev-link" data-bs-toggle="modal" data-bs-target="#developerModal">Ahmad Aquino</a></p>
         </main>
     </div>
+
+    <?php include __DIR__ . '/../includes/developer-modal.php'; ?>
 
     <!-- Account creation notice: accounts are issued by an admin, not self-registered -->
     <div class="modal fade" id="accountInfoModal" tabindex="-1" aria-labelledby="accountInfoModalLabel" aria-hidden="true">

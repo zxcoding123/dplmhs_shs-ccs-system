@@ -1,0 +1,3 @@
+# Chat attachments are private: they are only served through chat/file.php,
+# which checks that the viewer is part of the conversation.
+Require all denied

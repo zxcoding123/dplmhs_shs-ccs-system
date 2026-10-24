@@ -21,6 +21,17 @@
     const LIST_POLL_MS = 10000;
     const UNREAD_POLL_MS = 20000;
     const ROLE_LABEL = { admin: 'Admin', staff: 'Teacher', student: 'Student' };
+    const FILE_URL = API.replace(/api\.php(\?.*)?$/, 'file.php');
+
+    // Attachments: keep in step with app/helpers/ChatAttachments.php
+    const MAX_FILE_BYTES = 25 * 1024 * 1024;
+    const MAX_FILES = 10;
+    const IMAGE_MAX_EDGE = 1920;
+    const FILE_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'rtf', 'txt', 'csv', 'md',
+        'zip', 'rar', '7z', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'bmp',
+        'mp3', 'm4a', 'wav', 'ogg', 'mp4', 'mov', 'webm'];
+    // Photos the browser re-encodes before upload (GIFs are left alone to keep animation)
+    const COMPRESSIBLE = /^image\/(jpeg|png|webp|bmp|heic|heif)$/i;
 
     const ICON = {
         chat: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/></svg>',
@@ -35,6 +46,9 @@
         check: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>',
         x: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
         inbox: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/><path d="M8 11h8M8 14.5h5"/></svg>',
+        clip: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>',
+        download: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+        file: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
     };
 
     /* ------------------------------------------------------------------
@@ -89,7 +103,12 @@
                     ${closeBtn}
                 `)}
                 <div class="cc-thread" data-el="thread" aria-live="polite"></div>
+                <div class="cc-drop" data-el="drop" aria-hidden="true">${ICON.clip}<span>Drop files or photos to send</span></div>
+                <div class="cc-tray" data-el="tray" hidden></div>
                 <form class="cc-composer" data-el="composer">
+                    <button type="button" class="cc-attach" data-act="attach" data-el="attach" aria-label="Attach photos or files" title="Attach photos or files">${ICON.clip}</button>
+                    <input type="file" data-el="file" multiple hidden
+                        accept="image/*,${FILE_EXTENSIONS.map((e) => '.' + e).join(',')}">
                     <textarea rows="1" data-el="input" placeholder="Write a message…" maxlength="${MAX_LEN}" aria-label="Message"></textarea>
                     <button type="submit" class="cc-send" data-el="send" aria-label="Send" disabled>${ICON.send}</button>
                 </form>
@@ -145,6 +164,15 @@
                 </div>
             </div>
         </section>
+
+        <div class="cc-lightbox" data-el="lightbox" role="dialog" aria-label="Photo" hidden>
+            <div class="cc-lightbox-bar">
+                <span class="cc-lightbox-name" data-el="lb-name"></span>
+                <a class="cc-icon-btn" data-el="lb-download" aria-label="Download photo" title="Download">${ICON.download}</a>
+                <button type="button" class="cc-icon-btn" data-act="lightbox-close" aria-label="Close photo">${ICON.close}</button>
+            </div>
+            <img data-el="lb-img" alt="">
+        </div>
     `;
 
     const $ = (name) => root.querySelector(`[data-el="${name}"]`);
@@ -161,6 +189,14 @@
         composer: $('composer'),
         input: $('input'),
         send: $('send'),
+        attach: $('attach'),
+        file: $('file'),
+        tray: $('tray'),
+        drop: $('drop'),
+        lightbox: $('lightbox'),
+        lbName: $('lb-name'),
+        lbImg: $('lb-img'),
+        lbDownload: $('lb-download'),
         gName: $('g-name'),
         gDesc: $('g-desc'),
         gSearch: $('g-search'),
@@ -194,6 +230,8 @@
         selected: new Map(),    // new-group members
         timers: {},
         searchSeq: 0,
+        attachments: [],        // files waiting in the composer tray
+        queue: Promise.resolve(), // keeps uploads in the order they were sent
     };
 
     /* ------------------------------------------------------------------
@@ -236,29 +274,80 @@
         return data;
     }
 
+    // POST with one file, reporting upload progress (fetch can't).
+    function apiUpload(action, params, file, onProgress) {
+        return new Promise((resolve, reject) => {
+            const body = new FormData();
+            body.append('action', action);
+            Object.entries(params).forEach(([k, v]) => body.append(k, v));
+            body.append('file', file, file.name);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', API);
+            xhr.withCredentials = true;
+            xhr.setRequestHeader('X-Requested-With', 'CSMSChat');
+            xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
+            xhr.onerror = () => reject(new ChatError('Network error. Check your connection.', 'network'));
+            xhr.onload = () => {
+                let data;
+                try {
+                    data = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    reject(new ChatError(xhr.status === 413 ? 'That file is too large.' : 'Unexpected response from the server.', 'bad_response'));
+                    return;
+                }
+                if (!data.ok) reject(new ChatError(data.error || 'Something went wrong.', data.code));
+                else resolve(data);
+            };
+            xhr.send(body);
+        });
+    }
+
     function esc(value) {
         return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    // Escape text and turn http(s):// and www. URLs into safe links.
-    const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"']+/gi;
+    // Escape text and turn links into safe, clickable ones:
+    //   emails                         -> mailto:
+    //   http(s)://… and www.…          -> as typed (www. gets https://)
+    //   bare domains (facebook.com/x)  -> https://facebook.com/x
+    const TLDS = 'com|net|org|edu|gov|mil|ph|io|co|me|info|biz|app|dev|ai|ly|gl|gg|tv|xyz|site|online|store|tech|us|uk|ca|au|jp|sg|link|page|to|so|news|school|academy';
+    const LINK_RE = new RegExp(
+        '([a-z0-9._%+-]+@[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,})'                      // 1: email
+        + '|((?:https?:\\/\\/|www\\.)[^\\s<>"\']+)'                                       // 2: full URL
+        + '|((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:' + TLDS + ')(?![a-z0-9-])(?::\\d{2,5})?(?:[/?#][^\\s<>"\']*)?)', // 3: bare domain
+        'gi'
+    );
     function linkify(text) {
         const str = String(text ?? '');
         let html = '';
         let last = 0;
-        for (const match of str.matchAll(URL_RE)) {
-            let url = match[0];
+        for (const match of str.matchAll(LINK_RE)) {
+            // A bare domain glued to a word (e.g. "abc_def.com" inside text) or to an @ is not a link
+            const before = str[match.index - 1] || '';
+            if (match[3] && /[@\w.\/-]/.test(before)) continue;
+
+            let link = match[0];
             // Leave trailing punctuation (and unbalanced closing brackets) outside the link.
-            while (/[.,!?;:]$/.test(url) || (/\)$/.test(url) && (url.match(/\(/g) || []).length < (url.match(/\)/g) || []).length)) {
-                url = url.slice(0, -1);
+            while (/[.,!?;:'"]$/.test(link) || (/\)$/.test(link) && (link.match(/\(/g) || []).length < (link.match(/\)/g) || []).length)) {
+                link = link.slice(0, -1);
             }
-            const href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+            const href = match[1] ? 'mailto:' + link : (/^https?:\/\//i.test(link) ? link : 'https://' + link);
             html += esc(str.slice(last, match.index));
-            html += `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow">${esc(url)}</a>`;
-            last = match.index + url.length;
+            html += `<a href="${esc(href)}"${match[1] ? '' : ' target="_blank"'} rel="noopener noreferrer nofollow">${esc(link)}</a>`;
+            last = match.index + link.length;
         }
         return html + esc(str.slice(last));
     }
+
+    function fmtBytes(n) {
+        if (n < 1024) return n + ' B';
+        if (n < 1024 * 1024) return Math.round(n / 1024) + ' KB';
+        return (n / 1024 / 1024).toFixed(n < 10 * 1024 * 1024 ? 1 : 0) + ' MB';
+    }
+
+    const extOf = (name) => (String(name).match(/\.([a-z0-9]+)$/i) || [, ''])[1].toLowerCase();
+    const fileUrl = (id, extra = '') => `${FILE_URL}?id=${encodeURIComponent(id)}${extra}`;
 
     function initials(name) {
         const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
@@ -309,8 +398,17 @@
         return fmt('long', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(d);
     }
 
-    const avatar = (name, type) => `<div class="cc-avatar" data-type="${esc(type)}" aria-hidden="true">${esc(initials(name))}</div>`;
+    const isGone = (status) => status === 'deleted';
+    const avatar = (name, type, status) => isGone(status)
+        ? `<div class="cc-avatar" data-type="deleted" aria-hidden="true">?</div>`
+        : `<div class="cc-avatar" data-type="${esc(type)}" aria-hidden="true">${esc(initials(name))}</div>`;
     const roleChip = (type) => ROLE_LABEL[type] ? `<span class="cc-role" data-type="${esc(type)}">${ROLE_LABEL[type]}</span>` : '';
+    // Deactivated / deleted accounts get a status chip instead of their role
+    const STATUS_LABEL = { deactivated: 'Deactivated', deleted: 'Deleted' };
+    const personChip = (type, status) => STATUS_LABEL[status]
+        ? `<span class="cc-role" data-status="${esc(status)}">${STATUS_LABEL[status]}</span>`
+        : roleChip(type);
+    const nameClass = (status) => STATUS_LABEL[status] ? ` is-${status}` : '';
 
     function emptyState(title, text) {
         return `<div class="cc-empty"><div class="cc-empty-icon">${ICON.inbox}</div><strong>${esc(title)}</strong><p>${esc(text)}</p></div>`;
@@ -457,15 +555,15 @@
         }
         el.list.innerHTML = state.conversations.map((c, i) => `
             <button type="button" class="cc-item ${c.unread ? 'is-unread' : ''}" data-conv="${i}">
-                ${avatar(c.name, c.partner_type)}
+                ${avatar(c.name, c.partner_type, c.account_status)}
                 <div class="cc-item-body">
                     <div class="cc-item-top">
-                        <span class="cc-item-name">${esc(c.name)}</span>
+                        <span class="cc-item-name${nameClass(c.account_status)}">${esc(c.name)}</span>
                         <span class="cc-item-time">${esc(listTime(c.timestamp))}</span>
                     </div>
                     <div class="cc-item-bottom">
                         <span class="cc-item-preview">${c.last_from_me ? 'You: ' : ''}${esc(c.last_message)}</span>
-                        ${c.unread ? `<span class="cc-unread">${c.unread > 99 ? '99+' : c.unread}</span>` : roleChip(c.partner_type)}
+                        ${c.unread ? `<span class="cc-unread">${c.unread > 99 ? '99+' : c.unread}</span>` : personChip(c.partner_type, c.account_status)}
                     </div>
                 </div>
             </button>
@@ -524,10 +622,10 @@
         state.searchResults = users;
         el.list.innerHTML = '<div class="cc-section-label">People</div>' + users.map((u, i) => `
             <button type="button" class="cc-item" data-user="${i}">
-                ${avatar(u.name, u.type)}
+                ${avatar(u.name, u.type, u.account_status)}
                 <div class="cc-item-body">
-                    <div class="cc-item-top"><span class="cc-item-name">${esc(u.name)}</span></div>
-                    <div class="cc-item-bottom">${roleChip(u.type)}</div>
+                    <div class="cc-item-top"><span class="cc-item-name${nameClass(u.account_status)}">${esc(u.name)}</span></div>
+                    <div class="cc-item-bottom">${personChip(u.type, u.account_status)}</div>
                 </div>
             </button>
         `).join('');
@@ -560,15 +658,12 @@
         state.sending = 0;
         setLocked(false);
 
-        el.tName.textContent = convo.name;
         el.tAvatar.dataset.type = convo.kind === 'group' ? 'group' : convo.type;
-        el.tAvatar.innerHTML = esc(initials(convo.name));
-        el.tSub.textContent = convo.kind === 'group'
-            ? `${convo.memberCount || 0} member${convo.memberCount === 1 ? '' : 's'}`
-            : (ROLE_LABEL[convo.type] || '');
         el.tInfo.hidden = convo.kind !== 'group';
+        applyThreadHeader(convo);
         el.thread.innerHTML = skeleton(3);
         el.input.value = '';
+        clearTray();
         autosize();
 
         showView('thread');
@@ -576,6 +671,32 @@
         loadThread(true);
         startConvoPolling();
         setTimeout(() => el.input.focus({ preventScroll: true }), 60);
+    }
+
+    /** Name, avatar and subtitle of the open conversation; deleted contacts can't be messaged. */
+    function applyThreadHeader(convo) {
+        const status = convo.accountStatus || 'active';
+        el.tName.textContent = convo.name;
+        el.tName.className = 'cc-title' + nameClass(status);
+        if (convo.kind === 'group') {
+            el.tAvatar.innerHTML = esc(initials(convo.name));
+            el.tSub.textContent = `${convo.memberCount || 0} member${convo.memberCount === 1 ? '' : 's'}`;
+            return;
+        }
+        el.tAvatar.dataset.type = isGone(status) ? 'deleted' : convo.type;
+        el.tAvatar.innerHTML = isGone(status) ? '?' : esc(initials(convo.name));
+        el.tSub.textContent = status === 'deleted'
+            ? 'This account no longer exists'
+            : status === 'deactivated'
+                ? `${ROLE_LABEL[convo.type] || 'Account'} · Deactivated`
+                : (ROLE_LABEL[convo.type] || '');
+        if (isGone(status)) {
+            setLocked(true, 'This account has been deleted');
+            clearTray();
+        } else if (state.locked && convo.lockedFor === 'deleted') {
+            setLocked(false);
+        }
+        convo.lockedFor = isGone(status) ? 'deleted' : null;
     }
 
     function startConvoPolling() {
@@ -597,13 +718,22 @@
                 if (!data.messages.length) {
                     el.thread.innerHTML = emptyState(
                         'No messages yet',
-                        convo.kind === 'group' ? 'Say hello to the group.' : `Send ${convo.name.split(' ')[0]} a message to get started.`
+                        convo.kind === 'group' ? 'Say hello to the group.'
+                            : isGone(convo.accountStatus) ? 'This account has been deleted.'
+                            : `Send ${convo.name.split(' ')[0]} a message to get started.`
                     );
                 }
             }
             const nearBottom = el.thread.scrollHeight - el.thread.scrollTop - el.thread.clientHeight < 80;
             data.messages.forEach(appendMessage);
             if (convo.kind === 'dm') updateReceipt(data.receipts && data.receipts.last_read_id);
+            // The account may have been renamed, deactivated or deleted since the list loaded
+            if (convo.kind === 'dm' && data.partner
+                && (data.partner.status !== (convo.accountStatus || 'active') || data.partner.name !== convo.name)) {
+                convo.accountStatus = data.partner.status;
+                convo.name = data.partner.name;
+                applyThreadHeader(convo);
+            }
             if (initial || (data.messages.length && nearBottom)) scrollToEnd();
             if (initial && convo.kind === 'dm') refreshUnread();
         } catch (e) {
@@ -648,10 +778,12 @@
         const showSender = state.convo && state.convo.kind === 'group' && !msg.mine && !continued;
         const canDelete = msg.mine && !opts.pending && state.convo && state.convo.kind === 'dm';
 
+        const att = msg.attachment;
+        const bubbleClass = att ? (att.kind === 'image' ? ' has-image' : ' has-file') : '';
         row.innerHTML = `
             ${showSender ? `<div class="cc-msg-sender">${esc(msg.sender_name)}</div>` : ''}
             <div class="cc-bubble-row">
-                <div class="cc-bubble">${linkify(msg.message)}</div>
+                <div class="cc-bubble${bubbleClass}">${att ? attachmentHtml(att, opts.preview) : ''}${msg.message ? `<div class="cc-text">${linkify(msg.message)}</div>` : ''}</div>
                 ${canDelete ? `<button type="button" class="cc-msg-delete" data-act="delete-msg" aria-label="Delete message">${ICON.trash}</button>` : ''}
             </div>
             <div class="cc-msg-meta">${opts.pending ? 'Sending…' : esc(clock(date))}</div>
@@ -662,6 +794,34 @@
         if (!opts.pending && Number(msg.id) > state.lastId) state.lastId = Number(msg.id);
         state.lastRun = { day, sender, ts: date, el: row };
         return row;
+    }
+
+    /**
+     * Photo or file card inside a bubble. att comes from the server ({id, kind, name, size, width, height})
+     * or, while uploading, from the composer (no id yet; preview is a local object URL).
+     */
+    function attachmentHtml(att, preview) {
+        if (att.kind === 'image') {
+            const w = att.width || 4;
+            const h = att.height || 3;
+            const src = preview || fileUrl(att.id, '&size=thumb');
+            const ratio = `aspect-ratio:${w}/${h}`;
+            const img = `<img src="${esc(src)}" alt="${esc(att.name)}" width="${w}" height="${h}" loading="lazy" decoding="async" style="${ratio}">`;
+            return att.id
+                ? `<a class="cc-photo" href="${esc(fileUrl(att.id))}" data-act="view-photo" data-full="${esc(fileUrl(att.id))}" data-name="${esc(att.name)}" data-download="${esc(fileUrl(att.id, '&download=1'))}">${img}</a>`
+                : `<span class="cc-photo">${img}</span>`;
+        }
+        const ext = extOf(att.name);
+        const inner = `
+            <span class="cc-file-icon">${ICON.file}<b>${esc(ext.slice(0, 4) || 'file')}</b></span>
+            <span class="cc-file-body">
+                <span class="cc-file-name">${esc(att.name)}</span>
+                <span class="cc-file-size">${esc(fmtBytes(att.size || 0))}</span>
+            </span>
+            ${att.id ? `<span class="cc-file-dl">${ICON.download}</span>` : ''}`;
+        return att.id
+            ? `<a class="cc-file" href="${esc(fileUrl(att.id, '&download=1'))}" download="${esc(att.name)}" title="Download ${esc(att.name)}">${inner}</a>`
+            : `<span class="cc-file">${inner}</span>`;
     }
 
     function updateReceipt(lastReadId) {
@@ -681,6 +841,7 @@
     function setLocked(locked, placeholder) {
         state.locked = locked;
         el.input.disabled = locked;
+        el.attach.disabled = locked;
         el.input.placeholder = locked ? (placeholder || 'You can’t reply to this conversation') : 'Write a message…';
         updateSendState();
     }
@@ -695,7 +856,191 @@
     }
 
     function updateSendState() {
-        el.send.disabled = state.locked || !el.input.value.trim();
+        const files = state.attachments;
+        const busy = files.some((a) => a.status === 'processing');
+        const ready = files.some((a) => a.status === 'ready');
+        el.send.disabled = state.locked || busy || (!el.input.value.trim() && !ready);
+        el.send.setAttribute('aria-label', busy ? 'Optimizing attachments…' : 'Send');
+    }
+
+    /* ------------------------------------------------------------------
+     * Attachments: pick / paste / drop -> optimise -> tray -> send
+     * ------------------------------------------------------------------ */
+
+    function loadImageElement(file) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+            img.src = url;
+        });
+    }
+
+    const canvasBlob = (canvas, type, quality) => new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+
+    /**
+     * Shrinks photos before upload: fits them inside IMAGE_MAX_EDGE, applies the camera
+     * rotation, drops metadata (GPS etc.) and re-encodes as WebP (JPEG where WebP
+     * isn't supported). Keeps the original when that is already smaller.
+     * Returns { file, width, height } or null when the browser can't read the image.
+     */
+    async function compressImage(file) {
+        let source;
+        try {
+            source = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        } catch (e) {
+            try {
+                source = await loadImageElement(file);
+            } catch (e2) {
+                return null;
+            }
+        }
+        const w0 = source.width || source.naturalWidth;
+        const h0 = source.height || source.naturalHeight;
+        if (!w0 || !h0) return null;
+
+        const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(w0, h0));
+        const w = Math.max(1, Math.round(w0 * scale));
+        const h = Math.max(1, Math.round(h0 * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(source, 0, 0, w, h);
+        if (source.close) source.close();
+
+        let blob = await canvasBlob(canvas, 'image/webp', 0.82);
+        if (!blob || blob.type !== 'image/webp') {
+            // No WebP encoder (older Safari): JPEG has no transparency, so paint white behind it
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            blob = await canvasBlob(canvas, 'image/jpeg', 0.85);
+        }
+        if (!blob) return null;
+
+        const browserCanShow = /^image\/(jpeg|png|webp)$/i.test(file.type);
+        if (blob.size >= file.size && scale === 1 && browserCanShow) {
+            return { file, width: w, height: h };
+        }
+        const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+        const stem = file.name.replace(/\.[^.]+$/, '') || 'photo';
+        return { file: new File([blob], `${stem}.${ext}`, { type: blob.type }), width: w, height: h };
+    }
+
+    async function prepareAttachment(entry) {
+        const original = entry.original;
+        try {
+            if (COMPRESSIBLE.test(original.type)) {
+                const out = await compressImage(original);
+                if (out) {
+                    Object.assign(entry, { file: out.file, kind: 'image', width: out.width, height: out.height });
+                }
+            } else if (original.type === 'image/gif') {
+                const img = await loadImageElement(original).catch(() => null);
+                Object.assign(entry, { kind: 'image', width: img ? img.naturalWidth : null, height: img ? img.naturalHeight : null });
+            }
+            if (!entry.kind) {
+                entry.kind = 'file';
+                if (!FILE_EXTENSIONS.includes(extOf(original.name))) {
+                    throw new Error('This type of file can’t be sent.');
+                }
+            }
+            if (entry.file.size > MAX_FILE_BYTES) {
+                throw new Error(`Too large (max ${fmtBytes(MAX_FILE_BYTES)})`);
+            }
+            if (entry.kind === 'image') entry.preview = URL.createObjectURL(entry.file);
+            entry.status = 'ready';
+        } catch (e) {
+            entry.status = 'error';
+            entry.error = e.message || 'Could not prepare this file.';
+        }
+        renderTray();
+        updateSendState();
+    }
+
+    function addFiles(list) {
+        if (state.locked || !state.convo) return;
+        const files = Array.from(list || []).filter((f) => f && f.size >= 0);
+        if (!files.length) return;
+        const room = MAX_FILES - state.attachments.length;
+        if (room <= 0) {
+            notice(`You can send up to ${MAX_FILES} files at a time.`);
+            return;
+        }
+        if (files.length > room) notice(`Only the first ${room} file${room === 1 ? '' : 's'} were added (max ${MAX_FILES} at a time).`);
+
+        files.slice(0, room).forEach((original) => {
+            const entry = {
+                key: Math.random().toString(36).slice(2),
+                original,
+                file: original,
+                name: original.name || 'file',
+                kind: null,
+                status: 'processing',
+            };
+            state.attachments.push(entry);
+            prepareAttachment(entry);
+        });
+        renderTray();
+        updateSendState();
+    }
+
+    function removeAttachment(key, revoke = true) {
+        const i = state.attachments.findIndex((a) => a.key === key);
+        if (i < 0) return;
+        const [entry] = state.attachments.splice(i, 1);
+        if (revoke && entry.preview) URL.revokeObjectURL(entry.preview);
+        renderTray();
+        updateSendState();
+    }
+
+    function clearTray(revoke = true) {
+        if (revoke) state.attachments.forEach((a) => a.preview && URL.revokeObjectURL(a.preview));
+        state.attachments = [];
+        renderTray();
+        updateSendState();
+    }
+
+    function renderTray() {
+        const items = state.attachments;
+        el.tray.hidden = items.length === 0;
+        el.tray.innerHTML = items.map((a) => {
+            const thumb = a.preview
+                ? `<img src="${esc(a.preview)}" alt="">`
+                : `<span class="cc-file-icon">${ICON.file}<b>${esc(extOf(a.name).slice(0, 4) || 'file')}</b></span>`;
+            let meta;
+            if (a.status === 'processing') meta = a.kind === 'file' ? 'Preparing…' : 'Optimizing…';
+            else if (a.status === 'error') meta = a.error;
+            else if (a.file !== a.original && a.file.size < a.original.size) meta = `${fmtBytes(a.original.size)} → ${fmtBytes(a.file.size)}`;
+            else meta = fmtBytes(a.file.size);
+            return `
+                <div class="cc-tray-item is-${a.status}" title="${esc(a.name)}">
+                    <span class="cc-tray-thumb">${thumb}</span>
+                    <span class="cc-tray-body">
+                        <span class="cc-tray-name">${esc(a.file.name || a.name)}</span>
+                        <span class="cc-tray-meta">${esc(meta)}</span>
+                    </span>
+                    <button type="button" class="cc-tray-remove" data-remove-attachment="${a.key}" aria-label="Remove ${esc(a.name)}">${ICON.x}</button>
+                </div>`;
+        }).join('');
+    }
+
+    function openLightbox(link) {
+        el.lbImg.src = link.dataset.full;
+        el.lbImg.alt = link.dataset.name || '';
+        el.lbName.textContent = link.dataset.name || '';
+        el.lbDownload.href = link.dataset.download;
+        el.lbDownload.setAttribute('download', link.dataset.name || '');
+        el.lightbox.hidden = false;
+        el.lightbox.querySelector('[data-act="lightbox-close"]').focus();
+    }
+
+    function closeLightbox() {
+        el.lightbox.hidden = true;
+        el.lbImg.removeAttribute('src');
     }
 
     function autosize() {
@@ -703,21 +1048,67 @@
         el.input.style.height = Math.min(el.input.scrollHeight, 120) + 'px';
     }
 
-    async function send(text) {
+    /**
+     * Sends what's in the composer: the text on its own, or each attachment as its own
+     * message with the text as the first one's caption. Uploads go one at a time, in order.
+     */
+    function sendComposer(text) {
+        const ready = state.attachments.filter((a) => a.status === 'ready');
+        if (!ready.length) {
+            send(text);
+            return;
+        }
+        // Rejected files stay in the tray so the error remains visible; sent ones leave it.
+        ready.forEach((a) => removeAttachment(a.key, false));
+        ready.forEach((entry, i) => {
+            const caption = i === 0 ? text : '';
+            const job = send(caption, entry, true);
+            state.queue = state.queue.then(() => job.run()).catch(() => {});
+        });
+    }
+
+    /**
+     * Shows the message straight away (pending) and sends it. With deferred=true the upload
+     * waits until the returned job's run() is called, so queued files keep their order.
+     */
+    function send(text, entry = null, deferred = false) {
         const convo = state.convo;
-        if (!convo || state.locked) return;
-        text = text.trim();
-        if (!text) return;
+        if (!convo || state.locked) return { run: () => Promise.resolve() };
+        text = String(text || '').trim();
+        if (!text && !entry) return { run: () => Promise.resolve() };
 
         const tempId = 'tmp-' + Date.now() + Math.random().toString(16).slice(2);
-        const row = appendMessage({ id: tempId, message: text, mine: true, timestamp: new Date().toISOString() }, { pending: true });
+        const localAtt = entry ? { kind: entry.kind, name: entry.file.name, size: entry.file.size, width: entry.width, height: entry.height } : null;
+        const row = appendMessage(
+            { id: tempId, message: text, mine: true, timestamp: new Date().toISOString(), attachment: localAtt },
+            { pending: true, preview: entry && entry.preview }
+        );
         scrollToEnd();
         state.sending++;
+        const meta = row.querySelector('.cc-msg-meta');
+        if (entry) meta.textContent = 'Waiting…';
 
+        const run = () => deliver(convo, row, text, entry, meta);
+        if (deferred) return { run };
+        run();
+        return { run: () => Promise.resolve() };
+    }
+
+    async function deliver(convo, row, text, entry, meta) {
         try {
-            const data = convo.kind === 'group'
-                ? await api('group_send', { group_id: convo.id, message: text }, 'POST')
-                : await api('send', { partner_id: convo.id, partner_type: convo.type, message: text }, 'POST');
+            const params = convo.kind === 'group'
+                ? { group_id: convo.id, message: text }
+                : { partner_id: convo.id, partner_type: convo.type, message: text };
+            const action = convo.kind === 'group' ? 'group_send' : 'send';
+            let data;
+            if (entry) {
+                meta.textContent = 'Uploading… 0%';
+                data = await apiUpload(action, params, entry.file, (p) => {
+                    meta.textContent = p < 1 ? `Uploading… ${Math.round(p * 100)}%` : 'Processing…';
+                });
+            } else {
+                data = await api(action, params, 'POST');
+            }
             if (state.convo !== convo) return;
 
             const real = data.message;
@@ -726,7 +1117,14 @@
             } else {
                 row.classList.remove('is-pending');
                 row.dataset.id = real.id;
-                row.querySelector('.cc-msg-meta').textContent = row.dataset.time;
+                meta.textContent = row.dataset.time;
+                if (real.attachment) {
+                    // Swap the local preview for the optimised copy from the server
+                    const bubble = row.querySelector('.cc-bubble');
+                    const textEl = bubble.querySelector('.cc-text');
+                    bubble.innerHTML = attachmentHtml(real.attachment) + (textEl ? textEl.outerHTML : '');
+                    if (entry && entry.preview) setTimeout(() => URL.revokeObjectURL(entry.preview), 1000);
+                }
                 if (convo.kind === 'dm') {
                     row.querySelector('.cc-bubble-row').insertAdjacentHTML('beforeend',
                         `<button type="button" class="cc-msg-delete" data-act="delete-msg" aria-label="Delete message">${ICON.trash}</button>`);
@@ -739,7 +1137,6 @@
             if (state.convo !== convo) return;
             row.classList.remove('is-pending');
             row.classList.add('is-failed');
-            const meta = row.querySelector('.cc-msg-meta');
             meta.hidden = false;
 
             if (e.code === 'receiver_not_found' || e.code === 'sender_not_found') {
@@ -748,8 +1145,9 @@
                 setLocked(true, e.code === 'sender_not_found' ? 'Please log in again' : 'This contact no longer exists');
                 clearTimer('convo');
             } else {
-                meta.innerHTML = `${esc(e.message)} · <button type="button" data-act="retry" style="text-decoration:underline;font-weight:700">Retry</button>`;
-                row.dataset.text = text;
+                const canRetry = !['file_type', 'file_too_large', 'bad_image', 'empty_file'].includes(e.code);
+                meta.innerHTML = esc(e.message) + (canRetry ? ' · <button type="button" data-act="retry" style="text-decoration:underline;font-weight:700">Retry</button>' : '');
+                row.retrySend = () => send(text, entry);
             }
         } finally {
             state.sending = Math.max(0, state.sending - 1);
@@ -875,10 +1273,10 @@
             el.iDesc.hidden = !group.description;
             el.iMembers.innerHTML = group.members.map((m) => `
                 <div class="cc-item" style="cursor:default">
-                    ${avatar(m.name, m.type)}
+                    ${avatar(m.name, m.type, m.account_status)}
                     <div class="cc-item-body">
-                        <div class="cc-item-top"><span class="cc-item-name">${esc(m.name)}${m.me ? ' <span style="color:var(--cc-muted);font-weight:400">(you)</span>' : ''}</span></div>
-                        <div class="cc-item-bottom">${roleChip(m.type)}</div>
+                        <div class="cc-item-top"><span class="cc-item-name${nameClass(m.account_status)}">${esc(m.name)}${m.me ? ' <span style="color:var(--cc-muted);font-weight:400">(you)</span>' : ''}</span></div>
+                        <div class="cc-item-bottom">${personChip(m.type, m.account_status)}</div>
                     </div>
                 </div>
             `).join('');
@@ -929,13 +1327,24 @@
                 case 'delete-msg': deleteMessage(act); return;
                 case 'retry': {
                     const row = act.closest('.cc-msg');
-                    const text = row.dataset.text;
+                    const retry = row.retrySend;
                     row.remove();
-                    send(text);
+                    if (retry) retry();
                     return;
                 }
+                case 'attach': el.file.click(); return;
+                case 'view-photo':
+                    event.preventDefault();
+                    openLightbox(act);
+                    return;
+                case 'lightbox-close': closeLightbox(); return;
             }
         }
+
+        if (target === el.lightbox) { closeLightbox(); return; }
+
+        const removeBtn = target.closest('[data-remove-attachment]');
+        if (removeBtn) { removeAttachment(removeBtn.dataset.removeAttachment); return; }
 
         const tab = target.closest('[data-tab]');
         if (tab) { setTab(tab.dataset.tab); return; }
@@ -943,7 +1352,7 @@
         const conv = target.closest('[data-conv]');
         if (conv) {
             const c = state.conversations[Number(conv.dataset.conv)];
-            if (c) openThread({ kind: 'dm', id: c.partner_id, type: c.partner_type, name: c.name });
+            if (c) openThread({ kind: 'dm', id: c.partner_id, type: c.partner_type, name: c.name, accountStatus: c.account_status });
             return;
         }
 
@@ -952,7 +1361,7 @@
             const u = state.searchResults[Number(user.dataset.user)];
             if (u) {
                 el.search.value = '';
-                openThread({ kind: 'dm', id: u.id, type: u.type, name: u.name });
+                openThread({ kind: 'dm', id: u.id, type: u.type, name: u.name, accountStatus: u.account_status });
             }
             return;
         }
@@ -1001,13 +1410,54 @@
 
     el.composer.addEventListener('submit', (event) => {
         event.preventDefault();
+        if (el.send.disabled) return;
         const text = el.input.value;
-        if (!text.trim() || state.locked) return;
         el.input.value = '';
         autosize();
+        sendComposer(text);
         updateSendState();
-        send(text);
         el.input.focus();
+    });
+
+    el.file.addEventListener('change', () => {
+        addFiles(el.file.files);
+        el.file.value = '';
+    });
+
+    // Paste screenshots / copied files straight into the message box
+    el.input.addEventListener('paste', (event) => {
+        const files = event.clipboardData && Array.from(event.clipboardData.files || []);
+        if (files && files.length) {
+            event.preventDefault();
+            addFiles(files);
+        }
+    });
+
+    // Drag files onto the conversation
+    const threadView = root.querySelector('[data-view="thread"]');
+    let dragDepth = 0;
+    const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+    threadView.addEventListener('dragenter', (e) => {
+        if (!hasFiles(e) || state.locked) return;
+        e.preventDefault();
+        dragDepth++;
+        threadView.classList.add('is-dragging');
+    });
+    threadView.addEventListener('dragover', (e) => {
+        if (!hasFiles(e) || state.locked) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+    threadView.addEventListener('dragleave', () => {
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (!dragDepth) threadView.classList.remove('is-dragging');
+    });
+    threadView.addEventListener('drop', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth = 0;
+        threadView.classList.remove('is-dragging');
+        addFiles(e.dataTransfer.files);
     });
 
     el.input.addEventListener('input', () => {
@@ -1023,7 +1473,9 @@
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !state.open) return;
+        if (event.key !== 'Escape') return;
+        if (!el.lightbox.hidden) { closeLightbox(); return; }
+        if (!state.open) return;
         if (state.view === 'list') close(); else back();
     });
 

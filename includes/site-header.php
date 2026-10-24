@@ -5,7 +5,7 @@
  * Set before including:
  *   $page_title       – shown before the institution name in <title>
  *   $page_description – optional meta description
- *   $active_page      – home | about | programs | news | gallery | contact | help
+ *   $active_page      – home | about | programs | news | gallery | contact | help | calendar
  */
 require_once __DIR__ . '/site-helpers.php';
 
@@ -55,6 +55,7 @@ $au_nav = [
             <ul class="au-topbar-links">
                 <li><a href="login/index.php">Student Portal</a></li>
                 <li><a href="login/index.php">Faculty Portal</a></li>
+                <li><a href="calendar.php">School Calendar</a></li>
                 <li><a href="help.php">Help Center</a></li>
             </ul>
         </div>

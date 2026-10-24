@@ -475,6 +475,33 @@
     color: var(--cc-navy);
 }
 
+/* Accounts that were deactivated or deleted */
+.cc-avatar[data-type="deleted"] {
+    background: #c9ced8;
+    color: #fff;
+}
+
+.cc-item-name.is-deleted,
+.cc-title.is-deleted {
+    font-style: italic;
+    font-weight: 600;
+}
+
+.cc-item-name.is-deleted,
+.cc-item-name.is-deactivated {
+    color: var(--cc-muted) !important;
+}
+
+.cc-role[data-status="deactivated"] {
+    background: #fff4dc;
+    color: #8a5a00;
+}
+
+.cc-role[data-status="deleted"] {
+    background: #eceef2;
+    color: #5b6170;
+}
+
 .cc-role {
     display: inline-block;
     padding: 1px 7px;
@@ -655,18 +682,22 @@
     border: 1px solid #f5c2c4;
 }
 
-.cc-bubble a {
+.cc-tray + .cc-composer {
+    border-top: 0;
+}
+
+.cc-bubble .cc-text a {
     color: var(--cc-navy-2) !important;
     text-decoration: underline !important;
     text-underline-offset: 2px;
     word-break: break-all;
 }
 
-.cc-msg.mine .cc-bubble a {
+.cc-msg.mine .cc-bubble .cc-text a {
     color: #fff !important;
 }
 
-.cc-bubble a:hover {
+.cc-bubble .cc-text a:hover {
     text-decoration-thickness: 2px !important;
 }
 
@@ -726,8 +757,8 @@
 .cc-composer {
     display: flex;
     align-items: flex-end;
-    gap: 8px;
-    padding: 10px 12px 12px;
+    gap: 6px;
+    padding: 10px 12px 12px 8px;
     border-top: 1px solid var(--cc-line);
     background: #fff;
     flex-shrink: 0;
@@ -778,6 +809,332 @@
 .cc-send:disabled {
     opacity: 0.35;
     cursor: not-allowed;
+}
+
+/* ---------- Attachments ---------- */
+
+.cc-attach {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--cc-muted) !important;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cc-attach:hover:not(:disabled) {
+    background: var(--cc-bg-soft) !important;
+    color: var(--cc-navy) !important;
+}
+
+.cc-attach:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Waiting-to-send tray above the composer */
+.cc-tray {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px 2px;
+    overflow-x: auto;
+    background: #fff;
+    border-top: 1px solid var(--cc-line);
+    flex-shrink: 0;
+}
+
+.cc-tray[hidden] {
+    display: none;
+}
+
+.cc-tray-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    width: 190px;
+    padding: 6px 28px 6px 6px;
+    border: 1px solid var(--cc-line);
+    border-radius: 12px;
+    background: var(--cc-bg-soft);
+}
+
+.cc-tray-item.is-error {
+    border-color: #f5c2c4;
+    background: #fdecec;
+}
+
+.cc-tray-thumb {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #fff;
+}
+
+.cc-tray-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cc-tray-body {
+    min-width: 0;
+    display: grid;
+}
+
+.cc-tray-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cc-tray-meta {
+    font-size: 11px;
+    color: var(--cc-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cc-tray-item.is-processing .cc-tray-meta {
+    color: var(--cc-navy-2);
+}
+
+.cc-tray-item.is-error .cc-tray-meta {
+    color: var(--cc-danger);
+    white-space: normal;
+}
+
+.cc-tray-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--cc-muted) !important;
+}
+
+.cc-tray-remove:hover {
+    background: #fff !important;
+    color: var(--cc-danger) !important;
+}
+
+/* Inside bubbles */
+.cc-bubble.has-image,
+.cc-bubble.has-file {
+    white-space: normal;
+}
+
+.cc-bubble .cc-text {
+    white-space: pre-wrap;
+}
+
+.cc-bubble.has-image {
+    padding: 3px;
+    overflow: hidden;
+}
+
+.cc-bubble.has-file {
+    padding: 4px;
+}
+
+.cc-bubble .cc-text {
+    padding: 5px 9px 4px;
+}
+
+.cc-bubble:not(.has-image):not(.has-file) .cc-text {
+    padding: 0;
+}
+
+.cc-photo {
+    display: block;
+    border-radius: 15px;
+    overflow: hidden;
+    background: rgba(6, 30, 78, 0.06);
+    cursor: zoom-in;
+}
+
+.cc-photo img {
+    display: block;
+    width: 240px;
+    max-width: 100%;
+    height: auto;
+    max-height: 320px;
+    object-fit: cover;
+}
+
+.cc-msg.is-pending .cc-photo {
+    cursor: default;
+}
+
+.cc-file {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+    max-width: 260px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+.cc-msg.theirs .cc-file {
+    background: var(--cc-bg-soft);
+}
+
+.cc-file:hover .cc-file-dl {
+    transform: translateY(1px);
+}
+
+.cc-file-icon {
+    position: relative;
+    width: 38px;
+    height: 42px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    color: var(--cc-navy-2);
+}
+
+.cc-msg.mine .cc-file .cc-file-icon {
+    color: #fff;
+}
+
+.cc-file-icon svg {
+    width: 36px;
+    height: 36px;
+}
+
+.cc-file-icon b {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 3px;
+    border-radius: 3px;
+    background: var(--cc-gold);
+    color: var(--cc-navy);
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 13px;
+}
+
+.cc-file-body {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+}
+
+.cc-file-name {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cc-file-size {
+    font-size: 11.5px;
+    opacity: 0.75;
+}
+
+.cc-file-dl {
+    flex-shrink: 0;
+    transition: transform 0.12s ease;
+}
+
+/* Drag-and-drop target */
+.cc-view[data-view="thread"] {
+    position: relative;
+}
+
+.cc-drop {
+    position: absolute;
+    inset: 64px 10px 10px;
+    z-index: 3;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 2px dashed var(--cc-navy-2);
+    border-radius: 14px;
+    background: rgba(245, 246, 249, 0.94);
+    color: var(--cc-navy);
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.cc-drop svg {
+    width: 28px;
+    height: 28px;
+}
+
+.cc-view.is-dragging .cc-drop {
+    display: flex;
+}
+
+/* Full-size photo viewer */
+.cc-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 16px 24px;
+    background: rgba(3, 10, 28, 0.92);
+}
+
+.cc-lightbox[hidden] {
+    display: none;
+}
+
+.cc-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.cc-lightbox-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 14px;
+    color: #fff;
+}
+
+.cc-lightbox-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ---------- Forms (new group) ---------- */

@@ -116,19 +116,21 @@ class AuthService
     }
 
     /**
-     * Verify password and status
+     * Verify password, then status. The password is checked first so "deactivated"
+     * is only ever shown to someone who knows the password, and a wrong password
+     * looks the same whether or not the account is active.
      */
     private function verifyUser(array $user, string $password): void
     {
-        if (strtolower(trim($user['status'])) !== 'active') {
-            error_log("Active is inactive for user: " . $user['email']);
-            $this->fail("INVALID_CREDENTIALS");
-        }
-
         if (!password_verify($password, $user['password'])) {
             $this->recordFailedAttempt($user['email']);
             error_log("Invalid password attempt for user: " . $user['email']);
             $this->fail("INVALID_CREDENTIALS");
+        }
+
+        if (strtolower(trim($user['status'])) !== 'active') {
+            error_log("Login blocked, account is not active: " . $user['email']);
+            $this->fail("ACCOUNT_DEACTIVATED");
         }
     }
 

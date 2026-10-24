@@ -61,6 +61,11 @@ if (isset($_SESSION['admin_id'], $pdo)) {
                     <i class="bi bi-calendar3 align-middle"></i> <span class="align-middle">Semester Management</span>
                 </a>
             </li>
+            <li class="sidebar-item <?php echo ($current_page == 'calendar_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="calendar_management.php">
+                    <i class="bi bi-calendar-week align-middle"></i> <span class="align-middle">School Calendar</span>
+                </a>
+            </li>
 
             <li class="sidebar-header">Website</li>
             <li class="sidebar-item <?php echo ($current_page == 'post_management.php') ? 'active' : ''; ?>">

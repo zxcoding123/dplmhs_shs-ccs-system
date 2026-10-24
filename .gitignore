@@ -20,3 +20,7 @@ vendor/
 .env
 
 test.php
+
+# Private chat attachments (keep the folder's access rules)
+uploads/chat/*
+!uploads/chat/.htaccess

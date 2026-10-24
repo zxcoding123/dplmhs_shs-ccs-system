@@ -164,6 +164,17 @@ if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'TOO_MANY_ATTEMPTS') {
             </script>
         ";
     unset($_SESSION['STATUS']);
+} elseif (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'ACCOUNT_DEACTIVATED') {
+    echo "
+      <script>
+                Swal.fire({
+                    title: 'Account not active',
+            text: 'Your password is correct, but this account is currently deactivated. Please ask the school admin to activate it.',
+            icon: 'warning'
+                });
+            </script>
+        ";
+    unset($_SESSION['STATUS']);
 } elseif (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'ACCOUNT_NOT_FOUND') {
     echo "
                 <script>
