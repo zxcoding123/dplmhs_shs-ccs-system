@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(git check-ignore -v uploads/chat/.htaccess uploads/.htaccess)"
+      "PowerShell(git check-ignore -v uploads/chat/.htaccess uploads/.htaccess)",
+      "Bash(grep -v -E '\\\\.\\(png|jpg|svg|css|map|mp3|woff2?|ttf\\)$')",
+      "Bash(grep -v -E '\\\\.\\(png|jpg|svg|css|map|mp3|woff2?|ttf|webp|avif\\)$')",
+      "Bash(/c/xampp/php/php.exe -l processes/ideas/submit.php)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root csms_system -e \"START TRANSACTION; INSERT INTO admin_notifications \\(admin_id, type, title, description, date, link, status\\) SELECT id, 'idea', 'New idea: test', 'x', NOW\\(\\), 'ideas_management.php', 'unread' FROM admin; SELECT ROW_COUNT\\(\\) AS inserted; ROLLBACK;\")"
     ]
   }
 }

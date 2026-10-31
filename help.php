@@ -63,6 +63,15 @@ include __DIR__ . '/includes/site-header.php';
                 </div>
             </div>
         </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-3 mt-4 p-4 border rounded bg-light">
+            <i class="bi bi-lightbulb fs-2 text-warning" aria-hidden="true"></i>
+            <div class="flex-grow-1">
+                <h2 class="h5 mb-1">Missing something?</h2>
+                <p class="mb-0 text-muted">Suggest a feature or improvement, and upvote the ideas you need most.</p>
+            </div>
+            <a href="ideas.php" class="btn btn-au-gold">Ideas &amp; Improvements</a>
+        </div>
     </div>
 </section>
 

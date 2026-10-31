@@ -78,6 +78,11 @@ if (isset($_SESSION['admin_id'], $pdo)) {
                     <i class="bi bi-images align-middle"></i> <span class="align-middle">Gallery Management</span>
                 </a>
             </li>
+            <li class="sidebar-item <?php echo ($current_page == 'ideas_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="ideas_management.php">
+                    <i class="bi bi-lightbulb align-middle"></i> <span class="align-middle">Ideas &amp; Improvements</span>
+                </a>
+            </li>
 
             <li class="sidebar-header">Account</li>
             <li class="sidebar-item <?php echo ($current_page == 'admin_management.php') ? 'active' : ''; ?>">
