@@ -97,7 +97,7 @@ $stmt->execute();
 
                     <div class="au-auth-note mt-4">
                         <i class="bi bi-info-circle"></i>
-                        <span>All student and faculty accounts are created by the school's admin or sub-admin. Having trouble? Visit the <a href="../help.php">Help Center</a>.</span>
+                        <span>Student accounts are created by the school registrar; faculty accounts by the school's admin. Having trouble? Visit the <a href="../help.php">Help Center</a>.</span>
                     </div>
                 </div>
             </div>
@@ -119,7 +119,7 @@ $stmt->execute();
                 <div class="modal-body">
                     <p>Accounts cannot be created online. <strong>All accounts are created and accredited by the respective admin or sub-admin</strong> of Don Pablo Lorenzo Memorial High School – Stand-Alone Senior High School.</p>
                     <ul class="mb-3">
-                        <li><strong>Students</strong> — ask your class adviser or the school's admin or sub-admin for your account.</li>
+                        <li><strong>Students</strong> — ask the school registrar or your class adviser for your account.</li>
                         <li><strong>Teachers and staff</strong> — ask the school admin to create your account.</li>
                     </ul>
                     <p class="text-muted small mb-0">Once your account is created, you will receive your login details at your registered email address.</p>

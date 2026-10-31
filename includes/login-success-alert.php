@@ -14,6 +14,7 @@ $loginSuccessRoles = [
     'TEACHER_LOGIN_SUCCESFUL'  => 'teacher',
     'STUDENT_LOGIN_SUCCESSFUL' => 'student',
     'STUDENT_LOGIN_SUCCESFUL'  => 'student',
+    'REGISTRAR_LOGIN_SUCCESSFUL' => 'registrar',
 ];
 
 $loginStatus = $_SESSION['STATUS'] ?? '';

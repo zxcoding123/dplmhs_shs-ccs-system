@@ -98,6 +98,17 @@ if (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'TOO_MANY_ATTEMPTS') {
         </script>
         ";
     unset($_SESSION['STATUS']);
+} elseif (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'REGISTRAR_NOT_LOGGED_IN') {
+    echo "
+        <script>
+            Swal.fire({
+                title: 'Registrar not logged in!',
+                text: 'Please sign in with your registrar account to continue.',
+                icon: 'error'
+            });
+        </script>
+        ";
+    unset($_SESSION['STATUS']);
 } elseif (isset($_SESSION['STATUS']) && $_SESSION['STATUS'] == 'TEACHER_NOT_LOGGED_IN') {
     echo "
             <script>

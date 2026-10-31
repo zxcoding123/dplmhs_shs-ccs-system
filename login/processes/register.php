@@ -1,4 +1,14 @@
 <?php
+// Self-registration is closed: student accounts come from the registrar (or an
+// adviser for their own section), staff and registrar accounts from the admin.
+header('Content-Type: application/json');
+http_response_code(403);
+echo json_encode([
+    'success' => false,
+    'message' => 'Accounts can no longer be created online. Please ask the school registrar.'
+]);
+exit;
+
 require_once __DIR__ . '/../../database/connection.php';
 require_once '../../app/services/RegistrationService.php';
 

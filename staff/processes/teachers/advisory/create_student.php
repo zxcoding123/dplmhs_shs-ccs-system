@@ -13,6 +13,7 @@ if (!isset($_SESSION['teacher_id'])) {
 
 require __DIR__ . '/../../../../database/connection.php';
 require_once __DIR__ . '/../../../../includes/academic.php';
+require_once __DIR__ . '/../../../../includes/registrar.php';
 
 $class_name = $_POST['class_name'] ?? '';
 $returnUrl  = '../../../advisory_students.php?class_id=' . urlencode($class_name);
@@ -130,6 +131,19 @@ try {
 
     $pdo->prepare("INSERT INTO students_advising (student_id, staff_advising_id) VALUES (:sid, :sa_id)")
         ->execute(['sid' => $studentRowId, 'sa_id' => $staff_advising_id]);
+
+    // So the registrar sees the student as enrolled in this section for the current term
+    $term = enrollment_current_term($pdo);
+    enrollment_save($pdo, $studentRowId, [
+        'school_year'    => $term['school_year'],
+        'term'           => $term['term'],
+        'strand'         => $course,
+        'grade_level'    => $year_level,
+        'section_code'   => $class_name,
+        'admission_type' => $section['grade'] === '11' ? 'new' : 'continuing',
+        'status'         => 'enrolled',
+        'remarks'        => 'Added by adviser',
+    ], 'staff', $_SESSION['full_name'] ?? 'Adviser');
 
     // Let the admins know (one notification per admin)
     $pdo->prepare("

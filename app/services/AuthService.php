@@ -10,7 +10,8 @@ class AuthService
     private array $roleRedirects = [
         'admin' => '../../admin/index.php',
         'staff' => '../../staff/index.php',
-        'student' => '../../students/student_dashboard.php'
+        'student' => '../../students/student_dashboard.php',
+        'registrar' => '../../registrar/index.php'
     ];
 
     public function __construct(PDO $pdo)
@@ -145,6 +146,7 @@ class AuthService
      *   - staff   -> staff_accounts.id
      *   - student -> students.student_id (the business student number,
      *                NOT students.id, the row's own auto-increment key)
+     *   - registrar -> registrar_accounts.id
      * $user here is whatever findUser() returned, which is normally a
      * `users` table row ($user['id'] === users.id), but can also be the
      * admin table row directly (findUser()'s fallback branch when the email
@@ -194,6 +196,14 @@ class AuthService
             $fullName = $row ? trim($row['first_name'] . ' ' . $row['middle_name'] . ' ' . $row['last_name']) : null;
             $usersTableId = $user['id'];
             $_SESSION['student_id'] = $roleTableId;
+        } elseif ($user['role'] === 'registrar') {
+            $stmt = $this->pdo->prepare("SELECT id, fullName FROM registrar_accounts WHERE user_id = ?");
+            $stmt->execute([$user['id']]);
+            $row = $stmt->fetch();
+            $roleTableId = $row['id'] ?? null;
+            $fullName = $row['fullName'] ?? null;
+            $usersTableId = $user['id'];
+            $_SESSION['registrar_id'] = $roleTableId;
         }
 
         $_SESSION['user_id'] = $roleTableId;

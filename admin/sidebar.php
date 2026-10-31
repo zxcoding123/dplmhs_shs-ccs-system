@@ -90,6 +90,11 @@ if (isset($_SESSION['admin_id'], $pdo)) {
                     <i class="bi bi-person-badge align-middle"></i> <span class="align-middle">Admin Users</span>
                 </a>
             </li>
+            <li class="sidebar-item <?php echo ($current_page == 'registrar_management.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="registrar_management.php">
+                    <i class="bi bi-person-vcard align-middle"></i> <span class="align-middle">Registrars</span>
+                </a>
+            </li>
         </ul>
 
         <div class="au-portal-foot">
