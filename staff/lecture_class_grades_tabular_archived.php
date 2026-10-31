@@ -1,10 +1,44 @@
-﻿<?php
+<?php
+require_once __DIR__ . '/../includes/grading.php';
 session_start();
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
+    exit;
 }
 include __DIR__ . '/../database/connection.php';
+
+// Class shown in the header, the printout and the links back
+$class_id = $_GET['id'] ?? null;
+$stmt = $pdo->prepare("SELECT * FROM classes WHERE id = :class_id");
+$stmt->bindParam(':class_id', $class_id, PDO::PARAM_INT);
+$stmt->execute();
+$class = $stmt->fetch();
+
+if (!$class) {
+    echo "Class not found.";
+    exit;
+}
+
+$adviser = $class['teacher'];
+$subject = $class['subject'];
+$year_section = $class['name'];
+$semester = $class['semester'];
+$school_year = date('Y', strtotime($class['datetime_added']));
+$type = $class['type'];
+$gb_archived = (int) $class['is_archived'] === 1;
+$gb_state = grades_class_state($pdo, (int) $class['id']);
+$gb_back = 'class_grades.php?' . http_build_query([
+    'class_id' => $class['id'],
+    'semester_id' => $_GET['semester_id'] ?? '',
+    'subject_id' => $_GET['subject_id'] ?? '',
+]);
+$gb_state_pill = [
+    'none' => ['Not started', 'is-archived'],
+    'draft' => ['Draft · not submitted', 'is-type'],
+    'submitted' => ['Waiting for review', 'is-pending'],
+    'locked' => ['Accepted · locked', 'is-active'],
+][$gb_state];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,10 +48,13 @@ include __DIR__ . '/../database/connection.php';
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>DPLMHS-SHS | Student Management System</title>
-    <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
+    <?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('../admin/css/admin-ui.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('css/staff-ui.css', __DIR__); ?>" rel="stylesheet">
+    <script src="<?php echo csms_asset('js/staff-ui.js', __DIR__); ?>" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
@@ -26,227 +63,45 @@ include __DIR__ . '/../database/connection.php';
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
-
-
+    <link href="<?php echo csms_asset('css/dashboard.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('css/gradebook.css', __DIR__); ?>" rel="stylesheet">
 </head>
-
-<style>
-    table.dataTable {
-        font-size: 12px;
-    }
-
-    td {
-        text-align: center;
-        vertical-align: middle;
-        border-bottom: 1px solid black;
-        border: 1px solid black
-    }
-
-    .btn-csms {
-        background-color: #709775;
-        color: white;
-    }
-
-    .btn-csms:hover {
-        border: 1px solid #709775;
-    }
-
-    .grey-bg {
-        background-color: grey;
-        color: white;
-    }
-
-    .small-logo {
-        height: 125px;
-        width: 125px;
-    }
-</style>
 
 <body>
     <div class="wrapper">
         <div class="main">
             <main class="content">
-                <div class="d-flex align-items-center">
-                    <a href="class_grades.php?class_id=<?php echo $_GET['id'] ?>&semester_id=<?php echo $_GET['semester_id'] ?>&subject_id=<?php echo $_GET['subject_id'] ?>"
-                        class="d-flex align-items-center mb-3">
-                        <i class="bi bi-arrow-left-circle" style="font-size: 1.5rem; margin-right: 5px;"></i>
-                        <p class="m-0">Back</p>
-                    </a>
-                    <div class="ms-auto" aria-hidden="true">
+                <div class="container-fluid p-0 gb-page">
 
+                    <div class="fd-hero">
+                        <div>
+                            <div class="fd-eyebrow">Gradebook &middot; <?= htmlspecialchars($type) ?></div>
+                            <h1 class="fd-title"><?= htmlspecialchars($subject) ?></h1>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <span class="fd-chip"><i class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars($year_section) ?></span>
+                                <span class="fd-chip"><i class="bi bi-calendar3 me-1"></i><?= htmlspecialchars($semester) ?> &middot; <?= htmlspecialchars($school_year) ?></span>
+                                <span class="fd-chip"><i class="bi bi-person me-1"></i><?= htmlspecialchars($adviser) ?></span>
+                                <span class="fd-pill <?= $gb_state_pill[1] ?>"><?= $gb_state === 'locked' ? '<i class="bi bi-lock"></i> ' : '' ?><?= $gb_state_pill[0] ?></span>
+                                <?php if ($gb_archived): ?><span class="fd-pill is-archived"><i class="bi bi-archive"></i> Archived</span><?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="fd-quick">
+                            <a class="fd-btn-ghost" href="<?= htmlspecialchars($gb_back) ?>"><i class="bi bi-arrow-left"></i> Class grades</a>
+                            <?php if (!$gb_archived): ?>
+                                <button type="button" class="fd-btn-ghost" data-bs-toggle="modal" data-bs-target="#rubricModal"><i class="bi bi-sliders"></i> Components &amp; weights</button>
+                            <?php endif; ?>
+                            <button type="button" class="fd-btn" onclick="printDiv('printTable')"><i class="bi bi-printer"></i> Print</button>
+                        </div>
                     </div>
-                </div>
 
-
-
-
-
-
-                <div id="printTable">
-                    <div id="page-content-wrapper">
-                        <div class="card bg-light border-0 shadow-sm"
-                            style="background-color: white !important; padding: 5px;">
-
-                            <div class="card-body">
-                                <div
-                                    class="container text-center d-flex align-items-center justify-content-center my-3">
-                                    <div class="row w-100 d-flex align-items-center justify-content-center">
-                                        <div class="col-2 d-flex justify-content-center">
-                                            <img src="../external/img/AU_Logo"
-                                                class="img-fluid small-logo">
-                                        </div>
-                                        <div class="col-8 text-center">
-                                           <h5 class="bold mb-1">Don Pablo Lorenzo Memorial High School</h5>
-                                            <h5 class="mb-1">Stand-Alone Senior High School</h5>
-                                            <h5>Zamboanga City</h5>
-                                        </div>
-                                        <div class="col-2 d-flex justify-content-center">
-                                            <img src="../external/img/AU_CCS_Logo.png"
-                                                class="img-fluid small-logo">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr>
-
-
-
-                                <?php
-
-                                // Get the class_id from the URL parameter
-                                $class_id = $_GET['id'];
-
-                                // Prepare the SQL statement
-                                $stmt = $pdo->prepare("SELECT * FROM classes WHERE id = :class_id");
-
-                                // Bind the class_id parameter
-                                $stmt->bindParam(':class_id', $class_id, PDO::PARAM_INT);
-
-                                // Execute the query
-                                $stmt->execute();
-
-                                // Fetch the result
-                                $class = $stmt->fetch();
-
-                                if ($class) {
-                                    // Extract the class details from the fetched data
-                                    $adviser = $class['teacher'];
-                                    $subject = $class['subject'];
-                                    $year_section = $class['name']; // Assuming 'code' is for year/section
-                                    $semester = $class['semester'];
-                                    $school_year = date('Y', strtotime($class['datetime_added']));
-                                    $type = $class['type'];
-                                } else {
-                                    // If no class is found, display a message
-                                    echo "Class not found.";
-                                    exit;
-                                }
-
-                                ?>
-
-                                <style>
-                                    table.dataTable {
-                                        font-size: 12px;
-                                        border: 1px solid black;
-                                    }
-
-                                    td,
-                                    th {
-                                        text-align: center;
-                                        vertical-align: middle;
-                                        border: 1px solid black;
-                                        padding: 5px;
-                                    }
-
-                                    .small-logo {
-                                        height: 100px;
-                                        width: 100px;
-                                    }
-
-                                    /* Reinstated logo size */
-                                    .no-print {
-                                        display: block;
-                                    }
-
-                                    @media print {
-                                        .no-print {
-                                            display: none;
-                                        }
-
-                                        @page {
-                                            size: landscape;
-                                            margin: 0.25in;
-                                        }
-
-                                        /* Reduced margin for compactness */
-                                        body {
-                                            font-size: 10px;
-                                            font-family: Arial, sans-serif;
-                                        }
-
-                                        /* Smaller font for print */
-                                        .container-fluid {
-                                            width: 100%;
-                                        }
-
-                                        table {
-                                            width: 100%;
-                                            border-collapse: collapse;
-                                        }
-
-                                        .text-end {
-                                            text-align: right;
-                                        }
-
-                                        .print-class-details {
-                                            font-size: 10px;
-                                            line-height: 1.2;
-                                        }
-
-                                        /* Smaller, compact class details */
-                                        img.small-logo {
-                                            display: block;
-                                            height: 75px;
-                                            width: 75px;
-                                        }
-
-                                        /* Show logos in print, smaller size for compactness */
-                                    }
-                                </style>
-
-
-                                <!-- HTML Structure -->
-                                <div class="row mx-auto ">
-                                    <div class="col">
-                                        <h3><b><i class="bi bi-person-circle" style="margin-right: 5px;"></i>
-                                                Adviser:</b> <span><?php echo htmlspecialchars($adviser); ?></span></h3>
-                                        <h3><b><i class="bi bi-book" style="margin-right: 5px;"></i> Subject:</b>
-                                            <span><?php echo htmlspecialchars($subject); ?></span>
-                                        </h3>
-                                        <h3><b><i class="bi bi-building" style="margin-right: 5px;"></i> Year and
-                                                Section:</b> <span><?php echo htmlspecialchars($year_section); ?></span>
-                                        </h3>
-                                    </div>
-                                    <div class="col  text-end">
-                                        <h3><b><i class="bi bi-calendar3" style="margin-right: 5px;"></i> Semester:</b>
-                                            <span><?php echo htmlspecialchars($semester); ?></span>
-                                        </h3>
-                                        <h3><b><i class="bi bi-calendar-range" style="margin-right: 5px;"></i> School
-                                                Year:</b> <span><?php echo htmlspecialchars($school_year); ?></span>
-                                        </h3>
-                                        <h3><b><i class="bi bi-calendar-check" style="margin-right: 5px;"></i> Class
-                                                Type
-                                            </b> <span><?php echo htmlspecialchars($type); ?></span>
-                                        </h3>
-                                    </div>
-                                </div>
-
-
-                                <style>
-                                    .active {
-                                        color: black !important;
-                                    }
-                                </style>
+                    <div class="card fd-panel mb-4">
+                        <div class="card-header">
+                            <div>
+                                <h5 class="card-title"><i class="bi bi-table"></i> Grade Sheet</h5>
+                                <p class="fd-panel-sub">Raw scores by component. Quarter grades are transmuted to the DepEd 60–100 scale; the final grade is the average of both quarters.</p>
+                            </div>
+                        </div>
+                        <div class="card-body">
 
                                 <div class="modal fade" id="rubricModal" tabindex="-1" aria-labelledby="createRubricModalLabel" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
@@ -271,44 +126,72 @@ include __DIR__ . '/../database/connection.php';
                                                     </li>
                                                 </ul>
 
-                                                <div class="tab-content mt-3" id="rubricTabsContent">
-                                                    <div class="tab-pane fade show active" id="rubric" role="tabpanel" aria-labelledby="rubric-tab">
-                                                        <form id="createActivityForm" enctype="multipart/form-data" method="POST">
+                                              <div class="tab-content mt-3" id="rubricTabsContent">
+    <div class="tab-pane fade show active" id="rubric" role="tabpanel" aria-labelledby="rubric-tab">
+        <form id="createActivityForm" enctype="multipart/form-data" method="POST">
+            <div class="mb-3">
+                <label for="activityTitle" class="form-label">Rubric Title</label>
+                <input type="text" class="form-control" id="activityTitle" name="title" required>
+            </div>
+            <div class="mb-3">
+                <label for="existingRubrics" class="form-label">Existing Rubrics</label>
+                <ul id="rubricList">
+                    <li><div class="d-flex align-items-center"><strong role="status">Loading...</strong></div></li>
+                </ul>
+            </div>
+            <input type="hidden" name="class_id" value="<?php echo $_GET['id']; ?>">
+            <input type="hidden" name="subject_id" value="<?php echo $_GET['subject_id']; ?>">
+            <input type="hidden" name="rubric_id" id="rubricId" value="">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
+        </form>
+    </div>
 
+    <div class="tab-pane fade" id="percentile" role="tabpanel" aria-labelledby="percentile-tab">
+        <div class="border rounded p-3 mb-3 text-start" id="depedPreset">
+            <label for="depedPresetSelect" class="form-label fw-bold mb-1">DepEd component weights</label>
+            <p class="small text-muted mb-2">Sets Written Work, Performance Tasks and Quarterly Assessment to the DepEd weights for this subject type. Other components stay but count 0%.</p>
+            <div class="d-flex gap-2">
+                <select class="form-select" id="depedPresetSelect">
+                    <?php foreach (deped_weight_presets() as $presetKey => $preset): ?>
+                        <option value="<?= htmlspecialchars($presetKey) ?>"><?= htmlspecialchars($preset['label'] . ' (' . implode(' / ', $preset['weights']) . ')') ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn-primary text-nowrap" id="depedPresetApply" style="width:auto">Apply</button>
+            </div>
+        </div>
+        <script>
+            document.getElementById('depedPresetApply').addEventListener('click', function () {
+                const body = new URLSearchParams({
+                    class_id: '<?= (int) $_GET['id'] ?>',
+                    subject_id: '<?= (int) $_GET['subject_id'] ?>',
+                    preset: document.getElementById('depedPresetSelect').value
+                });
+                fetch('processes/teachers/rubrics/apply_deped.php', { method: 'POST', body: body })
+                    .then(r => r.json())
+                    .then(res => Swal.fire(res.success ? 'Weights applied' : 'Not applied', res.message, res.success ? 'success' : 'error')
+                        .then(() => { if (res.success) location.reload(); }))
+                    .catch(() => Swal.fire('Error', 'The weights could not be applied.', 'error'));
+            });
+        </script>
 
-                                                            <div class="mb-3">
-                                                                <label for="activityTitle" class="form-label">Rubric Title</label>
-                                                                <input type="text" class="form-control" id="activityTitle" name="title" required>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label for="existingRubrics" class="form-label">Existing Rubrics</label>
-                                                                <ul id="rubricList">
-                                                                    <li>
-                                                                        <div class="d-flex align-items-center"><strong role="status">Loading...</strong></div>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-
-                                                            <input type="hidden" name="class_id" value="<?php echo $_GET['id']; ?>">
-                                                            <input type="hidden" name="subject_id" value="<?php echo $_GET['subject_id']; ?>">
-                                                            <input type="hidden" name="rubric_id" id="rubricId" value="">
-
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                            <button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
-
-                                                        </form>
-                                                    </div>
-
-                                                    <div class="tab-pane fade" id="percentile" role="tabpanel" aria-labelledby="percentile-tab">
-                                                        <div class="mb-3" id="criteriaContainer">
-
-                                                            <div class="criteria-list">
-                                                                <!-- Criteria will be dynamically inserted here -->
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+        <div class="mb-3" id="criteriaContainer">
+            <table class="table table-striped" id="rubricsTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Original Percentile</th>
+                        <th>New Percentile</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="rubricsTableBody">
+                    <tr><td colspan="4">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
                                             </div>
 
                                             <input type="hidden" name="class_id" value="<?php echo htmlspecialchars($_GET['id']); ?>">
@@ -320,201 +203,327 @@ include __DIR__ . '/../database/connection.php';
                                 </div>
 
                                 <script>
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        const classId = '<?php echo $_GET['id']; ?>';
-                                        const subjectId = '<?php echo $_GET['subject_id']; ?>';
-                                        const form = document.getElementById('createActivityForm');
-                                        const rubricList = document.getElementById('rubricList');
-                                        const submitBtn = document.getElementById('submitBtn');
-                                        const titleInput = document.getElementById('activityTitle');
-                                        const rubricIdInput = document.getElementById('rubricId');
+                    document.addEventListener('DOMContentLoaded', function() {
+    const classId = '<?php echo $_GET['id']; ?>';
+    const subjectId = '<?php echo $_GET['subject_id']; ?>';
+    const form = document.getElementById('createActivityForm');
+    const rubricList = document.getElementById('rubricList');
+    const submitBtn = document.getElementById('submitBtn');
+    const titleInput = document.getElementById('activityTitle');
+    const rubricIdInput = document.getElementById('rubricId');
 
-                                        // Fetch existing rubrics
-                                        fetch(`processes/teachers/rubrics/add_from_rubrics.php?class_id=${classId}&subject_id=${subjectId}`)
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                rubricList.innerHTML = '';
-                                                if (data.success && data.rubrics && data.rubrics.length > 0) {
-                                                    data.rubrics.forEach(rubric => {
-                                                        rubricList.innerHTML += `
-                        <li>
-                            <div class="d-flex align-items-center">
-                                <span>${rubric.title}</span>
-                                <div class="ms-auto">
-                                    <a href="#" class="editRubric" data-id="${rubric.id}" data-title="${rubric.title}">
-                                        <i class="bi bi-pen-fill"></i>
-                                    </a>
-                                    <a href="#" class="deleteRubric" data-id="${rubric.id}" style="color:red">
-                                        <i class="bi bi-trash-fill"></i>
-                                    </a>
-                                </div>
+    // Function to render rubric list
+    function renderRubricList(rubrics) {
+        rubricList.innerHTML = '';
+        if (rubrics && rubrics.length > 0) {
+            rubrics.forEach(rubric => {
+                rubricList.innerHTML += `
+                    <li>
+                        <div class="d-flex align-items-center">
+                            <span>${rubric.title}</span>
+                            <div class="ms-auto">
+                                <a href="#" class="editRubric" data-id="${rubric.id}" data-title="${rubric.title}">
+                                    <i class="bi bi-pen-fill"></i>
+                                </a>
+                                <a href="#" class="deleteRubric" data-id="${rubric.id}" style="color:red">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
                             </div>
-                        </li>`;
-                                                    });
-                                                } else {
-                                                    rubricList.innerHTML = '<li>No rubrics found.</li>';
-                                                }
+                        </div>
+                    </li>`;
+            });
+            attachRubricListeners();
+        } else {
+            rubricList.innerHTML = '<li>No rubrics found.</li>';
+        }
+    }
 
-                                                // Edit rubric
-                                                document.querySelectorAll('.editRubric').forEach(link => {
-                                                    link.addEventListener('click', function(e) {
-                                                        e.preventDefault();
-                                                        const id = this.getAttribute('data-id');
-                                                        const title = this.getAttribute('data-title');
-                                                        titleInput.value = title;
-                                                        rubricIdInput.value = id;
-                                                        submitBtn.textContent = 'Update';
-                                                    });
-                                                });
+    // Fetch and load rubric list
+    function loadRubricsList() {
+        fetch(`processes/teachers/rubrics/add_from_rubrics.php?class_id=${classId}&subject_id=${subjectId}`)
+            .then(response => response.json())
+            .then(data => {
+                renderRubricList(data.success && data.rubrics ? data.rubrics : []);
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to load rubrics: ' + error.message,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+    }
 
-                                                // Delete rubric with SweetAlert2 confirmation
-                                                document.querySelectorAll('.deleteRubric').forEach(link => {
-                                                    link.addEventListener('click', function(e) {
-                                                        e.preventDefault();
-                                                        const id = this.getAttribute('data-id');
+    // Function to render percentile table
+    function loadRubrics() {
+        const tbody = document.getElementById('rubricsTableBody');
+        if (!tbody) return;
 
-                                                        Swal.fire({
-                                                            title: 'Are you sure?',
-                                                            text: 'Do you really want to delete this rubric? This action cannot be undone.',
-                                                            icon: 'warning',
-                                                            showCancelButton: true,
-                                                            confirmButtonColor: '#3085d6',
-                                                            cancelButtonColor: '#d33',
-                                                            confirmButtonText: 'Yes, delete it!'
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
-                                                                fetch(`processes/teachers/rubrics/add_from_rubrics.php?delete=true&rubric_id=${id}&class_id=${classId}&subject_id=${subjectId}`, {
-                                                                        method: 'GET'
-                                                                    })
-                                                                    .then(response => response.json())
-                                                                    .then(data => {
-                                                                        if (data.success) {
-                                                                            Swal.fire({
-                                                                                title: 'Deleted!',
-                                                                                text: data.message,
-                                                                                icon: 'success',
-                                                                                confirmButtonText: 'OK'
-                                                                            }).then(() => {
-                                                                                location.reload(); // Refresh to update list
-                                                                            });
-                                                                        } else {
-                                                                            Swal.fire({
-                                                                                title: 'Error',
-                                                                                text: data.message,
-                                                                                icon: 'error',
-                                                                                confirmButtonText: 'OK'
-                                                                            });
-                                                                        }
-                                                                    })
-                                                                    .catch(error => {
-                                                                        Swal.fire({
-                                                                            title: 'Error',
-                                                                            text: 'Something went wrong: ' + error.message,
-                                                                            icon: 'error',
-                                                                            confirmButtonText: 'OK'
-                                                                        });
-                                                                    });
-                                                            }
-                                                        });
-                                                    });
-                                                });
-                                            })
-                                            .catch(error => {
-                                                Swal.fire({
-                                                    title: 'Error',
-                                                    text: 'Failed to load rubrics: ' + error.message,
-                                                    icon: 'error',
-                                                    confirmButtonText: 'OK'
-                                                });
-                                            });
+        fetch(`processes/teachers/rubrics/get_rubrics.php?class_id=${encodeURIComponent(classId)}&subject_id=${encodeURIComponent(subjectId)}`)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                tbody.innerHTML = '';
+                if (data?.success && Array.isArray(data.rubrics) && data.rubrics.length > 0) {
+                    data.rubrics.forEach(rubric => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${escapeHtml(rubric.title)}</td>
+                                <td>${rubric.percentile || 0}%</td>
+                                <td>
+                                    <input type="number" 
+                                           class="form-control new-percentile" 
+                                           data-rubric-id="${rubric.id}"
+                                           min="0" 
+                                           max="100" 
+                                           step="1" 
+                                           value="${rubric.percentile || ''}" 
+                                           placeholder="%">
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary save-percentile" 
+                                            data-rubric-id="${rubric.id}">
+                                        Save
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                    attachSaveListeners();
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4">No rubrics found</td></tr>';
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to load rubrics: ' + error.message,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+    }
 
-                                        // Form submission (Create/Edit) with SweetAlert2
-                                        form.addEventListener('submit', function(e) {
-                                            e.preventDefault();
-                                            const formData = new FormData(this);
+    // Attach event listeners to rubric actions
+    function attachRubricListeners() {
+        document.querySelectorAll('.editRubric').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const id = this.getAttribute('data-id');
+                const title = this.getAttribute('data-title');
+                titleInput.value = title;
+                rubricIdInput.value = id;
+                submitBtn.textContent = 'Update';
+            });
+        });
 
-                                            fetch('processes/teachers/rubrics/add_from_rubrics.php', {
-                                                    method: 'POST',
-                                                    body: formData
-                                                })
-                                                .then(response => response.json())
-                                                .then(data => {
-                                                    if (data.success) {
-                                                        Swal.fire({
-                                                            title: 'Success!',
-                                                            text: data.message,
-                                                            icon: 'success',
-                                                            confirmButtonText: 'OK'
-                                                        }).then(() => {
-                                                            location.reload(); // Refresh to update list
-                                                        });
-                                                    } else {
-                                                        Swal.fire({
-                                                            title: 'Error',
-                                                            text: data.message,
-                                                            icon: 'error',
-                                                            confirmButtonText: 'OK'
-                                                        });
-                                                    }
-                                                })
-                                                .catch(error => {
-                                                    Swal.fire({
-                                                        title: 'Error',
-                                                        text: 'Something went wrong: ' + error.message,
-                                                        icon: 'error',
-                                                        confirmButtonText: 'OK'
-                                                    });
-                                                });
-                                        });
-                                    });
+        document.querySelectorAll('.deleteRubric').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const id = this.getAttribute('data-id');
 
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        // Assuming these are passed via URL parameters or some other method
-                                        const urlParams = new URLSearchParams(window.location.search);
-                                        const classId = urlParams.get('id') || '';
-                                        const subjectId = urlParams.get('subject_id') || '';
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Do you really want to delete this rubric? This action cannot be undone.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(`processes/teachers/rubrics/add_from_rubrics.php?delete=true&rubric_id=${id}&class_id=${classId}&subject_id=${subjectId}`, {
+                            method: 'GET'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'Deleted!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    loadRubricsList(); // Refresh rubric list
+                                    loadRubrics();     // Refresh percentile table
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: data.message,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Something went wrong: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                    }
+                });
+            });
+        });
+    }
 
-                                        // Table container - you'll need to add this to your HTML
-                                        const tableContainer = document.createElement('div');
-                                        tableContainer.innerHTML = `
-        <table class="table table-striped" id="rubricsTable">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Original Percentile</th>
-                    <th>New Percentile</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="rubricsTableBody"></tbody>
-        </table>
-    `;
-                                        document.querySelector('#percentile')?.appendChild(tableContainer);
+    // Form submission (Create/Edit)
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const rubricId = rubricIdInput.value;
 
-                                        // Function to fetch and load rubrics
-                                        function loadRubrics() {
-                                            if (!classId || !subjectId) {
-                                                showError('Missing class or subject ID');
-                                                return;
-                                            }
+        fetch('processes/teachers/rubrics/add_from_rubrics.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: data.message,
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    form.reset();
+                    submitBtn.textContent = 'Create';
+                    rubricIdInput.value = '';
+                    loadRubricsList(); // Refresh rubric list
+                    loadRubrics();     // Refresh percentile table
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                title: 'Error',
+                text: 'Something went wrong: ' + error.message,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        });
+    });
 
-                                            fetch(`processes/teachers/rubrics/get_rubrics.php?class_id=${encodeURIComponent(classId)}&subject_id=${encodeURIComponent(subjectId)}`, {
-                                                    method: 'GET',
-                                                    credentials: 'same-origin'
-                                                })
-                                                .then(response => {
-                                                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                                                    return response.json();
-                                                })
-                                                .then(data => {
-                                                    const tbody = document.getElementById('rubricsTableBody');
-                                                    if (!tbody) return;
+    // Attach save button listeners for percentile table
+    function attachSaveListeners() {
+        document.querySelectorAll('.save-percentile').forEach(button => {
+            button.addEventListener('click', function() {
+                const rubricId = this.getAttribute('data-rubric-id');
+                const newPercentileInput = this.closest('tr').querySelector('.new-percentile');
+                const newPercentile = newPercentileInput.value;
 
-                                                    tbody.innerHTML = '';
-                                                    if (data?.success && Array.isArray(data.rubrics) && data.rubrics.length > 0) {
-                                                        data.rubrics.forEach(rubric => {
-                                                            const row = document.createElement('tr');
-                                                            row.innerHTML = `
+                if (!newPercentile || newPercentile < 0 || newPercentile > 100) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Please enter a valid percentile (0-100)',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('rubric_id', rubricId);
+                formData.append('percentile', newPercentile);
+                formData.append('class_id', classId);
+                formData.append('subject_id', subjectId);
+
+                fetch('processes/teachers/rubrics/update_percentile.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: 'Percentile updated successfully',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            loadRubrics(); // Refresh table after saving percentile
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'Failed to update percentile',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error saving percentile: ' + error.message,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
+            });
+        });
+    }
+
+    // HTML escape function
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Initial load
+    loadRubricsList();
+    loadRubrics();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const classId = urlParams.get('id') || '';
+    const subjectId = urlParams.get('subject_id') || '';
+
+    const tableContainer = document.createElement('div');
+   
+    document.querySelector('#percentile')?.appendChild(tableContainer);
+
+    // Function to fetch and load rubrics for table
+    function loadRubrics() {
+        if (!classId || !subjectId) {
+            showError('Missing class or subject ID');
+            return;
+        }
+
+        fetch(`processes/teachers/rubrics/get_rubrics.php?class_id=${encodeURIComponent(classId)}&subject_id=${encodeURIComponent(subjectId)}`, {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            const tbody = document.getElementById('rubricsTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            if (data?.success && Array.isArray(data.rubrics) && data.rubrics.length > 0) {
+                data.rubrics.forEach(rubric => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
                         <td>${escapeHtml(rubric.title)}</td>
                         <td>${rubric.percentile || 0}%</td>
                         <td>
@@ -534,110 +543,98 @@ include __DIR__ . '/../database/connection.php';
                             </button>
                         </td>
                     `;
-                                                            tbody.appendChild(row);
-                                                        });
-                                                        attachSaveListeners();
-                                                    } else {
-                                                        tbody.innerHTML = '<tr><td colspan="4">No rubrics found</td></tr>';
-                                                    }
-                                                })
-                                                .catch(error => showError('Failed to load rubrics: ' + error.message));
-                                        }
+                    tbody.appendChild(row);
+                });
+                attachSaveListeners();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4">No rubrics found</td></tr>';
+            }
+        })
+        .catch(error => showError('Failed to load rubrics: ' + error.message));
+    }
 
-                                        // HTML escape function
-                                        function escapeHtml(unsafe) {
-                                            return unsafe
-                                                .replace(/&/g, "&amp;")
-                                                .replace(/</g, "&lt;")
-                                                .replace(/>/g, "&gt;")
-                                                .replace(/"/g, "&quot;")
-                                                .replace(/'/g, "&#039;");
-                                        }
+    // HTML escape function
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
-                                        // Error display function
-                                        function showError(message) {
-                                            if (typeof Swal !== 'undefined') {
-                                                Swal.fire({
-                                                    title: 'Error',
-                                                    text: message,
-                                                    icon: 'error',
-                                                    confirmButtonText: 'OK'
-                                                });
-                                            } else {
+    // Error display function
+    function showError(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error',
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
 
-                                            }
-                                        }
+    // Success display function
+    function showSuccess(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Success',
+                text: message,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
 
-                                        // Success display function
-                                        function showSuccess(message) {
-                                            if (typeof Swal !== 'undefined') {
-                                                Swal.fire({
-                                                    title: 'Success',
-                                                    text: message,
-                                                    icon: 'success',
-                                                    confirmButtonText: 'OK'
-                                                }).then((result) => {
-                                                    // Reload the page only after the user clicks "OK"
-                                                    if (result.isConfirmed) {
+    // Attach save button listeners
+    function attachSaveListeners() {
+        document.querySelectorAll('.save-percentile').forEach(button => {
+            button.addEventListener('click', function() {
+                const rubricId = this.getAttribute('data-rubric-id');
+                const newPercentileInput = this.closest('tr').querySelector('.new-percentile');
+                const newPercentile = newPercentileInput.value;
 
-                                                    }
-                                                });
-                                            } else {
-                                                // Fallback if SweetAlert2 is not available
-                                                alert('Success: ' + message);
-                                                window.location.reload();
-                                            }
-                                        }
-                                        // Attach save button listeners
-                                        function attachSaveListeners() {
-                                            document.querySelectorAll('.save-percentile').forEach(button => {
-                                                button.addEventListener('click', function() {
-                                                    const rubricId = this.getAttribute('data-rubric-id');
-                                                    const newPercentileInput = this.closest('tr').querySelector('.new-percentile');
-                                                    const newPercentile = newPercentileInput.value;
+                if (!newPercentile || newPercentile < 0 || newPercentile > 100) {
+                    showError('Please enter a valid percentile (0-100)');
+                    return;
+                }
 
-                                                    if (!newPercentile || newPercentile < 0 || newPercentile > 100) {
-                                                        showError('Please enter a valid percentile (0-100)');
-                                                        return;
-                                                    }
+                savePercentile(rubricId, newPercentile);
+            });
+        });
+    }
 
-                                                    savePercentile(rubricId, newPercentile);
-                                                });
-                                            });
-                                        }
+    // Save percentile function
+    function savePercentile(rubricId, percentile) {
+        const formData = new FormData();
+        formData.append('rubric_id', rubricId);
+        formData.append('percentile', percentile);
+        formData.append('class_id', classId);
+        formData.append('subject_id', subjectId);
 
-                                        // Save percentile function
-                                        function savePercentile(rubricId, percentile) {
-                                            const formData = new FormData();
-                                            formData.append('rubric_id', rubricId);
-                                            formData.append('percentile', percentile);
-                                            formData.append('class_id', classId);
-                                            formData.append('subject_id', subjectId);
+        fetch('processes/teachers/rubrics/update_percentile.php', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Percentile updated successfully');
+                loadRubrics(); // Refresh table
+            } else {
+                showError(data.message || 'Failed to update percentile');
+            }
+        })
+        .catch(error => showError('Error saving percentile: ' + error.message));
+    }
 
-                                            fetch('processes/teachers/rubrics/update_percentile.php', {
-                                                    method: 'POST',
-                                                    body: formData,
-                                                    credentials: 'same-origin'
-                                                })
-                                                .then(response => response.json())
-                                                .then(data => {
-                                                    if (data.success) {
-                                                        showSuccess('Percentile updated successfully');
-                                                        loadRubrics(); // Reload to show updated values
-
-                                                    } else {
-                                                        showError(data.message || 'Failed to update percentile');
-                                                    }
-                                                })
-                                                .catch(error => showError('Error saving percentile: ' + error.message));
-                                        }
-
-                                        // Initial load
-                                        loadRubrics();
-                                    });
+    // Initial load
+    loadRubrics();
+});
                                 </script>
 
-                                <hr>
 
                                 <?php
                                 require __DIR__ . '/../database/connection.php';
@@ -699,43 +696,6 @@ include __DIR__ . '/../database/connection.php';
                                 }
                                 ?>
 
-                                <style>
-                                    table.dataTable {
-                                        font-size: 12px;
-                                        border: 1px solid black;
-                                        padding: 8px;
-                                        text-align: center;
-                                    }
-
-                                    .table tr,
-                                    th,
-                                    td {
-                                        border: 1px solid black !important;
-                                        text-align: center;
-                                    }
-
-                                    .grader {
-                                        border: none !important;
-                                        text-align: center;
-                                    }
-
-                                    input,
-                                    select {
-                                        width: 100%;
-                                        box-sizing: border-box;
-                                    }
-
-                                    input[type="number"]::-webkit-outer-spin-button,
-                                    input[type="number"]::-webkit-inner-spin-button {
-                                        -webkit-appearance: none;
-                                        margin: 0;
-                                    }
-
-                                    .grader:focus {
-                                        border: none;
-                                        outline: none;
-                                    }
-                                </style>
 
                                 <?php
                                 // Assuming PDO connection is already established
@@ -747,17 +707,8 @@ include __DIR__ . '/../database/connection.php';
 
                                 function calculateGrade($percentage)
                                 {
-
-                                    if ($percentage >= 0.96) return "1.00"; // 96-100%
-                                    if ($percentage >= 0.91) return "1.25"; // 91-95%
-                                    if ($percentage >= 0.86) return "1.50"; // 86-90%
-                                    if ($percentage >= 0.81) return "1.75"; // 81-85%
-                                    if ($percentage >= 0.76) return "2.00"; // 76-80%
-                                    if ($percentage >= 0.71) return "2.25"; // 71-75%
-                                    if ($percentage >= 0.66) return "2.50"; // 66-70%
-                                    if ($percentage >= 0.61) return "2.75"; // 61-65%
-                                    if ($percentage >= 0.45) return "3.00"; // 50-60% (Passing)
-                                    return "5.00"; // Below 50% (Failing)
+                                    // DepEd transmutation (includes/grading.php)
+                                    return deped_quarter_grade($percentage);
                                 }
 
                                 function roundToNearestGrade($value, $grades)
@@ -956,6 +907,9 @@ include __DIR__ . '/../database/connection.php';
                                             if ($existingMidtermGrade === 'AW' || $existingFinalGrade === 'AW') {
                                                 $midtermGrade = $finalGrade = $overallGrade = 'AW';
                                                 $status = $existingStatus;
+                                            } elseif ($existingMidtermGrade === 'DRP' || $existingFinalGrade === 'DRP') {
+                                                $midtermGrade = $finalGrade = $overallGrade = 'DRP';
+                                                $status = $existingStatus;
                                             } elseif ($existingMidtermGrade === 'UW' || $existingFinalGrade === 'UW') {
                                                 $midtermGrade = $finalGrade = $overallGrade = 'UW';
                                                 $status = $existingStatus;
@@ -972,57 +926,45 @@ include __DIR__ . '/../database/connection.php';
                                                         $midtermGrade = $finalGrade = $overallGrade = "N/A";
                                                         $status = "N/A";
                                                     } else {
-                                                        // Calculate grades based on activities
+                                                        // Calculate grades based on activities only if they exist
                                                         foreach ($activityTypes as $type) {
-                                                            $grades['midterm'] += calculateActivityScore($studentId, $activitiesByType[$type]['midterm'], $studentScores, $totalPoints, $percentiles[$type], 'midterm');
-                                                            $grades['final'] += calculateActivityScore($studentId, $activitiesByType[$type]['final'], $studentScores, $totalPoints, $percentiles[$type], 'final');
+                                                            // Check if activities exist for this type
+                                                            if (!empty($activitiesByType[$type]['midterm']) || !empty($activitiesByType[$type]['final'])) {
+                                                                $grades['midterm'] += !empty($activitiesByType[$type]['midterm']) ?
+                                                                    calculateActivityScore($studentId, $activitiesByType[$type]['midterm'], $studentScores, $totalPoints, $percentiles[$type], 'midterm') : 0;
+                                                                $grades['final'] += !empty($activitiesByType[$type]['final']) ?
+                                                                    calculateActivityScore($studentId, $activitiesByType[$type]['final'], $studentScores, $totalPoints, $percentiles[$type], 'final') : 0;
+                                                            }
                                                         }
 
                                                         // Handle attendance
-
                                                         if ($hasAttendance && $totalMeetings > 0) {
                                                             // Calculate the attendance percentage
                                                             $attendancePercentage = calculateAttendance($studentId, $attendanceDates, $attendanceRecords, $totalMeetings);
 
-                                                            // Loop through the $attendanceTypes to handle all attendance rubrics dynamically
                                                             foreach ($attendanceTypes as $attendanceType) {
-                                                                // Check if this specific 'Attendance' type exists in the $percentiles array
                                                                 if (isset($percentiles[$attendanceType])) {
-                                                                    // Apply the attendance percentage to the grades based on the specific attendance type
-                                                                    $grades['midterm'] += $attendancePercentage * ($percentiles[$attendanceType] / 100) / 2;
-                                                                    $grades['final'] += $attendancePercentage * ($percentiles[$attendanceType] / 100) / 2;
+                                                                    $grades['midterm'] += $attendancePercentage * ($percentiles[$attendanceType] / 100);
+                                                                    $grades['final'] += $attendancePercentage * ($percentiles[$attendanceType] / 100);
                                                                 }
                                                             }
                                                         }
-
 
                                                         // Check for missing requirements or final exam
                                                         $missingRequirements = checkMissingRequirements($studentId, $requiredActivityIds, $studentScores);
                                                         $missedFinalExam = checkMissingRequirements($studentId, $finalExamActivityIds, $studentScores);
 
-                                                        // Calculate grades
-                                                        $midtermGrade = calculateGrade($grades['midterm']);
-                                                        $finalGrade = calculateGrade($grades['final']);
-
-
-                                                        $midtermNumeric = floatval($midtermGrade);
-                                                        $finalNumeric = floatval($finalGrade);
-                                                        if ($missingRequirements || $missedFinalExam) {
-                                                            $midtermGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : $midtermGrade;
-                                                            $finalGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : $finalGrade;
-                                                            $overallGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : "INC";
-                                                            $status = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : "INC";
-                                                        } else {
-                                                            $rawAverage = ($midtermNumeric + $finalNumeric) / 2;
-                                                            $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00];
-                                                            $overallGrade = number_format(roundToNearestGrade($rawAverage, $validGrades), 2);
-                                                        }
+                                                        // Calculate grades only if there are activities
+                                                        // DepEd: each quarter is transmuted on its own, the final grade is their average (includes/grading.php)
+                                                        $midtermGrade = deped_term_has_work($activities, 'midterm') ? calculateGrade($grades['midterm']) : 'N/A';
+                                                        $finalGrade = deped_term_has_work($activities, 'final') ? calculateGrade($grades['final']) : 'N/A';
+                                                        $overallGrade = deped_final_grade($midtermGrade, $finalGrade);
                                                     }
                                                 }
 
                                                 // Check if there's a need to update the grade
                                                 if ($existingMidtermGrade !== $midtermGrade || $existingFinalGrade !== $finalGrade || $existingRecord['overall_grade'] !== $overallGrade) {
-                                                    $updateStmt = $pdo->prepare("UPDATE student_grades SET midterm_grade = :midterm_grade, final_grade = :final_grade, overall_grade = :overall_grade, updated_at = NOW()WHERE class_id = :class_id AND student_id = :student_id");
+                                                    $updateStmt = $pdo->prepare("UPDATE student_grades SET midterm_grade = :midterm_grade, final_grade = :final_grade, overall_grade = :overall_grade, updated_at = NOW() WHERE class_id = :class_id AND student_id = :student_id");
                                                     $updateStmt->execute([':class_id' => $class_id, ':student_id' => $studentId, ':midterm_grade' => $midtermGrade, ':final_grade' => $finalGrade, ':overall_grade' => $overallGrade]);
                                                 }
                                             }
@@ -1033,7 +975,6 @@ include __DIR__ . '/../database/connection.php';
                                                 $lecGrade = fetchGrade($lectureClassId, $studentId, $pdo);
                                                 $labGrade = fetchGrade($labClassId, $studentId, $pdo);
                                                 $combinedOverallGrade = calculateCombinedGrade($lecGrade, $labGrade);
-                                             
                                             }
 
                                             $studentGrades[$studentId] = [
@@ -1148,7 +1089,7 @@ include __DIR__ . '/../database/connection.php';
                                         $weightedAverage = ($lecNumeric * 0.6) + ($labNumeric * 0.4); // 60% Lecture, 40% Lab
 
                                         // Define valid grades and find the nearest one
-                                        $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00, 25];
+                                        $validGrades = range(60, 100); // DepEd whole-number grades
                                         return findNearestGrade($weightedAverage, $validGrades);
                                     }
                                 }
@@ -1185,20 +1126,51 @@ include __DIR__ . '/../database/connection.php';
                                     $totalColumns += 2; // Add Lab and Lec grade columns
                                 }
                                 ?>
-                                <div class="container-fluid mt-4">
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered">
-                                            <thead>
-                                                <tr>
-                                                    <th colspan="<?php echo $totalColumns; ?>">Worksheets</th>
-                                                </tr>
-                                                <?php if (empty($rubricTypes)): ?>
+                                <?php
+                                // Quarter / final grade cell: failing grades in red, not-yet-graded muted
+                                $gbGradeCell = function ($grade, $extra = '') {
+                                    $grade = ($grade === null || $grade === '') ? 'N/A' : $grade;
+                                    $text = is_numeric($grade) ? deped_display($grade) : (string) $grade;
+                                    $flag = deped_is_number($grade)
+                                        ? ($grade < DEPED_PASSING_GRADE ? ' is-fail' : '')
+                                        : ($grade === 'N/A' ? ' gb-missing' : ' is-fail');
+                                    return '<td class="gb-grade' . $extra . $flag . '">' . htmlspecialchars($text) . '</td>';
+                                };
+                                ?>
+                                <div id="printTable">
+                                    <div class="gb-letterhead">
+                                        <img src="../external/img/dp_logo.avif" alt="">
+                                        <div>
+                                            <strong>Don Pablo Lorenzo Memorial High School</strong>
+                                            <span>Stand-Alone Senior High School &middot; Zamboanga City</span>
+                                            <span><b>Class Record</b></span>
+                                        </div>
+                                        <img src="../external/img/dp_logo.avif" alt="">
+                                    </div>
+                                    <ul class="gb-details">
+                                        <li><span>Subject</span><strong><?= htmlspecialchars($class['subject']) ?></strong></li>
+                                        <li><span>Section</span><strong><?= htmlspecialchars($class['name']) ?></strong></li>
+                                        <li><span>Class type</span><strong><?= htmlspecialchars($class['type']) ?></strong></li>
+                                        <li><span>Teacher</span><strong><?= htmlspecialchars($class['teacher']) ?></strong></li>
+                                        <li><span>Semester</span><strong><?= htmlspecialchars($class['semester']) ?></strong></li>
+                                        <li><span>School year</span><strong><?= htmlspecialchars($school_year) ?></strong></li>
+                                    </ul>
+
+                                    <?php if (empty($rubricTypes)): ?>
+                                        <div class="fd-empty">
+                                            <i class="bi bi-sliders"></i>
+                                            <p>No grading components have been set up for this class yet.</p>
+                                            <p class="small mt-1">Add components such as Written Work, Performance Tasks and Quarterly Assessment, then give them weights.</p>
+                                            <?php if (!$gb_archived): ?>
+                                                <button type="button" class="fd-btn mt-3 gb-no-print" data-bs-toggle="modal" data-bs-target="#rubricModal"><i class="bi bi-plus-lg"></i> Set up components</button>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="gb-scroll">
+                                            <table class="gb-table">
+                                                <thead>
                                                     <tr>
-                                                        <th colspan="<?php echo $totalColumns; ?>" class="text-center">No Rubrics Defined Yet</th>
-                                                    </tr>
-                                                <?php else: ?>
-                                                    <tr>
-                                                        <th class="text-center" colspan="2">Criteria</th>
+                                                        <th class="gb-criteria" colspan="2" style="text-align:left">Student</th>
                                                         <?php foreach ($activityTypes as $type): ?>
                                                             <?php
                                                             $containsAttendance = stripos($type, 'Attendance') !== false;
@@ -1207,131 +1179,109 @@ include __DIR__ . '/../database/connection.php';
                                                                 : 0;
                                                             $colspan = $activityCount + 1 + ($containsAttendance ? $totalMeetings + 1 : 0);
                                                             ?>
-                                                            <th colspan="<?php echo $colspan; ?>" class="text-center">
+                                                            <th colspan="<?php echo $colspan; ?>" class="gb-group-start">
                                                                 <?php echo htmlspecialchars($type); ?>
-                                                                (<?php echo number_format($percentiles[$type] ?? 0, 2); ?>%)
+                                                                <span class="gb-weight"><?php echo rtrim(rtrim(number_format($percentiles[$type] ?? 0, 2), '0'), '.'); ?>% of grade</span>
                                                             </th>
                                                         <?php endforeach; ?>
-                                                        <th>Midterms</th>
-                                                        <th>Finals</th>
-                                                        <th>Numerical Grade</th>
+                                                        <th rowspan="2" class="gb-grade gb-group-start">1st Qtr<span class="gb-weight">60–100</span></th>
+                                                        <th rowspan="2" class="gb-grade">2nd Qtr<span class="gb-weight">60–100</span></th>
+                                                        <th rowspan="2" class="gb-grade">Final<span class="gb-weight">60–100</span></th>
                                                         <?php if ($hasBothLabAndLec): ?>
-                                                            <th class="text-center">Overall Grade <br><small>(Lecture and Laboratory)</small></th>
+                                                            <th rowspan="2" class="gb-grade">Overall<span class="gb-weight">Lec 60% + Lab 40%</span></th>
                                                         <?php endif; ?>
                                                     </tr>
-                                                <?php endif; ?>
-                                            </thead>
-                                            <tbody>
-                                                <?php if (empty($rubricTypes)): ?>
-                                                    <tr>
-                                                        <td colspan="<?php echo $totalColumns; ?>" class="text-center">Please define rubrics to display grading data.</td>
-                                                    </tr>
-                                                <?php else: ?>
-                                                    <tr>
-                                                        <td>Student ID</td>
-                                                        <td>Student Name</td>
+                                                    <tr class="gb-label">
+                                                        <th class="gb-sid">ID</th>
+                                                        <th class="gb-name">Name</th>
                                                         <?php foreach ($activityTypes as $type): ?>
                                                             <?php
                                                             $typeData = $activitiesByType[$type] ?? ['midterm' => [], 'final' => [], 'max_points' => ['midterm' => 0, 'final' => 0]];
                                                             $activities = array_merge($typeData['midterm'], $typeData['final']);
                                                             foreach ($activities as $index => $activity):
-                                                                $label = htmlspecialchars($type[0]) . ($index + 1) . " (" . htmlspecialchars($activity['max_points']) . " pts, " . ucfirst($activity['term']) . ")";
                                                             ?>
-                                                                <td><?php echo $label; ?></td>
+                                                                <th class="<?= $index === 0 ? 'gb-group-start' : '' ?>">
+                                                                    <?php echo htmlspecialchars($type[0]) . ($index + 1); ?>
+                                                                    <small><?php echo htmlspecialchars($activity['max_points']); ?> pts &middot; <?php echo $activity['term'] === 'final' ? 'Q2' : ($activity['term'] === 'midterm' ? 'Q1' : htmlspecialchars(deped_quarter_label($activity['term']))); ?></small>
+                                                                </th>
                                                             <?php endforeach; ?>
-                                                            <td>TOTAL (<?php echo $typeData['max_points']['midterm'] + $typeData['max_points']['final']; ?> pts)</td>
+                                                            <th class="gb-total <?= empty($activities) ? 'gb-group-start' : '' ?>">Total<small><?php echo $typeData['max_points']['midterm'] + $typeData['max_points']['final']; ?> pts</small></th>
 
-                                                            <!-- Attendance Columns if Present in this Rubric -->
                                                             <?php if (stripos($type, 'Attendance') !== false): ?>
                                                                 <?php foreach ($attendanceDates as $date): ?>
-                                                                    <td><?php echo '<small>Attendance (' . date('M d, Y', strtotime($date)) . ')</small>'; ?></td>
+                                                                    <th><?php echo date('M j', strtotime($date)); ?><small><?php echo date('D', strtotime($date)); ?></small></th>
                                                                 <?php endforeach; ?>
-                                                                <td>TOTAL (No. Days)</td>
+                                                                <th class="gb-total">Present<small>of <?php echo $totalMeetings; ?></small></th>
                                                             <?php endif; ?>
                                                         <?php endforeach; ?>
-                                                        <td>1-5</td>
-                                                        <td>1-5</td>
-                                                        <td>1-5</td>
-                                                        <?php if ($hasBothLabAndLec): ?>
-                                                            <td class="text-center">1-5</td>
-                                                        <?php endif; ?>
                                                     </tr>
-
-                                                    <?php foreach ($students as $student): ?>
+                                                </thead>
+                                                <tbody>
+                                                    <?php if (empty($students)): ?>
                                                         <tr>
-                                                            <td><?php echo htmlspecialchars($student['student_id']); ?></td>
-                                                            <td><?php echo htmlspecialchars($student['fullName']); ?></td>
+                                                            <td colspan="99" class="gb-missing py-4">No students are enrolled in this class yet.</td>
+                                                        </tr>
+                                                    <?php endif; ?>
+
+                                                    <?php foreach ($students as $student):
+                                                        $gbRow = $studentGrades[$student['student_id']] ?? [];
+                                                    ?>
+                                                        <tr>
+                                                            <td class="gb-sid"><?php echo htmlspecialchars($student['student_id']); ?></td>
+                                                            <td class="gb-name"><?php echo htmlspecialchars($student['fullName']); ?></td>
                                                             <?php foreach ($activityTypes as $type): ?>
                                                                 <?php
                                                                 $typeData = $activitiesByType[$type] ?? ['midterm' => [], 'final' => [], 'max_points' => ['midterm' => 0, 'final' => 0]];
                                                                 $activities = array_merge($typeData['midterm'], $typeData['final']);
                                                                 $typeTotal = 0;
                                                                 ?>
-                                                                <?php foreach ($activities as $activity): ?>
+                                                                <?php foreach ($activities as $index => $activity): ?>
                                                                     <?php
+                                                                    $hasScore = isset($studentScores[$student['student_id']][$activity['id']]);
                                                                     $score = $studentScores[$student['student_id']][$activity['id']] ?? 0;
                                                                     $typeTotal += (float)$score;
                                                                     ?>
-                                                                    <td><?php echo htmlspecialchars($score); ?></td>
+                                                                    <td class="<?= $index === 0 ? 'gb-group-start' : '' ?> <?= $hasScore ? '' : 'gb-missing' ?>"><?php echo $hasScore ? htmlspecialchars($score) : '&ndash;'; ?></td>
                                                                 <?php endforeach; ?>
-                                                                <td class='total-score' data-type='<?php echo $type; ?>' data-student-id='<?php echo $student['student_id']; ?>'><?php echo $typeTotal; ?></td>
+                                                                <td class="total-score gb-total <?= empty($activities) ? 'gb-group-start' : '' ?>" data-type="<?php echo htmlspecialchars($type); ?>" data-student-id="<?php echo $student['student_id']; ?>"><?php echo $typeTotal; ?></td>
 
-                                                                <!-- Attendance Data Within the Same Rubric -->
                                                                 <?php if (stripos($type, 'Attendance') !== false): ?>
                                                                     <?php
                                                                     $studentAttendance = $attendanceRecords[$student['student_id']] ?? [];
                                                                     $presentCount = 0;
                                                                     foreach ($attendanceDates as $meetingId => $date):
-                                                                        $status = $studentAttendance[$meetingId] ?? 'absent';
+                                                                        $status = strtolower($studentAttendance[$meetingId] ?? 'absent');
                                                                         if ($status === 'present') $presentCount++;
                                                                     ?>
-                                                                        <td style="<?php echo strtolower($status) === 'absent' ? 'color: crimson;' : ''; ?>">
-                                                                            <?php echo ucfirst($status); ?>
+                                                                        <td class="<?= $status === 'absent' ? 'gb-absent' : ($status === 'late' ? 'gb-late' : '') ?>" title="<?= ucfirst($status) ?>">
+                                                                            <?php echo ['present' => 'P', 'late' => 'L', 'absent' => 'A'][$status] ?? htmlspecialchars(ucfirst($status)); ?>
                                                                         </td>
                                                                     <?php endforeach; ?>
-                                                                    <td class="total-attendance" data-student-id="<?php echo $student['student_id']; ?>"><?php echo $presentCount; ?></td>
+                                                                    <td class="total-attendance gb-total" data-student-id="<?php echo $student['student_id']; ?>"><?php echo $presentCount; ?></td>
                                                                 <?php endif; ?>
                                                             <?php endforeach; ?>
 
-                                                            <!-- Midterm, Finals, and Numerical Grade -->
-                                                            <td <?php echo in_array($studentGrades[$student['student_id']]['midterm'], ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
-                                                                <?php echo $studentGrades[$student['student_id']]['midterm']; ?>
-                                                            </td>
-
-                                                            <td <?php echo in_array($studentGrades[$student['student_id']]['final'], ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
-                                                                <?php echo $studentGrades[$student['student_id']]['final']; ?>
-                                                            </td>
-
-                                                            <td <?php echo in_array($studentGrades[$student['student_id']]['gpa'] ?? 'N/A', ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
-                                                                <?php
-                                                                $gpa = $studentGrades[$student['student_id']]['gpa'] ?? 'N/A';
-                                                                if (in_array($gpa, ['INC', 'UW', 'AW', 'N/A'])) {
-                                                                    echo htmlspecialchars($gpa);
-                                                                } elseif (is_numeric($gpa)) {
-                                                                    echo htmlspecialchars(number_format((float)$gpa, 2));
-                                                                } else {
-                                                                    echo htmlspecialchars($gpa);
-                                                                }
-                                                                ?>
-                                                            </td>
-
+                                                            <?= $gbGradeCell($gbRow['midterm'] ?? 'N/A', ' gb-group-start') ?>
+                                                            <?= $gbGradeCell($gbRow['final'] ?? 'N/A') ?>
+                                                            <?= $gbGradeCell($gbRow['gpa'] ?? 'N/A', $hasBothLabAndLec ? '' : ' is-result') ?>
                                                             <?php if ($hasBothLabAndLec): ?>
-                                                                <td <?php echo in_array($studentGrades[$student['student_id']]['overallGrade'], ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
-                                                                    <?php
-                                                                    $grade = $studentGrades[$student['student_id']]['overallGrade'];
-                                                                    echo in_array($grade, ['INC', 'UW', 'AW', 'N/A']) ? $grade : number_format((float)$grade, 2);
-                                                                    ?>
-                                                                </td>
+                                                                <?= $gbGradeCell($gbRow['overallGrade'] ?? 'N/A', ' is-result') ?>
                                                             <?php endif; ?>
                                                         </tr>
                                                     <?php endforeach; ?>
-                                                <?php endif; ?>
-                                            </tbody>
-                                        </table>
+                                                </tbody>
+                                            </table>
+                                        </div>
 
-                                    </div>
+                                        <div class="gb-legend">
+                                            <span><b>W1, P1 …</b> activity number within its component</span>
+                                            <span><b>Q1 / Q2</b> 1st / 2nd quarter</span>
+                                            <span><b>&ndash;</b> no score yet (counts as 0)</span>
+                                            <?php if ($hasAttendance): ?><span><b>P / L / A</b> present / late / absent</span><?php endif; ?>
+                                            <span class="is-fail" style="color:var(--au-crimson)"><b>Red</b> below <?= DEPED_PASSING_GRADE ?> or incomplete</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
-</body>
 
 
 <?php if (!empty($rubricTypes)): ?>
@@ -1402,17 +1352,12 @@ include __DIR__ . '/../database/connection.php';
 
 
 <?php endif; ?>
-</div>
-<div class="row">
-    <button id="buttonism" onclick="printDiv('printTable')" class="btn btn-primary mb-5 p-2 w-25 m-auto">
-        <i class="bi bi-printer"></i> Print
-    </button>
-   
-</div>
-</main>
-
-
-</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
 
 
 <script src="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('js/app.js', __DIR__); ?>"></script>
@@ -1425,25 +1370,9 @@ include __DIR__ . '/../database/connection.php';
         printWindow.document.write(`
         <html>
             <head>
-                <title>Print Content</title>
-                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    .text-center { text-align: center; }
-                    .bold { font-weight: bold; }
-                    .grey-bg { background-color: #f8f9fa; }
-                    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 1px; }
-                    .grade { background: none; border: none; cursor: pointer; color: inherit; }
-                    @media print {
-                        @page { size: landscape; }
-
-                        #buttonism{
-                        display: none
-            }
-
-                    }
-                </style>
+                <title>Class Record</title>
+                <base href="${location.href}">
+                <link rel="stylesheet" href="css/gradebook.css">
             </head>
             <body onload="window.print(); window.close();">
                 ${content}
@@ -1458,6 +1387,7 @@ include __DIR__ . '/../database/connection.php';
     document.addEventListener('DOMContentLoaded', function() {
         // Get the modal element
         const rubricModal = document.getElementById('rubricModal');
+        if (!rubricModal) return;
 
         // Listen for the 'hidden.bs.modal' event
         rubricModal.addEventListener('hidden.bs.modal', function() {
@@ -1470,8 +1400,7 @@ include __DIR__ . '/../database/connection.php';
 include('processes/server/modals.php');
 ?>
 
-
-
+</body>
 
 </html>
 

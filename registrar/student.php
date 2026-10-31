@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/../includes/records.php';
 
 $id = (int) ($_GET['id'] ?? 0);
 $stmt = $pdo->prepare("
@@ -38,11 +39,23 @@ $name = trim($student['first_name'] . ' ' . ($student['middle_name'] ? $student[
 $isActive = $student['account_status'] === 'active';
 $grade = shs_grade_number((string) $student['year_level']) ?? '';
 $admission = enrollment_admission_types();
+$gradeTerms = records_student_grades($pdo, $student);
+$printYears = array_unique(array_merge(array_column($records, 'school_year'), array_column($gradeTerms, 'school_year')));
+rsort($printYears);
+
+$printMenu = '<div class="dropdown d-inline-block"><button type="button" class="btn btn-ui-ghost dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-printer"></i> Print</button><ul class="dropdown-menu dropdown-menu-end">'
+    . '<li><a class="dropdown-item" target="_blank" href="print.php?doc=coe&amp;student=' . $id . '">Certificate of Enrollment</a></li>'
+    . '<li><a class="dropdown-item" target="_blank" href="print.php?doc=good_moral&amp;student=' . $id . '">Certificate of Good Moral Character</a></li>'
+    . '<li><hr class="dropdown-divider"></li>';
+foreach ($printYears ?: [$term['school_year']] as $py) {
+    $printMenu .= '<li><a class="dropdown-item" target="_blank" href="print.php?doc=sf9&amp;student=' . $id . '&amp;sy=' . admin_e($py) . '">Report card (SF9) · S.Y. ' . admin_e($py) . '</a></li>';
+}
+$printMenu .= '<li><a class="dropdown-item" target="_blank" href="print.php?doc=sf10&amp;student=' . $id . '">Permanent record (SF10)</a></li></ul></div>';
 
 registrar_page_start($name);
 
 admin_page_header($name, 'Student ID ' . $student['student_id'] . ' · ' . $student['course'] . ' ' . $student['year_level'], 'bi-person-vcard',
-    '<a class="btn btn-outline-secondary" href="students.php"><i class="bi bi-arrow-left"></i> All students</a>'
+    '<a class="btn btn-ui-ghost" href="students.php"><i class="bi bi-arrow-left"></i> All students</a>' . $printMenu
     . '<button type="button" class="btn btn-ui-gold" ' . registrar_enroll_data([
         'student_row_id' => $id,
         'student_name'   => $name,
@@ -57,7 +70,7 @@ admin_page_header($name, 'Student ID ' . $student['student_id'] . ' · ' . $stud
         <i class="bi bi-key"></i>
         <div>
             <strong><?= !empty($credentials['reset']) ? 'Password changed.' : 'Account created.' ?> Give these sign-in details to <?= admin_e($credentials['name']) ?>:</strong><br>
-            Email <code><?= admin_e($credentials['email']) ?></code> · Password <code><?= admin_e($credentials['password']) ?></code><br>
+            <?php if (!empty($credentials['student_id'])): ?>Student ID <code><?= admin_e($credentials['student_id']) ?></code> · <?php endif; ?>Email <code><?= admin_e($credentials['email']) ?></code> · Password <code><?= admin_e($credentials['password']) ?></code><br>
             <span class="text-muted small">This is the only time the password is shown. Ask the student to change it after signing in.</span>
         </div>
     </div>
@@ -106,6 +119,21 @@ admin_page_header($name, 'Student ID ' . $student['student_id'] . ' · ' . $stud
                     <i class="bi <?= $isActive ? 'bi-person-dash' : 'bi-person-check' ?>"></i> <?= $isActive ? 'Deactivate account' : 'Activate account' ?>
                 </button>
             </form>
+            <?php $lockedGrades = registrar_student_locked_grades($pdo, (int) $student['student_id']); ?>
+            <div class="mt-3 pt-3 border-top">
+                <?php if ($lockedGrades): ?>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-trash"></i> Delete account</button>
+                    <p class="text-muted small mt-2 mb-0">Can't be deleted: <?= $lockedGrades ?> accepted grade<?= $lockedGrades === 1 ? ' is an' : 's are' ?> official record<?= $lockedGrades === 1 ? '' : 's' ?>. Deactivate the account instead.</p>
+                <?php else: ?>
+                    <form method="POST" action="processes/student_delete.php" id="deleteStudentForm">
+                        <input type="hidden" name="csrf" value="<?= admin_e(registrar_csrf_token()) ?>">
+                        <input type="hidden" name="id" value="<?= $id ?>">
+                        <input type="hidden" name="confirm_student_id" id="confirmStudentId">
+                        <button type="button" class="btn btn-sm btn-danger" data-delete-student="<?= admin_e($student['student_id']) ?>" data-name="<?= admin_e($name) ?>"><i class="bi bi-trash"></i> Delete account</button>
+                    </form>
+                    <p class="text-muted small mt-2 mb-0">Removes the login, classes, scores, attendance, messages and enrollment history for good.</p>
+                <?php endif; ?>
+            </div>
         </section>
     </div>
     <div class="col-lg-4">
@@ -185,6 +213,43 @@ admin_page_header($name, 'Student ID ' . $student['student_id'] . ' · ' . $stud
             <i class="bi bi-clipboard"></i>
             <h3>No enrollment records yet</h3>
             <p>Add a record for each term the student is enrolled in, including earlier terms for transferees.</p>
+        </div>
+    <?php endif; ?>
+</section>
+
+<section class="ui-panel mt-3">
+    <div class="ui-panel-head">
+        <div>
+            <h2>Grades</h2>
+            <p>From the classes the student joined. Only accepted (locked) grades are final and appear on the SF9 and SF10.</p>
+        </div>
+    </div>
+    <?php if ($gradeTerms): ?>
+        <?php foreach (array_reverse($gradeTerms) as $gt): ?>
+            <p class="ui-section-label">S.Y. <?= admin_e($gt['school_year']) ?> · <?= admin_e($gt['term']) ?>
+                <?= $gt['general_average'] !== null ? ' · General average ' . admin_e((string) (int) round($gt['general_average'])) : '' ?></p>
+            <div class="ui-table-scroll">
+                <table class="table align-middle">
+                    <thead><tr><th>Subject</th><th class="text-end">Q1</th><th class="text-end">Q2</th><th class="text-end">Final</th><th>Remarks</th></tr></thead>
+                    <tbody>
+                        <?php foreach ($gt['subjects'] as $s): ?>
+                            <tr>
+                                <td><?= admin_e($s['subject']) ?></td>
+                                <td class="text-end"><?= admin_e($s['q1']) ?></td>
+                                <td class="text-end"><?= admin_e($s['q2']) ?></td>
+                                <td class="text-end fw-bold <?= deped_flagged($s['final']) ? 'text-danger' : '' ?>"><?= admin_e($s['final']) ?></td>
+                                <td><?= $s['official'] ? admin_e($s['remarks'] ?: '—') : '<span class="ui-pill is-warn">Not final</span>' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <div class="ui-empty">
+            <i class="bi bi-journal"></i>
+            <h3>No grades yet</h3>
+            <p>Grades appear once the student joins classes and teachers record them.</p>
         </div>
     <?php endif; ?>
 </section>

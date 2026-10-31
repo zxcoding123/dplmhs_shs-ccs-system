@@ -9,7 +9,7 @@ if (!isset($_SESSION['teacher_id'])) {
     exit;
 }
 
-$redirect = $_SERVER['HTTP_REFERER'] ;
+$redirect = $_SERVER['HTTP_REFERER'] ?? '../../class_management.php';
 
 try {
     $subject_id = $_POST['subject_id'] ?? null;
@@ -20,7 +20,7 @@ try {
     if (!$subject_id || !$title || !$content) {
         $_SESSION['STATUS'] = 'ERROR';
         $_SESSION['STATUS_MSG'] = 'All fields are required.';
-        header('Location: ../../subjects.php');
+        header('Location: ' . $redirect);
         exit;
     }
 

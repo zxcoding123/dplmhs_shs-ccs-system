@@ -17,6 +17,14 @@ require_once __DIR__ . '/../../admin/includes/ui.php';
 require_once __DIR__ . '/../../includes/registrar.php';
 
 $registrarId = (int) $_SESSION['registrar_id'];
+
+// The session outlives the account: sign out a registrar the admin has since deleted or deactivated
+$stillActive = $pdo->prepare("SELECT 1 FROM registrar_accounts r JOIN users u ON u.id = r.user_id WHERE r.id = ? AND u.status = 'active'");
+$stillActive->execute([$registrarId]);
+if (!$stillActive->fetchColumn()) {
+    require_once __DIR__ . '/../../app/logout.php';
+    csms_logout('../' . (basename(dirname($_SERVER['PHP_SELF'])) === 'processes' ? '../' : '') . 'login/index.php', 'ACCOUNT_DEACTIVATED');
+}
 $registrarName = $_SESSION['name'] ?? 'Registrar';
 
 /** For processes: send the registrar back with a one-time message. */

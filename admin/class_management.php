@@ -34,6 +34,35 @@ foreach ($pdo->query("SELECT subject_id, meeting_days, start_time, end_time FROM
     $schedules[$row['subject_id']][] = substr($row['meeting_days'], 0, 3) . ' ' . date('g:i A', strtotime($row['start_time'])) . '–' . date('g:i A', strtotime($row['end_time']));
 }
 
+/**
+ * Weekly schedule with days that share a time merged, same rules as groupSchedule() in the page script:
+ * ["Mon 7:00 AM–4:00 PM", "Tue 7:00 AM–4:00 PM"] → <div class="cls-times"> "Mon–Tue | 7:00 AM–4:00 PM" </div>
+ */
+function class_schedule_html(array $slots): string
+{
+    if (!$slots) {
+        return '<span class="text-muted fst-italic">Not scheduled yet</span>';
+    }
+    $week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    $byTime = [];
+    foreach ($slots as $slot) {
+        $byTime[substr($slot, 4)][] = array_search(substr($slot, 0, 3), $week, true);
+    }
+    $html = '<div class="cls-times">';
+    foreach ($byTime as $time => $days) {
+        sort($days);
+        $runs = [];
+        foreach ($days as $d) {
+            $last = count($runs) - 1;
+            if ($last >= 0 && $d === $runs[$last][1] + 1) $runs[$last][1] = $d; else $runs[] = [$d, $d];
+        }
+        $label = implode(', ', array_map(fn($r) => $r[1] - $r[0] >= 2 ? $week[$r[0]] . '–' . $week[$r[1]]
+            : ($r[0] === $r[1] ? $week[$r[0]] : $week[$r[0]] . ', ' . $week[$r[1]]), $runs));
+        $html .= '<span class="days">' . admin_e($label) . '</span><span class="time">' . admin_e($time) . '</span>';
+    }
+    return $html . '</div>';
+}
+
 function class_state(array $c): array
 {
     if ((int) $c['is_archived'] === 1) return ['Archived', ''];
@@ -78,6 +107,17 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
         .cls-roster-btn { border: 0; background: none; padding: 0; font-weight: 700; color: var(--ui-blue); text-decoration: underline dotted; }
         .cls-note { display: block; max-width: 260px; font-size: 0.78rem; color: var(--ui-muted); white-space: normal; }
         .code-box { display: flex; gap: 0.5rem; align-items: center; }
+        .cls-summary { height: 100%; padding: 1rem 1.1rem; border: 1px solid var(--ui-line); border-radius: var(--ui-radius); background: var(--ui-soft); }
+        .cls-summary-title { display: flex; align-items: center; gap: 0.4rem; margin: 0 0 0.75rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ui-muted); }
+        .cls-summary dl { margin: 0; }
+        .cls-summary dt { font-size: 0.75rem; font-weight: 600; color: var(--ui-muted); }
+        .cls-summary dd { margin: 0.1rem 0 0.85rem; font-weight: 600; color: var(--ui-ink); overflow-wrap: anywhere; }
+        .cls-summary dd.is-empty { font-weight: 400; font-style: italic; color: var(--ui-muted); }
+        .cls-summary dd.is-warn { color: var(--ui-amber); }
+        .cls-times { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 0.75rem; margin-top: 0.15rem; padding: 0.5rem 0.65rem; border: 1px solid var(--ui-line); border-radius: 8px; background: var(--ui-surface); font-size: 0.85rem; }
+        .cls-times .days { font-weight: 700; color: var(--ui-navy); white-space: nowrap; }
+        .cls-times .time { font-weight: 500; color: var(--ui-ink); }
+        .cls-summary-foot { margin: 0; padding-top: 0.6rem; border-top: 1px solid var(--ui-line); font-size: 0.75rem; color: var(--ui-muted); }
         .code-box code { padding: 0.3rem 0.6rem; border-radius: 6px; background: var(--ui-soft); font-size: 1rem; font-weight: 700; letter-spacing: 0.12em; color: var(--ui-navy); }
     </style>
 </head>
@@ -218,50 +258,60 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <?php if ($activeSemester): ?><p class="text-muted small">The class will be created in <b><?= admin_e($activeSemester) ?></b> and the teacher notified.</p><?php endif; ?>
                     <input type="hidden" name="semester" value="<?= admin_e($activeSemester ?? '') ?>">
                     <input type="hidden" name="subjectTypeClass" id="newSubjectType">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="newSection" class="form-label">Section</label>
-                            <select class="form-select" name="selectedClassAdd" id="newSection" required>
-                                <option value="" selected disabled>Select a section</option>
-                                <?php foreach ($sections as $dept => $list): ?>
-                                    <optgroup label="<?= admin_e(shs_strand_label($dept)) ?>">
-                                        <?php foreach ($list as $sec): ?><option value="<?= $sec ?>"><?= str_replace('-', ' – ', $sec) ?></option><?php endforeach; ?>
-                                    </optgroup>
-                                <?php endforeach; ?>
-                            </select>
+                    <div class="row g-4">
+                        <!-- What the admin chooses -->
+                        <div class="col-md-7">
+                            <div class="mb-3">
+                                <label for="newSection" class="form-label">Section</label>
+                                <select class="form-select" name="selectedClassAdd" id="newSection" required>
+                                    <option value="" selected disabled>Select a section</option>
+                                    <?php foreach ($sections as $dept => $list): ?>
+                                        <optgroup label="<?= admin_e(shs_strand_label($dept)) ?>">
+                                            <?php foreach ($list as $sec): ?><option value="<?= $sec ?>"><?= str_replace('-', ' – ', $sec) ?></option><?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newSubject" class="form-label">Subject</label>
+                                <select class="form-select" name="subjectNameClass" id="newSubject" required disabled>
+                                    <option value="">Select a section first</option>
+                                </select>
+                                <div class="form-text" id="newSubjectHint">Subjects for the chosen section's strand and grade appear here.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newTeacher" class="form-label">Subject teacher</label>
+                                <select class="form-select" name="teacher" id="newTeacher" required>
+                                    <option value="" selected disabled><?= $teachers ? 'Select a teacher' : 'No teachers added yet' ?></option>
+                                    <?php foreach ($teachers as $t): ?><option value="<?= admin_e($t) ?>"><?= admin_e(preg_replace('/\s+/', ' ', $t)) ?></option><?php endforeach; ?>
+                                </select>
+                                <div class="form-text">They're notified once the class is created.</div>
+                            </div>
+                            <div>
+                                <label for="newDesc" class="form-label">Description</label>
+                                <textarea class="form-control" id="newDesc" name="classDesc" rows="3" required maxlength="500" placeholder="e.g. Bring a scientific calculator. Quizzes every Friday."></textarea>
+                                <div class="form-text">Shown to learners when they join the class.</div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="newAdviser" class="form-label">Class adviser</label>
-                            <input type="text" class="form-control" id="newAdviser" readonly placeholder="Chosen automatically from the section">
-                        </div>
-                        <div class="col-md-8">
-                            <label for="newSubject" class="form-label">Subject</label>
-                            <select class="form-select" name="subjectNameClass" id="newSubject" required disabled>
-                                <option value="">Select a section first</option>
-                            </select>
-                            <small class="text-muted" id="newSubjectHint"></small>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="newSubjectTypeView" class="form-label">Type</label>
-                            <input type="text" class="form-control" id="newSubjectTypeView" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="newTeacher" class="form-label">Teacher</label>
-                            <select class="form-select" name="teacher" id="newTeacher" required>
-                                <option value="" selected disabled><?= $teachers ? 'Select a teacher' : 'No teachers added yet' ?></option>
-                                <?php foreach ($teachers as $t): ?><option value="<?= admin_e($t) ?>"><?= admin_e(preg_replace('/\s+/', ' ', $t)) ?></option><?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="newSchedule" class="form-label">Schedule</label>
-                            <input type="text" class="form-control" id="newSchedule" readonly placeholder="From the subject's weekly schedule">
-                        </div>
-                        <div class="col-12">
-                            <label for="newDesc" class="form-label">Description</label>
-                            <textarea class="form-control" id="newDesc" name="classDesc" rows="3" required placeholder="What learners should know about this class"></textarea>
+
+                        <!-- Filled in automatically -->
+                        <div class="col-md-5">
+                            <aside class="cls-summary" aria-live="polite">
+                                <h2 class="cls-summary-title"><i class="bi bi-info-circle"></i> Class details</h2>
+                                <dl>
+                                    <dt>Semester</dt>
+                                    <dd><?= $activeSemester ? admin_e($activeSemester) : '<span class="text-danger">No active semester</span>' ?></dd>
+                                    <dt>Class adviser</dt>
+                                    <dd id="newAdviser" class="is-empty">Pick a section</dd>
+                                    <dt>Type</dt>
+                                    <dd id="newSubjectTypeView" class="is-empty">Pick a subject</dd>
+                                    <dt>Weekly schedule</dt>
+                                    <dd id="newSchedule" class="is-empty">Pick a subject</dd>
+                                </dl>
+                                <p class="cls-summary-foot">These come from the section and subject setup. Change them under Sections or Subjects.</p>
+                            </aside>
                         </div>
                     </div>
                 </div>
@@ -372,7 +422,7 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
                             <dt>Subject</dt>
                             <dd><?= admin_e($c['subject']) ?> <span class="ui-tag"><?= admin_e($c['type']) ?></span> <span class="text-muted"><?= admin_e($c['code']) ?></span></dd>
                             <dt>Schedule</dt>
-                            <dd><?= admin_e(implode(' · ', $schedules[$c['subject_id']] ?? ['Not scheduled'])) ?></dd>
+                            <dd><?= class_schedule_html($schedules[$c['subject_id']] ?? []) ?></dd>
                             <dt>Teacher</dt>
                             <dd><?= admin_e($c['teacher'] ?: '—') ?></dd>
                             <dt>Adviser</dt>
@@ -417,40 +467,55 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
                         <div class="modal-body">
                             <input type="hidden" name="semester" value="<?= admin_e($c['semester']) ?>">
                             <input type="hidden" name="subjectNameClass" value="<?= admin_e($c['subject']) ?>">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="editSection<?= $id ?>" class="form-label">Section</label>
-                                    <select class="form-select" name="selectedClassAdd" id="editSection<?= $id ?>" required data-adviser-target="#editAdviser<?= $id ?>">
-                                        <?php $known = in_array($c['name'], array_merge(...array_values($sections)), true); ?>
-                                        <?php if (!$known): ?><option value="<?= admin_e($c['name']) ?>" selected><?= admin_e($c['name']) ?></option><?php endif; ?>
-                                        <?php foreach ($sections as $dept => $list): ?>
-                                            <optgroup label="<?= admin_e(shs_strand_label($dept)) ?>">
-                                                <?php foreach ($list as $sec): ?><option value="<?= $sec ?>" <?= $c['name'] === $sec ? 'selected' : '' ?>><?= str_replace('-', ' – ', $sec) ?></option><?php endforeach; ?>
-                                            </optgroup>
-                                        <?php endforeach; ?>
-                                    </select>
+                            <div class="row g-4">
+                                <!-- What the admin can change -->
+                                <div class="col-md-7">
+                                    <div class="mb-3">
+                                        <label for="editSection<?= $id ?>" class="form-label">Section</label>
+                                        <select class="form-select" name="selectedClassAdd" id="editSection<?= $id ?>" required data-adviser-target="#editAdviser<?= $id ?>">
+                                            <?php $known = in_array($c['name'], array_merge(...array_values($sections)), true); ?>
+                                            <?php if (!$known): ?><option value="<?= admin_e($c['name']) ?>" selected><?= admin_e($c['name']) ?></option><?php endif; ?>
+                                            <?php foreach ($sections as $dept => $list): ?>
+                                                <optgroup label="<?= admin_e(shs_strand_label($dept)) ?>">
+                                                    <?php foreach ($list as $sec): ?><option value="<?= $sec ?>" <?= $c['name'] === $sec ? 'selected' : '' ?>><?= str_replace('-', ' – ', $sec) ?></option><?php endforeach; ?>
+                                                </optgroup>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="editTeacher<?= $id ?>" class="form-label">Subject teacher</label>
+                                        <select class="form-select" id="editTeacher<?= $id ?>" name="teacher" required>
+                                            <?php if ($c['teacher'] && !in_array($c['teacher'], $teachers, true)): ?><option value="<?= admin_e($c['teacher']) ?>" selected><?= admin_e($c['teacher']) ?> (no longer on staff)</option><?php endif; ?>
+                                            <?php if (!$c['teacher']): ?><option value="" selected disabled>Select a teacher</option><?php endif; ?>
+                                            <?php foreach ($teachers as $t): ?><option value="<?= admin_e($t) ?>" <?= $c['teacher'] === $t ? 'selected' : '' ?>><?= admin_e(preg_replace('/\s+/', ' ', $t)) ?></option><?php endforeach; ?>
+                                        </select>
+                                        <div class="form-text">Changing the teacher notifies them and the enrolled learners.</div>
+                                    </div>
+                                    <div>
+                                        <label for="editDesc<?= $id ?>" class="form-label">Description</label>
+                                        <textarea class="form-control" id="editDesc<?= $id ?>" name="classDesc" rows="3" required maxlength="500"><?= admin_e($c['description']) ?></textarea>
+                                        <div class="form-text">Shown to learners in the class.</div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="editAdviser<?= $id ?>" class="form-label">Class adviser</label>
-                                    <input type="text" class="form-control" id="editAdviser<?= $id ?>" value="<?= admin_e($advisers[$c['name']] ?? 'No adviser assigned') ?>" readonly>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="editSubject<?= $id ?>">Subject</label>
-                                    <input type="text" class="form-control" id="editSubject<?= $id ?>" value="<?= admin_e($c['subject'] . ' (' . $c['code'] . ') · ' . $c['type']) ?>" readonly>
-                                    <small class="text-muted">To change the subject, create a new class.</small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="editTeacher<?= $id ?>" class="form-label">Teacher</label>
-                                    <select class="form-select" id="editTeacher<?= $id ?>" name="teacher" required>
-                                        <?php if ($c['teacher'] && !in_array($c['teacher'], $teachers, true)): ?><option value="<?= admin_e($c['teacher']) ?>" selected><?= admin_e($c['teacher']) ?> (no longer on staff)</option><?php endif; ?>
-                                        <?php if (!$c['teacher']): ?><option value="" selected disabled>Select a teacher</option><?php endif; ?>
-                                        <?php foreach ($teachers as $t): ?><option value="<?= admin_e($t) ?>" <?= $c['teacher'] === $t ? 'selected' : '' ?>><?= admin_e(preg_replace('/\s+/', ' ', $t)) ?></option><?php endforeach; ?>
-                                    </select>
-                                    <small class="text-muted">Changing the teacher notifies them and the enrolled learners.</small>
-                                </div>
-                                <div class="col-12">
-                                    <label for="editDesc<?= $id ?>" class="form-label">Description</label>
-                                    <textarea class="form-control" id="editDesc<?= $id ?>" name="classDesc" rows="3" required><?= admin_e($c['description']) ?></textarea>
+
+                                <!-- Fixed for this class, or follows the section -->
+                                <div class="col-md-5">
+                                    <aside class="cls-summary" aria-live="polite">
+                                        <h2 class="cls-summary-title"><i class="bi bi-info-circle"></i> Class details</h2>
+                                        <dl>
+                                            <dt>Subject</dt>
+                                            <dd><?= admin_e($c['subject']) ?> <span class="text-muted fw-normal"><?= admin_e($c['code']) ?></span></dd>
+                                            <dt>Type</dt>
+                                            <dd><?= admin_e($c['type']) ?></dd>
+                                            <dt>Semester</dt>
+                                            <dd><?= admin_e($c['semester']) ?></dd>
+                                            <dt>Class adviser</dt>
+                                            <dd id="editAdviser<?= $id ?>" class="<?= isset($advisers[$c['name']]) ? '' : 'is-warn' ?>"><?= admin_e($advisers[$c['name']] ?? 'No adviser assigned yet') ?></dd>
+                                            <dt>Weekly schedule</dt>
+                                            <dd><?= class_schedule_html($schedules[$c['subject_id']] ?? []) ?></dd>
+                                        </dl>
+                                        <p class="cls-summary-foot">To change the subject, create a new class. The adviser follows the section you pick.</p>
+                                    </aside>
                                 </div>
                             </div>
                         </div>
@@ -485,9 +550,18 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
         const sectionSelect = document.getElementById('newSection');
         const subjectSelect = document.getElementById('newSubject');
 
+        // Summary panel value: text, or a muted placeholder; tone 'warn' highlights a gap to fix
+        function setDetail(id, text, placeholder, tone) {
+            const el = document.getElementById(id);
+            el.classList.toggle('is-empty', !text);
+            el.classList.toggle('is-warn', tone === 'warn');
+            el.textContent = text || placeholder;
+        }
+
         sectionSelect.addEventListener('change', function () {
             const [course, year] = sectionSelect.value.split('-');
-            document.getElementById('newAdviser').value = advisers[sectionSelect.value] || 'No adviser assigned';
+            const adviser = advisers[sectionSelect.value];
+            setDetail('newAdviser', adviser || 'No adviser assigned yet', '', adviser ? '' : 'warn');
 
             const matching = subjects.filter(s => s.course === course && s.year_level === year);
             const list = matching.length ? matching : subjects;
@@ -510,14 +584,67 @@ $enrolled = array_sum(array_map(fn($c) => count($rosters[$c['id']] ?? []), $clas
             const option = subjectSelect.selectedOptions[0];
             const type = option && option.dataset.type ? option.dataset.type : '';
             document.getElementById('newSubjectType').value = type;
-            document.getElementById('newSubjectTypeView').value = type;
-            document.getElementById('newSchedule').value = option && option.dataset.id ? (subjectSchedules[option.dataset.id] || ['Not scheduled']).join(' · ') : '';
+            setDetail('newSubjectTypeView', type, 'Pick a subject');
+
+            const schedule = document.getElementById('newSchedule');
+            const slots = option && option.dataset.id ? (subjectSchedules[option.dataset.id] || []) : null;
+            if (!slots) {
+                setDetail('newSchedule', '', 'Pick a subject');
+            } else if (!slots.length) {
+                setDetail('newSchedule', 'Not scheduled yet', '', 'warn');
+            } else {
+                schedule.className = '';
+                const grid = Object.assign(document.createElement('div'), { className: 'cls-times' });
+                groupSchedule(slots).forEach(function ([days, time]) {
+                    grid.append(
+                        Object.assign(document.createElement('span'), { className: 'days', textContent: days }),
+                        Object.assign(document.createElement('span'), { className: 'time', textContent: time })
+                    );
+                });
+                schedule.replaceChildren(grid);
+            }
+        });
+
+        // ["Mon 7:00 AM–4:00 PM", "Tue 7:00 AM–4:00 PM", "Fri 1:00 PM–3:00 PM"] → [["Mon–Tue", "7:00 AM–4:00 PM"], ["Fri", "1:00 PM–3:00 PM"]]
+        // Days sharing a time are merged; a consecutive run becomes a range, otherwise a list.
+        function groupSchedule(slots) {
+            const week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const byTime = new Map();
+            slots.forEach(function (slot) {
+                const day = slot.slice(0, 3);
+                const time = slot.slice(4);
+                if (!byTime.has(time)) byTime.set(time, []);
+                byTime.get(time).push(day);
+            });
+            return Array.from(byTime, function ([time, days]) {
+                const idx = days.map(d => week.indexOf(d)).sort((a, b) => a - b);
+                const runs = [];
+                idx.forEach(function (i) {
+                    const last = runs[runs.length - 1];
+                    if (last && i === last[1] + 1) last[1] = i; else runs.push([i, i]);
+                });
+                const label = runs.map(([a, b]) => b - a >= 2 ? week[a] + '–' + week[b] : (a === b ? week[a] : week[a] + ', ' + week[b])).join(', ');
+                return [label, time];
+            });
+        }
+
+        // Opening the modal again starts from a clean form
+        document.getElementById('createClassModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('createClassForm').reset();
+            subjectSelect.innerHTML = '<option value="">Select a section first</option>';
+            subjectSelect.disabled = true;
+            document.getElementById('newSubjectHint').textContent = "Subjects for the chosen section's strand and grade appear here.";
+            setDetail('newAdviser', '', 'Pick a section');
+            setDetail('newSubjectTypeView', '', 'Pick a subject');
+            setDetail('newSchedule', '', 'Pick a subject');
         });
 
         // Edit modal: adviser follows the chosen section
         document.querySelectorAll('[data-adviser-target]').forEach(function (select) {
             select.addEventListener('change', function () {
-                document.querySelector(select.dataset.adviserTarget).value = advisers[select.value] || 'No adviser assigned';
+                const target = document.querySelector(select.dataset.adviserTarget);
+                target.textContent = advisers[select.value] || 'No adviser assigned yet';
+                target.classList.toggle('is-warn', !advisers[select.value]);
             });
         });
 

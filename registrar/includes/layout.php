@@ -168,6 +168,8 @@ function registrar_page_start(string $title, string $head = ''): void
         'Records' => [
             ['students.php', 'bi-people', 'Students', ['student.php']],
             ['enrollment.php', 'bi-clipboard-check', 'Enrollment'],
+            ['grades.php', 'bi-journal-check', 'Grade review', ['grade_sheet.php']],
+            ['requests.php', 'bi-file-earmark-text', 'Document requests'],
         ],
     ];
     ?>
@@ -195,6 +197,30 @@ function registrar_page_start(string $title, string $head = ''): void
         .person-name { display: block; font-weight: 700; color: var(--ui-navy); }
         .person-name:hover { text-decoration: underline; }
         .person-meta { display: block; font-size: 0.8rem; color: var(--ui-muted); }
+        /* Registrar tables read centered, header and body alike */
+        html body table.dataTable thead th, html body table.dataTable tbody td,
+        .content .table > thead > tr > th, .content .table > tbody > tr > td { text-align: center; }
+        table .person { justify-content: center; text-align: left; }
+        /* Page header actions: one height, quiet secondary buttons, a lifted primary */
+        html body .ui-page-actions .btn {
+            min-height: 2.5rem; padding: 0.45rem 1rem; border-radius: 9px; font-size: 0.9rem;
+            box-shadow: 0 1px 2px rgba(6, 30, 78, 0.06);
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+        html body .ui-page-actions .btn:hover:not(:disabled):not(.disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(6, 30, 78, 0.12); }
+        html body .ui-page-actions .btn:active:not(:disabled):not(.disabled),
+        html body .ui-page-actions .btn.show { transform: none; box-shadow: 0 1px 2px rgba(6, 30, 78, 0.08); }
+        html body .ui-page-actions .btn:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(194, 167, 77, 0.45); }
+        html body .ui-page-actions .btn-ui-gold { box-shadow: inset 0 -2px 0 rgba(6, 30, 78, 0.15), 0 1px 2px rgba(6, 30, 78, 0.1); }
+        html body .ui-page-actions .btn-outline-danger { background: #fff; border-color: rgba(180, 35, 56, 0.4); color: var(--ui-red); }
+        html body .ui-page-actions .btn-outline-danger:hover:not(:disabled):not(.disabled),
+        html body .ui-page-actions .btn-outline-danger:focus:not(:disabled):not(.disabled) { background: #fdf1f3; border-color: var(--ui-red); color: var(--ui-red); }
+        html body .ui-page-actions .dropdown-menu { margin-top: 0.35rem !important; border-color: var(--ui-line); border-radius: 10px; box-shadow: 0 10px 28px rgba(6, 30, 78, 0.14); }
+        @media (max-width: 575.98px) {
+            /* Two per row instead of a tall stack of full-width buttons */
+            html body .ui-page-actions > .btn, html body .ui-page-actions > .dropdown { flex: 1 1 calc(50% - 0.25rem); width: auto; }
+            html body .ui-page-actions > .dropdown > .btn { width: 100%; }
+        }
     </style>
     <?= $head ?>
 </head>

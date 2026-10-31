@@ -3,55 +3,88 @@ session_start();
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
-    exit();
+    exit;
 }
 
 include __DIR__ . '/../database/connection.php';
-
-// Get teacher's advisory classes
-$teacher_name = $_SESSION['full_name'];
-$advisory_stmt = $pdo->prepare("
-    SELECT id, class_advising 
-    FROM staff_advising 
-    WHERE fullName = :teacher_name
-");
-$advisory_stmt->execute(['teacher_name' => $teacher_name]);
-$advisory_classes = $advisory_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Build student counts by course and year level
-$student_counts = [];
 require_once __DIR__ . '/../includes/academic.php';
-$yearMap = array_combine(shs_grades(), shs_grade_levels()); // '11' => 'Grade 11'
 
-foreach ($advisory_classes as $cls) {
-    $class_id = $cls['class_advising'];
-    $sa_id = $cls['id'];
+// ---------- Page data ----------
+$teacher_name = $_SESSION['teacher_name'] ?? $_SESSION['full_name'] ?? '';
+$advisory_classes = [];
+$schedules = [];
+$week_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    if (preg_match('/^(?<course>[A-Z]+)-(?<year>\d{2})/', $class_id, $m)) {
-        $course = $m['course'];
-        $year = $m['year'];
-        $label = $yearMap[$year] ?? 'Unknown';
+try {
+    $advisory_stmt = $pdo->prepare("
+        SELECT sa.id, sa.class_advising, COUNT(stu.id) AS student_count
+        FROM staff_advising sa
+        LEFT JOIN students_advising sad ON sad.staff_advising_id = sa.id
+        LEFT JOIN students stu ON stu.id = sad.student_id
+        WHERE sa.fullName = :teacher_name
+        GROUP BY sa.id, sa.class_advising
+        ORDER BY sa.class_advising
+    ");
+    $advisory_stmt->execute(['teacher_name' => $teacher_name]);
+    $advisory_classes = $advisory_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log('Error fetching advisory classes: ' . $e->getMessage());
+}
 
-        if (!isset($student_counts[$course][$label])) {
-            $student_counts[$course][$label] = 0;
-        }
+// Only the teacher's own advisory sections can be viewed
+$advisory_codes = array_column($advisory_classes, 'class_advising');
+$current_class_id = $_GET['class_id'] ?? '';
+if (!in_array($current_class_id, $advisory_codes, true)) {
+    $current_class_id = $advisory_codes[0] ?? '';
+}
 
-        $cnt_stmt = $pdo->prepare("
-            SELECT COUNT(*) AS cnt
-            FROM students_advising sa
-            JOIN students s ON s.id = sa.student_id
-            WHERE sa.staff_advising_id = :sa_id
-        ");
-        $cnt_stmt->execute(['sa_id' => $sa_id]);
-        $row = $cnt_stmt->fetch(PDO::FETCH_ASSOC);
-        $student_counts[$course][$label] += (int)$row['cnt'];
+$current_class = null;
+foreach ($advisory_classes as $class) {
+    if ($class['class_advising'] === $current_class_id) {
+        $current_class = $class;
     }
 }
 
-// Get current class_id from URL if available
-$current_class_id = $_GET['class_id'] ?? ($advisory_classes[0]['class_advising'] ?? '');
-?>
+if ($current_class_id !== '') {
+    try {
+        $sched_stmt = $pdo->prepare("
+            SELECT sch.meeting_days, sch.start_time, sch.end_time,
+                sub.name AS subject_name, c.teacher AS teacher_name
+            FROM classes c
+            JOIN subjects sub ON sub.id = c.subject_id
+            JOIN subjects_schedules sch ON sch.subject_id = sub.id
+            WHERE c.name = :class_name AND c.is_archived = 0
+            ORDER BY sch.start_time
+        ");
+        $sched_stmt->execute(['class_name' => $current_class_id]);
+        $schedules = $sched_stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Error fetching class schedule: ' . $e->getMessage());
+    }
+}
 
+// meeting_days can list several days ("Monday, Wednesday"), so file each row under every day it names
+$schedule_by_day = array_fill_keys($week_days, []);
+foreach ($schedules as $sch) {
+    foreach ($week_days as $day) {
+        if (stripos($sch['meeting_days'], $day) !== false) {
+            $schedule_by_day[$day][] = $sch;
+        }
+    }
+}
+
+// Weekend columns only show when something is scheduled on them
+$shown_days = array_filter($week_days, function ($day) use ($schedule_by_day) {
+    return !in_array($day, ['Saturday', 'Sunday'], true) || !empty($schedule_by_day[$day]);
+});
+
+$today = date('l');
+$now = date('H:i:s');
+$today_classes = $schedule_by_day[$today] ?? [];
+$weekly_meetings = array_sum(array_map('count', $schedule_by_day));
+$subject_count = count(array_unique(array_column($schedules, 'subject_name')));
+$parsed = $current_class_id !== '' ? shs_parse_section($current_class_id) : null;
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -60,76 +93,42 @@ $current_class_id = $_GET['class_id'] ?? ($advisory_classes[0]['class_advising']
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>DPLMHS-SHS | Student Management System</title>
-    <link rel="icon" href="../external/img/favicon-32x32.png" type="image/x-icon">
+    <?php include(__DIR__ . '/../includes/favicon-links.php'); ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('../admin/css/admin-ui.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('css/staff-ui.css', __DIR__); ?>" rel="stylesheet">
+    <script src="<?php echo csms_asset('js/staff-ui.js', __DIR__); ?>" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <link href="<?php echo csms_asset('css/dashboard.css', __DIR__); ?>" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <style>
-        .schedule-card {
-            border-left: 4px solid #3c49a0;
-            margin-bottom: 15px;
+        /* Section switcher */
+        .cs-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1.5rem;
         }
 
-        .class-selector {
-            cursor: pointer;
-            transition: all 0.3s;
-            color: #3c49a0 !important;
+        .cs-tabs .fd-btn-ghost.is-current {
+            background-color: var(--au-navy);
+            border-color: var(--au-navy);
+            color: #fff !important;
         }
 
-        .class-selector:hover {
-            background-color: #f8f9fa;
+        .cs-tabs .fd-count {
+            margin-left: 0.15rem;
         }
 
-        .class-selector.active {
-            background-color: #3c49a0;
-            color: white !important;
-        }
-
-        .time-col {
-            width: 120px;
-        }
-
-        .day-header {
-            background-color: #3c49a0;
-            color: white;
-        }
-
-        .student-count-badge {
-            font-size: 0.75rem;
-            margin-left: 5px;
-        }
-
-        table.dataTable {
-            font-size: 12px;
-        }
-
-        td {
-            text-align: center;
-            vertical-align: middle;
-            border-bottom: 1px solid black;
-        }
-
-        .btn-csms {
-            background-color: #10177a;
-            color: white;
-            border: 1px solid white;
-        }
-
-        .btn-csms:hover {
-            border: 1px solid #10177a;
-            background-color: white;
-            color: #10177a;
+        .cs-tabs .is-current .fd-count {
+            background-color: rgba(255, 255, 255, 0.18);
+            color: #fff;
         }
     </style>
-
-
 </head>
 
 <body>
@@ -142,314 +141,191 @@ $current_class_id = $_GET['class_id'] ?? ($advisory_classes[0]['class_advising']
                     <i class="hamburger align-self-center"></i>
                 </a>
                 <img src="../external/img/dp_logo.avif" class="logo-small" alt="DPLMHS logo">
-                <span class="text-white"><b>DPLMHS</b> - Student Management System
-                </span>
+                <span class="text-white"><b>DPLMHS</b> - Student Management System </span>
                 <div class="navbar-collapse collapse">
                     <?php include('top-bar.php') ?>
                 </div>
             </nav>
 
             <main class="content">
-                <div class="container-fluid">
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h1 class="h3 mb-0"><b>Class Schedules</b></h1>
-                         
+                <div class="container-fluid p-0">
 
-                                <a href="class_management.php" class="btn btn-secondary">
-                                    <i class="bi bi-arrow-left"></i> Back to Dashboard
-                                </a>
-                            </div>
-                            <p class="text-secondary">View and manage class schedules for your advisory classes</p>
-
-
+                    <div class="fd-hero">
+                        <div>
+                            <div class="fd-eyebrow">Advisory</div>
+                            <h1 class="fd-title">Class Schedules</h1>
+                            <p class="fd-subtitle">The weekly timetable of each of your advisory sections.</p>
+                        </div>
+                        <div class="fd-quick">
+                            <a class="fd-btn-ghost" href="class_management.php"><i class="bi bi-arrow-left"></i> Back to Class Management</a>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="m-0 font-weight-bold ">My Advisory Classes</h6>
-                                </div>
-                                <div class="list-group list-group-flush">
-                                    <?php foreach ($advisory_classes as $class):
-                                        $class_id = $class['class_advising'];
-                                        if (preg_match('/^(?<course>[A-Z]+)-(?<year>\d{2})/', $class_id, $m)) {
-                                            $course = $m['course'];
-                                            $year = $m['year'];
-                                            $label = $yearMap[$year] ?? 'Unknown';
-                                            $count = $student_counts[$course][$label] ?? 0;
-                                        }
-                                    ?>
-                                        <a href="class_schedule.php?class_id=<?= urlencode($class['class_advising']) ?>"
-                                            class="list-group-item list-group-item-action class-selector <?= ($class['class_advising'] === $current_class_id) ? 'active' : '' ?> " style="color: white; font-weight:bold">
-                                            <?= htmlspecialchars($class['class_advising']) ?>
-                                            <span class="badge bg-secondary student-count-badge">
-                                                <?= $count ?> students
-                                            </span>
-                                        </a>
-                                    <?php endforeach; ?>
+                    <?php if (empty($advisory_classes)): ?>
+                        <div class="card fd-panel mb-4">
+                            <div class="card-body">
+                                <div class="fd-empty">
+                                    <i class="bi bi-person-badge"></i>
+                                    <p>You are not currently assigned as an adviser to any section.</p>
+                                    <p class="small mt-1">Once the administrator assigns you a section, its schedule will show up here.</p>
                                 </div>
                             </div>
                         </div>
+                    <?php else: ?>
 
-                        <div class="col-md-9">
-                            <?php if ($current_class_id): ?>
-                                <?php
-                                // Get schedule for selected class
-                                $schedStmt = $pdo->prepare("
-            SELECT
-                sch.meeting_days AS day,
-                sch.start_time,
-                sch.end_time,
-                sub.name AS subject_name,
-                sa.fullName AS teacher_name
-            FROM classes c
-            JOIN subjects sub ON sub.id = c.subject_id
-            JOIN subjects_schedules sch ON sch.subject_id = sub.id
-            JOIN staff_accounts sa ON sa.fullName = c.teacher
-            WHERE c.name = :class_name
-            ORDER BY
-                FIELD(sch.meeting_days,
-                    'Monday','Tuesday','Wednesday',
-                    'Thursday','Friday','Saturday','Sunday'),
-                sch.start_time
-        ");
-                                $schedStmt->execute(['class_name' => $current_class_id]);
-                                $schedules = $schedStmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                // Group by day
-                                $schedule_by_day = [
-                                    'Monday'    => [],
-                                    'Tuesday'   => [],
-                                    'Wednesday' => [],
-                                    'Thursday'  => [],
-                                    'Friday'    => [],
-                                    'Saturday'  => [],
-                                    'Sunday'    => []
-                                ];
-
-                                foreach ($schedules as $schedule) {
-
-                                    $schedule_by_day[$schedule['day']][] = $schedule;
-                                }
-
+                        <!-- Section switcher -->
+                        <?php if (count($advisory_classes) > 1): ?>
+                            <nav class="cs-tabs" aria-label="Advisory sections">
+                                <?php foreach ($advisory_classes as $class):
+                                    $is_current = $class['class_advising'] === $current_class_id;
                                 ?>
+                                    <a href="class_schedule.php?class_id=<?= urlencode($class['class_advising']) ?>"
+                                        class="fd-btn-ghost <?= $is_current ? 'is-current' : '' ?>"
+                                        <?= $is_current ? 'aria-current="page"' : '' ?>>
+                                        <?= htmlspecialchars($class['class_advising']) ?>
+                                        <span class="fd-count"><?= (int) $class['student_count'] ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </nav>
+                        <?php endif; ?>
 
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="m-0 font-weight-bold">
-                                            <b> Schedule for <?= htmlspecialchars($current_class_id) ?></b>
-                                        </h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="time-col">Time</th>
-                                                        <th>Monday</th>
-                                                        <th>Tuesday</th>
-                                                        <th>Wednesday</th>
-                                                        <th>Thursday</th>
-                                                        <th>Friday</th>
-                                                        <th>Saturday</th>
-                                                        <th>Sunday</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php for ($hour = 7; $hour <= 19; $hour++): ?>
-                                                        <tr>
-                                                            <td class="time-col">
-                                                                <?= sprintf("%02d:00", $hour) ?> - <?= sprintf("%02d:00", $hour + 1) ?>
-                                                            </td>
-                                                            <?php foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day): ?>
-                                                                <td style="font-size: small;">
-                                                                    <?php foreach ($schedule_by_day[$day] as $schedule):
-                                                                        $start = (int)substr($schedule['start_time'], 0, 2);
-                                                                        $end = (int)substr($schedule['end_time'], 0, 2);
-                                                                        if ($hour >= $start && $hour < $end): ?>
-                                                                            <div class="schedule-card p-2 mb-2">
-                                                                                <strong><i class="bi bi-book-fill me-1"></i> <?= htmlspecialchars($schedule['subject_name']) ?></strong><br>
-                                                                                <i class="bi bi-person-fill me-1"></i> <?= htmlspecialchars($schedule['teacher_name']) ?><br>
-                                                                                <i class="bi bi-clock-fill me-1"></i> <?= htmlspecialchars($schedule['start_time']) ?> - <?= htmlspecialchars($schedule['end_time']) ?>
-                                                                            </div>
-                                                                        <?php endif; ?>
-                                                                    <?php endforeach; ?>
-                                                                </td>
-                                                            <?php endforeach; ?>
-                                                        </tr>
-                                                    <?php endfor; ?>
-                                                </tbody>
-                                            </table>
+                        <!-- Summary -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-6 col-xl-3">
+                                <div class="card fd-stat">
+                                    <span class="fd-stat-icon"><i class="bi bi-diagram-3"></i></span>
+                                    <div>
+                                        <div class="fd-stat-value"><?= htmlspecialchars($current_class_id) ?></div>
+                                        <div class="fd-stat-label">
+                                            <?= $parsed ? htmlspecialchars($parsed['grade_level'] . ' · ' . shs_strand_label($parsed['strand'])) : 'Advisory section' ?>
                                         </div>
                                     </div>
                                 </div>
-
-                        </div>
-                    </div>
-
-                    <!-- Upcoming Classes Table -->
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <h3 class="m-0 font-weight-bold"><b>Upcoming Classes</b></h3>
-                            <p class="text-muted mb-0">Here is the schedule for the upcoming classes of your students.</p>
-                        </div>
-
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="upcomingClassesTable" class="table table-bordered table-hover" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Class</th>
-                                            <th>Subject</th>
-                                            <th>Teacher</th>
-                                            <th>Day</th>
-                                            <th>Time</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $upcomingStmt = $pdo->prepare("
-                                               
- SELECT
-    c.name                AS class_name,
-    sch.meeting_days      AS day,
-    cm.date,                          -- actual calendar date of the meeting
-    sch.start_time,                   -- planned start
-    sch.end_time,                     -- planned end
-    sub.name              AS subject_name,
-    sa.fullName           AS teacher_name,
-    cm.status,                        -- e.g. “scheduled”, “cancelled”, …
-    cm.type                           -- lecture, lab, etc. (if you use it)
-FROM       classes               c
-JOIN       subjects              sub  ON sub.id          = c.subject_id
-JOIN       subjects_schedules    sch  ON sch.subject_id  = sub.id
-JOIN       staff_accounts        sa   ON sa.id           = c.teacher       -- join on ID, not name
-JOIN       classes_meetings      cm   ON cm.class_id     = c.id            -- only keep rows that have a real meeting
-                                       AND cm.date       = CURRENT_DATE
-                                       AND cm.start_time = sch.start_time   -- keep if you store these
-                                       AND cm.end_time   = sch.end_time
-WHERE  c.name = :class_name
-  AND  sch.meeting_days = DAYNAME(CURRENT_DATE)          -- Monday, Tuesday, etc.
-  AND  cm.status = 'scheduled'                           -- ignore cancelled/postponed
-  AND  cm.start_time > CURRENT_TIME()                    -- only meetings still ahead today
-ORDER BY cm.start_time
-LIMIT 3;
-
-                                                    ");
-                                        $upcomingStmt->execute(['class_name' => $current_class_id]);
-                                        $upcoming_classes = $upcomingStmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($upcoming_classes as $class): ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($class['class_name']) ?></td>
-                                                <td><?= htmlspecialchars($class['subject_name']) ?></td>
-                                                <td><?= htmlspecialchars($class['teacher_name']) ?></td>
-                                                <td><?= htmlspecialchars($class['day']) ?></td>
-                                                <td><?= htmlspecialchars($class['start_time']) ?> - <?= htmlspecialchars($class['end_time']) ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <div class="card fd-stat">
+                                    <span class="fd-stat-icon"><i class="bi bi-people"></i></span>
+                                    <div>
+                                        <div class="fd-stat-value"><?= (int) ($current_class['student_count'] ?? 0) ?></div>
+                                        <div class="fd-stat-label">Students</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <div class="card fd-stat">
+                                    <span class="fd-stat-icon is-gold"><i class="bi bi-book"></i></span>
+                                    <div>
+                                        <div class="fd-stat-value"><?= $subject_count ?></div>
+                                        <div class="fd-stat-label">Subject<?= $subject_count === 1 ? '' : 's' ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <div class="card fd-stat">
+                                    <span class="fd-stat-icon is-gold"><i class="bi bi-calendar-week"></i></span>
+                                    <div>
+                                        <div class="fd-stat-value"><?= $weekly_meetings ?></div>
+                                        <div class="fd-stat-label">Meetings per week</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                <?php else: ?>
-                    <div class="alert alert-info">
-                        Please select an advisory class to view its schedule.
-                    </div>
-                <?php endif; ?>
+
+                        <!-- Today -->
+                        <div class="card fd-panel mb-4">
+                            <div class="card-header">
+                                <div>
+                                    <h5 class="card-title"><i class="bi bi-clock"></i> Today &middot; <?= $today ?> <span class="fd-count"><?= count($today_classes) ?></span></h5>
+                                    <p class="fd-panel-sub">Classes <?= htmlspecialchars($current_class_id) ?> has today.</p>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <?php if (empty($today_classes)): ?>
+                                    <div class="fd-empty">
+                                        <i class="bi bi-cup-hot"></i>
+                                        <p>No classes scheduled for today.</p>
+                                    </div>
+                                <?php else: ?>
+                                    <ul class="fd-schedule">
+                                        <?php foreach ($today_classes as $sch):
+                                            if ($now >= $sch['end_time']) {
+                                                $status = ['is-done', 'Done'];
+                                            } elseif ($now >= $sch['start_time']) {
+                                                $status = ['is-now', 'In progress'];
+                                            } else {
+                                                $status = ['is-upcoming', 'Upcoming'];
+                                            }
+                                        ?>
+                                            <li>
+                                                <div class="fd-time">
+                                                    <strong><?= date('g:i A', strtotime($sch['start_time'])) ?></strong>
+                                                    <span><?= date('g:i A', strtotime($sch['end_time'])) ?></span>
+                                                </div>
+                                                <div>
+                                                    <div class="fd-class-name"><?= htmlspecialchars($sch['subject_name']) ?></div>
+                                                    <div class="fd-class-meta"><i class="bi bi-person"></i> <?= htmlspecialchars($sch['teacher_name']) ?></div>
+                                                </div>
+                                                <span class="fd-status <?= $status[0] ?>"><?= $status[1] ?></span>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Weekly timetable -->
+                        <div class="card fd-panel mb-4">
+                            <div class="card-header">
+                                <div>
+                                    <h5 class="card-title"><i class="bi bi-calendar-week"></i> Weekly Schedule</h5>
+                                    <p class="fd-panel-sub">Every subject <?= htmlspecialchars($current_class_id) ?> takes, by day.</p>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <?php if (empty($schedules)): ?>
+                                    <div class="fd-empty">
+                                        <i class="bi bi-calendar-x"></i>
+                                        <p>No subject schedules have been set for this section yet.</p>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="cs-week">
+                                        <?php foreach ($shown_days as $day): ?>
+                                            <section class="cs-day <?= $day === $today ? 'is-today' : '' ?>">
+                                                <div class="cs-day-head">
+                                                    <span><?= $day ?></span>
+                                                    <?php if ($day === $today): ?><span>Today</span><?php endif; ?>
+                                                </div>
+                                                <div class="cs-day-body">
+                                                    <?php if (empty($schedule_by_day[$day])): ?>
+                                                        <div class="cs-day-empty">No classes</div>
+                                                    <?php else: ?>
+                                                        <?php foreach ($schedule_by_day[$day] as $sch): ?>
+                                                            <div class="cs-slot">
+                                                                <div class="cs-slot-time">
+                                                                    <?= date('g:i A', strtotime($sch['start_time'])) ?> &ndash; <?= date('g:i A', strtotime($sch['end_time'])) ?>
+                                                                </div>
+                                                                <div class="cs-slot-subject"><?= htmlspecialchars($sch['subject_name']) ?></div>
+                                                                <div class="cs-slot-teacher"><?= htmlspecialchars($sch['teacher_name']) ?></div>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </section>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                 </div>
+            </main>
         </div>
     </div>
-    </main>
-    </div>
-    </div>
 
+    <script src="<?php echo csms_asset('js/app.js', __DIR__); ?>"></script>
 
-
-
-
-    <script src="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('js/app.js', __DIR__); ?>"></script>
     <?php include('processes/server/modals.php'); ?>
-
-    <script>
-        $(document).ready(function() {
-            // Initialize DataTable
-            $('#upcomingClassesTable').DataTable({
-                responsive: true,
-                paging: false,
-                searching: false,
-                info: false
-            });
-
-            // Handle delete schedule
-            $(document).on('click', '.delete-schedule', function() {
-                const scheduleId = $(this).data('id');
-
-                Swal.fire({
-                    title: 'Confirm Deletion',
-                    text: 'Are you sure you want to delete this schedule?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: 'processes/teachers/schedules/delete_schedule.php',
-                            method: 'POST',
-                            data: {
-                                id: scheduleId
-                            },
-                            success: function(response) {
-                                const result = JSON.parse(response);
-                                if (result.success) {
-                                    Swal.fire('Deleted!', result.message, 'success')
-                                        .then(() => location.reload());
-                                } else {
-                                    Swal.fire('Error', result.message, 'error');
-                                }
-                            },
-                            error: function() {
-                                Swal.fire('Error', 'Failed to delete schedule', 'error');
-                            }
-                        });
-                    }
-                });
-            });
-
-            // Handle add schedule form submission
-            $('#addScheduleForm').submit(function(e) {
-                e.preventDefault();
-
-                $.ajax({
-                    url: $(this).attr('action'),
-                    method: 'POST',
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        const result = JSON.parse(response);
-                        if (result.success) {
-                            Swal.fire('Success!', result.message, 'success')
-                                .then(() => {
-                                    $('#addScheduleModal').modal('hide');
-                                    location.reload();
-                                });
-                        } else {
-                            Swal.fire('Error', result.message, 'error');
-                        }
-                    },
-                    error: function() {
-                        Swal.fire('Error', 'Failed to add schedule', 'error');
-                    }
-                });
-            });
-        });
-    </script>
 
     <script>
         function getTime() {
@@ -461,7 +337,7 @@ LIMIT 3;
         setInterval(getTime, 100);
     </script>
 
-
 </body>
 
 </html>
+<?php include('processes/server/alerts.php'); ?>

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/grading.php';
 session_start();
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
@@ -20,6 +21,9 @@ include __DIR__ . '/../database/connection.php';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('../admin/css/admin-ui.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('css/staff-ui.css', __DIR__); ?>" rel="stylesheet">
+    <script src="<?php echo csms_asset('js/staff-ui.js', __DIR__); ?>" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
@@ -888,7 +892,7 @@ include __DIR__ . '/../database/connection.php';
                                                 ?>
 
                                                 <div class="container-fluid mt-2">
-                                                    <h3 class="bold">Midterms</h3>
+                                                    <h3 class="bold">1st Quarter</h3>
                                                     <?php foreach ($rubricTitles as $rubricTitle):
                                                         $items = $midtermActivities[$rubricTitle] ?? [];
                                                     ?>
@@ -927,7 +931,7 @@ include __DIR__ . '/../database/connection.php';
                                                 ?>
 
                                                 <div class="container-fluid mt-2">
-                                                    <h3 class="bold">Finals</h3>
+                                                    <h3 class="bold">2nd Quarter</h3>
                                                     <?php foreach ($rubricTitles as $rubricTitle):
                                                         $items = $finalActivities[$rubricTitle] ?? [];
                                                     ?>
@@ -1181,8 +1185,8 @@ include __DIR__ . '/../database/connection.php';
                                                                     <div class="mb-3">
                                                                         <label for="activityTerm" class="form-label">Term</label>
                                                                         <select class="form-select" id="activityTerm" name="term" required>
-                                                                            <option value="midterm" selected>Midterms</option>
-                                                                            <option value="final">Finals</option>
+                                                                            <option value="midterm" selected>1st Quarter</option>
+                                                                            <option value="final">2nd Quarter</option>
                                                                         </select>
                                                                     </div>
                                                                     <div class="mb-3">
@@ -1986,7 +1990,7 @@ include __DIR__ . '/../database/connection.php';
                                                                 ?>
 
                                                                 <div class="container-fluid mt-2">
-                                                                    <h3 class="bold">Midterms</h3>
+                                                                    <h3 class="bold">1st Quarter</h3>
                                                                     <?php if (empty($rubricTitles)): ?>
                                                                         <p>No rubrics or activities uploaded yet for Midterms.</p>
                                                                     <?php else: ?>
@@ -2030,7 +2034,7 @@ include __DIR__ . '/../database/connection.php';
                                                                 ?>
 
                                                                 <div class="container-fluid mt-2">
-                                                                    <h3 class="bold">Finals</h3>
+                                                                    <h3 class="bold">2nd Quarter</h3>
                                                                     <?php if (empty($rubricTitles)): ?>
                                                                         <p>No rubrics or activities uploaded yet for Finals.</p>
                                                                     <?php else: ?>
@@ -2283,8 +2287,8 @@ include __DIR__ . '/../database/connection.php';
                                                                                     <div class="mb-3">
                                                                                         <label for="activityTerm" class="form-label">Term</label>
                                                                                         <select class="form-select" id="activityTerm" name="term" required>
-                                                                                            <option value="midterm" selected>Midterms</option>
-                                                                                            <option value="final">Finals</option>
+                                                                                            <option value="midterm" selected>1st Quarter</option>
+                                                                                            <option value="final">2nd Quarter</option>
                                                                                         </select>
                                                                                     </div>
                                                                                     <div class="mb-3">
@@ -3526,12 +3530,12 @@ include __DIR__ . '/../database/connection.php';
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Midterm Grade</th>
-                            <th>Final Grade</th>
+                            <th>1st Quarter</th>
+                            <th>2nd Quarter</th>
                         </tr>
                     </thead>
                     <tbody>";
-                                                                                    renderStudentsWithGrades($maleStudents, ['3.0', 'N/A', 'INC', 'AW', 'UW']);
+                                                                                    renderStudentsWithGrades($maleStudents, ['N/A', 'DRP']);
                                                                                     echo "</tbody></table>";
                                                                                 } else {
                                                                                     echo "<p class='no-students text-center'>No male students are enrolled in this class.</p>";
@@ -3543,12 +3547,12 @@ include __DIR__ . '/../database/connection.php';
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Midterm Grade</th>
-                            <th>Final Grade</th>
+                            <th>1st Quarter</th>
+                            <th>2nd Quarter</th>
                         </tr>
                     </thead>
                     <tbody>";
-                                                                                    renderStudentsWithGrades($femaleStudents, ['3.0', 'N/A', 'INC', 'AW', 'UW']);
+                                                                                    renderStudentsWithGrades($femaleStudents, ['N/A', 'DRP']);
                                                                                     echo "</tbody></table>";
                                                                                 } else {
                                                                                     echo "<p class='no-students text-center'>No female students are enrolled in this class.</p>";

@@ -1,5 +1,11 @@
 <?php
 session_start();
+
+// Self-registration is closed: student accounts come from the registrar (or an adviser).
+$_SESSION['STATUS'] = 'REGISTRATION_CLOSED';
+header('Location: ../../../../login/index.php');
+exit;
+
 require_once __DIR__ . '/../../../../database/connection.php'; // Ensure this path is correct
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

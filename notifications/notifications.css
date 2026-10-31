@@ -1,0 +1,548 @@
+/* =========================================================
+   Shared notification bell (admin, staff, students)
+   Scoped under .cn-panel so page styles can't leak in.
+   Colours follow the chat widget (chat/chat-widget.css).
+   ========================================================= */
+
+.cn-panel {
+    --cn-navy: #061E4E;
+    --cn-gold: #c2a74d;
+    --cn-ink: #1b2130;
+    --cn-muted: #667085;
+    --cn-line: #e7e9ef;
+    --cn-bg: #ffffff;
+    --cn-bg-soft: #f5f6f9;
+    --cn-unread: #f3f6fd;
+    --cn-accent: #2f5bb7;
+    --cn-danger: #c0262d;
+
+    flex-direction: column;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--cn-ink);
+    background: var(--cn-bg);
+    text-align: left;
+}
+
+.cn-panel *,
+.cn-panel *::before,
+.cn-panel *::after {
+    box-sizing: border-box;
+}
+
+.cn-panel :where(button) {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.cn-panel :where(button:disabled) {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.cn-panel svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+/* ---------- Dropdown shell ---------- */
+
+/* Bootstrap hides .dropdown-menu until it gets .show; only lay out once open */
+.csms-notify .cn-menu.dropdown-menu:not(.show) {
+    display: none;
+}
+
+.csms-notify .cn-menu.dropdown-menu.show,
+.cn-panel--modal {
+    display: flex;
+}
+
+.csms-notify .cn-menu.dropdown-menu {
+    width: 400px;
+    max-width: calc(100vw - 24px);
+    padding: 0;
+    margin-top: 10px;
+    border: 1px solid var(--cn-line, #e7e9ef);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -12px rgba(6, 30, 78, 0.3), 0 8px 20px -8px rgba(6, 30, 78, 0.18);
+    right: 0;
+    left: auto;
+}
+
+.csms-notify .cn-menu .cn-list {
+    max-height: min(420px, 60vh);
+}
+
+@media (max-width: 575.98px) {
+    .csms-notify .cn-menu.dropdown-menu {
+        position: fixed;
+        top: 60px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+        margin-top: 0;
+    }
+
+    .csms-notify .cn-menu .cn-list {
+        max-height: calc(100vh - 260px);
+    }
+
+    .cn-head-actions .cn-btn span {
+        display: none;
+    }
+}
+
+/* ---------- Header ---------- */
+
+.cn-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 10px;
+}
+
+.cn-head-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.cn-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cn-navy);
+}
+
+.cn-sub {
+    font-size: 12.5px;
+    color: var(--cn-muted);
+    min-height: 1.2em;
+}
+
+.cn-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cn-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--cn-accent);
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+
+.cn-btn:not(:disabled):hover {
+    background: var(--cn-bg-soft);
+}
+
+.cn-btn--danger {
+    color: var(--cn-danger);
+}
+
+.cn-btn--solid-danger {
+    background: var(--cn-danger);
+    color: #fff;
+}
+
+.cn-btn--solid-danger:not(:disabled):hover {
+    background: #a51f25;
+}
+
+.cn-btn--block {
+    width: 100%;
+    justify-content: center;
+    padding: 9px;
+    border: 1px solid var(--cn-line);
+}
+
+.cn-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--cn-muted);
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.cn-icon-btn:hover {
+    background: var(--cn-line);
+    color: var(--cn-navy);
+}
+
+.cn-icon-btn--danger:hover {
+    background: #fde8e8;
+    color: var(--cn-danger);
+}
+
+.cn-panel :focus-visible {
+    outline: 2px solid var(--cn-accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Delete-all confirm bar ---------- */
+
+.cn-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 12px 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fdf1f1;
+    color: #7a1a1e;
+    font-size: 13px;
+}
+
+.cn-confirm[hidden] {
+    display: none;
+}
+
+.cn-confirm > div {
+    display: flex;
+    gap: 6px;
+}
+
+/* ---------- Tabs ---------- */
+
+.cn-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--cn-line);
+}
+
+.cn-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cn-muted);
+}
+
+.cn-tab.is-active {
+    color: var(--cn-navy);
+}
+
+.cn-tab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--cn-gold);
+}
+
+.cn-tab-count:not(:empty) {
+    min-width: 18px;
+    padding: 0 6px;
+    border-radius: 9px;
+    background: var(--cn-navy);
+    color: #fff;
+    font-size: 11px;
+    line-height: 18px;
+    text-align: center;
+}
+
+/* ---------- List ---------- */
+
+.cn-error {
+    margin: 10px 12px 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fdf1f1;
+    color: var(--cn-danger);
+    font-size: 13px;
+}
+
+.cn-error[hidden] {
+    display: none;
+}
+
+.cn-list {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.cn-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cn-line);
+    transition: background-color 0.15s, height 0.18s ease, opacity 0.18s ease, padding 0.18s ease;
+}
+
+.cn-item:last-child {
+    border-bottom: 0;
+}
+
+.cn-item:hover {
+    background: var(--cn-bg-soft);
+}
+
+.cn-item.is-unread {
+    background: var(--cn-unread);
+}
+
+.cn-item.is-unread:hover {
+    background: #e9eefa;
+}
+
+.cn-item.is-leaving {
+    overflow: hidden;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.cn-ico {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.cn-tone-navy   { background: #e8ecf5; color: var(--cn-navy); }
+.cn-tone-blue   { background: #e6eefc; color: #2f5bb7; }
+.cn-tone-violet { background: #efe9fb; color: #6a43b5; }
+.cn-tone-gold   { background: #f6efd9; color: #8a6d14; }
+.cn-tone-green  { background: #e3f4ea; color: #1d7a45; }
+.cn-tone-red    { background: #fde8e8; color: var(--cn-danger); }
+
+.cn-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: inherit;
+    text-decoration: none;
+    cursor: default;
+}
+
+a.cn-body {
+    cursor: pointer;
+}
+
+a.cn-body:hover,
+a.cn-body:focus {
+    color: inherit;
+    text-decoration: none;
+}
+
+a.cn-body:hover .cn-item-title {
+    text-decoration: underline;
+    text-decoration-color: var(--cn-gold);
+    text-underline-offset: 2px;
+}
+
+.cn-item-title {
+    font-weight: 600;
+    color: var(--cn-ink);
+    overflow-wrap: anywhere;
+}
+
+.cn-item:not(.is-unread) .cn-item-title {
+    font-weight: 500;
+}
+
+.cn-desc {
+    color: var(--cn-muted);
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.cn-panel--modal .cn-desc {
+    -webkit-line-clamp: 4;
+}
+
+.cn-time {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #8a93a6;
+}
+
+.cn-dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--cn-accent);
+    flex-shrink: 0;
+    visibility: hidden;
+}
+
+.cn-item.is-unread .cn-dot {
+    visibility: visible;
+}
+
+/* Row actions sit over the dot and appear on hover/focus; always shown on touch */
+.cn-actions {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 18px;
+    background: var(--cn-bg);
+    box-shadow: 0 2px 8px rgba(6, 30, 78, 0.14);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+}
+
+.cn-item:hover .cn-actions,
+.cn-item:focus-within .cn-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (hover: none) {
+    .cn-actions {
+        position: static;
+        opacity: 1;
+        pointer-events: auto;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .cn-dot {
+        display: none;
+    }
+}
+
+/* ---------- Empty / loading ---------- */
+
+.cn-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 36px 24px;
+    text-align: center;
+    color: var(--cn-muted);
+    font-size: 13px;
+}
+
+.cn-empty strong {
+    color: var(--cn-ink);
+    font-size: 14px;
+}
+
+.cn-empty-ico {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 6px;
+    border-radius: 50%;
+    background: var(--cn-bg-soft);
+    color: var(--cn-gold);
+}
+
+.cn-skel {
+    height: 64px;
+    margin: 10px 16px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #f0f2f6 25%, #e6e9ef 50%, #f0f2f6 75%);
+    background-size: 200% 100%;
+    animation: cn-shimmer 1.2s infinite linear;
+}
+
+@keyframes cn-shimmer {
+    to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cn-skel { animation: none; }
+    .cn-item { transition: none; }
+}
+
+/* ---------- Footer ---------- */
+
+.cn-foot {
+    border-top: 1px solid var(--cn-line);
+}
+
+.cn-foot:empty,
+.cn-foot[hidden] {
+    display: none;
+}
+
+.cn-foot-link {
+    display: block;
+    width: 100%;
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cn-accent);
+    text-align: center;
+}
+
+.cn-foot-link:hover {
+    background: var(--cn-bg-soft);
+}
+
+.cn-panel--modal .cn-foot {
+    padding: 12px 16px;
+}
+
+/* ---------- Modal ---------- */
+
+.cn-modal .modal-content.cn-panel {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.cn-modal .cn-panel--modal .cn-head {
+    padding: 18px 20px 12px;
+}
+
+.cn-modal .cn-panel--modal .cn-title {
+    font-size: 18px;
+}
+
+.cn-modal .cn-panel--modal .cn-list {
+    flex: 1;
+    min-height: 200px;
+}
+
+.cn-modal .cn-panel--modal .cn-item {
+    padding: 14px 20px;
+}
+
+@media (max-width: 575.98px) {
+    .cn-modal .modal-content.cn-panel {
+        border-radius: 0;
+    }
+}

@@ -5,7 +5,25 @@
       "Bash(grep -v -E '\\\\.\\(png|jpg|svg|css|map|mp3|woff2?|ttf\\)$')",
       "Bash(grep -v -E '\\\\.\\(png|jpg|svg|css|map|mp3|woff2?|ttf|webp|avif\\)$')",
       "Bash(/c/xampp/php/php.exe -l processes/ideas/submit.php)",
-      "Bash(/c/xampp/mysql/bin/mysql.exe -u root csms_system -e \"START TRANSACTION; INSERT INTO admin_notifications \\(admin_id, type, title, description, date, link, status\\) SELECT id, 'idea', 'New idea: test', 'x', NOW\\(\\), 'ideas_management.php', 'unread' FROM admin; SELECT ROW_COUNT\\(\\) AS inserted; ROLLBACK;\")"
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root csms_system -e \"START TRANSACTION; INSERT INTO admin_notifications \\(admin_id, type, title, description, date, link, status\\) SELECT id, 'idea', 'New idea: test', 'x', NOW\\(\\), 'ideas_management.php', 'unread' FROM admin; SELECT ROW_COUNT\\(\\) AS inserted; ROLLBACK;\")",
+      "Bash(grep -n -E \"FROM messages|messages m|UPDATE messages\" -A4 app/helpers/ChatHelper.php | head -50; grep -n \"innodb_buffer_pool_size\\\\|innodb_log_file_size\\\\|max_connections\" /c/xampp/mysql/bin/my.ini)",
+      "Read(//c/xampp/mysql/bin/**)",
+      "Bash(/c/xampp/mysql/bin/mysql -uroot csms_system)",
+      "Bash(/c/xampp/mysql/bin/mysql -uroot csms_system -e \"SHOW COLUMNS FROM students LIKE 'fullName'; SHOW COLUMNS FROM student_grades LIKE '%grade'; SHOW TABLES LIKE 'grade_reviews';\")",
+      "Bash(/c/xampp/php/php.exe -r ' *)",
+      "Bash(/c/xampp/mysql/bin/mysql -uroot csms_system -e \"SHOW TABLES LIKE 'document_requests'\")",
+      "Bash(/c/xampp/php/php.exe -l includes/records.php)",
+      "Bash(cat)",
+      "Bash(/c/xampp/php/php.exe \"/c/Users/AHMAD/AppData/Local/Temp/claude/c--xampp-htdocs-csms-system/2f137f67-7b09-4050-b22f-ad54cdfe1b24/scratchpad/q.php\")",
+      "Read(//c/Users/AHMAD/AppData/Local/Temp/claude/c--xampp-htdocs-csms-system/2f137f67-7b09-4050-b22f-ad54cdfe1b24/scratchpad/shot/**)",
+      "Bash(node shot.js after2 1440 class_management.php subject_management.php \"subject_activities.php?url=people&class_id=194&subject_id=146\" \"class_attendance.php?class_id=194&semester_id=66\" \"class_grades.php?class_id=194&semester_id=66&subject_id=146\" \"lecture_class_grades_tabular.php?id=194&semester_id=66&subject_id=146\" index.php)",
+      "Bash(node shot.js after2 390 \"subject_activities.php?url=people&class_id=194&subject_id=146\" subject_management.php)",
+      "Bash(/c/xampp/php/php -r 'echo ini_get\\(\"session.save_path\"\\),\"\\\\n\";')",
+      "Read(//c/xampp/php/**)",
+      "Read(//c/Program Files \\\\\\(x86\\\\\\)/Microsoft/Edge/Application/**)",
+      "Bash(python -c \"import playwright; print\\('pw ok'\\)\")",
+      "Bash(./mysql -u root csms_system -e \"select count\\(*\\) from admin_notifications where admin_id=11\")",
+      "PowerShell(& C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe -u root csms_system -e \"SELECT id, name, school_year FROM semester;\")"
     ]
   }
 }

@@ -63,6 +63,24 @@ if (!function_exists('enrollment_statuses')) {
         return $years;
     }
 
+    /**
+     * The admin names semesters freely ("1st Semester", "First Sem 2026", "Test"), but records
+     * use the two DepEd terms. Reads the name; when it doesn't say, uses the date
+     * (June–October is the 1st semester, November–May the 2nd).
+     */
+    function enrollment_term_for(string $semesterName, DateTimeInterface $date): string
+    {
+        $name = strtolower($semesterName);
+        if (preg_match('/\b(1st|first|1)\b|\bsem(ester)?\s*1\b/', $name)) {
+            return '1st Semester';
+        }
+        if (preg_match('/\b(2nd|second|2)\b|\bsem(ester)?\s*2\b/', $name)) {
+            return '2nd Semester';
+        }
+        $month = (int) $date->format('n');
+        return ($month >= 6 && $month <= 10) ? '1st Semester' : '2nd Semester';
+    }
+
     function enrollment_valid_school_year(string $sy): bool
     {
         return (bool) preg_match('/^(\d{4})-(\d{4})$/', $sy, $m) && (int) $m[2] === (int) $m[1] + 1;
@@ -90,9 +108,10 @@ if (!function_exists('enrollment_statuses')) {
         }
 
         if ($row) {
+            $start = new DateTime($row['start_date']);
             $term = [
-                'school_year' => enrollment_school_year_for(new DateTime($row['start_date'])),
-                'term'        => $row['name'],
+                'school_year' => enrollment_school_year_for($start),
+                'term'        => enrollment_term_for($row['name'], $start),
                 'semester_id' => (int) $row['id'],
             ];
         } else {
@@ -241,6 +260,94 @@ if (!function_exists('enrollment_statuses')) {
     /* ------------------------------------------------------------------
      * Student accounts
      * ------------------------------------------------------------------ */
+
+    /**
+     * Insert a student row with a system-assigned student ID: the school year's start year
+     * plus a 5-digit sequence (S.Y. 2026-2027 → 202600001, 202600002, …). The unique index
+     * uniq_students_number guarantees no duplicates; if two saves race for the same number
+     * the insert is retried with the next one. $fields are students columns (no student_id).
+     * Returns [students.id, student_id].
+     */
+    function registrar_insert_student(PDO $pdo, array $fields): array
+    {
+        $year = (int) substr(enrollment_current_term($pdo)['school_year'], 0, 4);
+        $first = $year * 100000;
+        $columns = implode(', ', array_keys($fields)) . ', student_id';
+        $marks = implode(', ', array_fill(0, count($fields), '?')) . ', ?';
+        $insert = $pdo->prepare("INSERT INTO students ($columns) VALUES ($marks)");
+        $next = $pdo->prepare("SELECT COALESCE(MAX(student_id), ?) + 1 FROM students WHERE student_id BETWEEN ? AND ?");
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $next->execute([$first, $first + 1, $first + 99999]);
+            $studentId = (int) $next->fetchColumn();
+            if ($studentId > $first + 99999) {
+                throw new RuntimeException("Student numbers for $year are used up.");
+            }
+            try {
+                $insert->execute([...array_values($fields), $studentId]);
+                return [(int) $pdo->lastInsertId(), $studentId];
+            } catch (PDOException $e) {
+                // 1062 = duplicate key: someone else took this number a moment ago, try the next
+                if (($e->errorInfo[1] ?? null) !== 1062 || strpos($e->getMessage(), 'uniq_students_number') === false) {
+                    throw $e;
+                }
+            }
+        }
+        throw new RuntimeException('Could not assign a student ID. Please try again.');
+    }
+
+    /** Number of the student's accepted (locked) grades: official records that block deleting the account. */
+    function registrar_student_locked_grades(PDO $pdo, int $studentNumber): int
+    {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM student_grades WHERE student_id = ? AND status = 'accepted'");
+        $stmt->execute([$studentNumber]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Permanently delete a student account and everything tied to it. Refused (returns false)
+     * when the student has accepted grades, since those are official records; deactivate instead.
+     * Rows are keyed three ways: students.id (row), students.student_id (number) and users.id.
+     */
+    function registrar_delete_student(PDO $pdo, int $rowId): bool
+    {
+        $stmt = $pdo->prepare("SELECT id, student_id, user_id FROM students WHERE id = ?");
+        $stmt->execute([$rowId]);
+        $s = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$s || registrar_student_locked_grades($pdo, (int) $s['student_id']) > 0) {
+            return false;
+        }
+        $number = (int) $s['student_id'];
+
+        $pdo->beginTransaction();
+        try {
+            foreach ([
+                "DELETE FROM activity_submissions WHERE student_id = ?" => $number,
+                "DELETE FROM attendance WHERE student_id = ?" => $number,
+                "DELETE FROM students_enrollments WHERE student_id = ?" => $number,
+                "DELETE FROM student_grades WHERE student_id = ?" => $number,
+                "DELETE FROM student_notifications WHERE user_id = ?" => $number,
+                "DELETE FROM student_pictures WHERE user_id = ?" => $number,
+                "DELETE FROM group_members WHERE user_type = 'student' AND user_id = ?" => $number,
+                "DELETE FROM feature_request_votes WHERE voter_role = 'student' AND voter_id = ?" => $number,
+                "DELETE FROM enrollment_records WHERE student_row_id = ?" => $rowId,
+                "DELETE FROM document_requests WHERE student_row_id = ?" => $rowId,
+                "DELETE FROM remember_tokens WHERE user_id = ?" => (int) $s['user_id'],
+            ] as $sql => $key) {
+                $pdo->prepare($sql)->execute([$key]);
+            }
+            $pdo->prepare("DELETE FROM messages WHERE (sender_type = 'student' AND sender_id = ?) OR (receiver_type = 'student' AND receiver_id = ?)")
+                ->execute([$number, $number]);
+            // students (and through it class_students / students_advising) go with the login via ON DELETE CASCADE
+            $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$s['user_id']]);
+            $pdo->prepare("DELETE FROM students WHERE id = ?")->execute([$rowId]); // in case the login was already gone
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+        return true;
+    }
 
     /** "" is allowed (LRN not known yet); otherwise exactly 12 digits. */
     function registrar_valid_lrn(string $lrn): bool

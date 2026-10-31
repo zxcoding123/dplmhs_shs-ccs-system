@@ -11,6 +11,8 @@ $notEnrolled = (int) admin_count($pdo, "SELECT COUNT(*) FROM students s JOIN use
     WHERE NOT EXISTS (SELECT 1 FROM enrollment_records er WHERE er.student_row_id = s.id AND er.school_year = ? AND er.term = ?)", $params);
 $noSection = (int) admin_count($pdo, "SELECT COUNT(*) FROM enrollment_records WHERE school_year = ? AND term = ? AND status = 'enrolled' AND section_code IS NULL", $params);
 $missingLrn = (int) admin_count($pdo, "SELECT COUNT(*) FROM students WHERE lrn IS NULL OR lrn = ''");
+$gradesWaiting = (int) admin_count($pdo, "SELECT COUNT(DISTINCT class_id) FROM student_grades WHERE status = 'for_approval'");
+$requestsPending = (int) admin_count($pdo, "SELECT COUNT(*) FROM document_requests WHERE status = 'pending'");
 
 $recent = $pdo->query("
     SELECT er.*, s.first_name, s.last_name
@@ -23,7 +25,7 @@ $hasSemester = $term['semester_id'] !== null;
 registrar_page_start('Dashboard');
 
 admin_page_header('Registrar dashboard', $term['label'], 'bi-speedometer2',
-    '<a class="btn btn-outline-secondary" href="enrollment.php"><i class="bi bi-clipboard-check"></i> Enrollment</a>'
+    '<a class="btn btn-ui-ghost" href="enrollment.php"><i class="bi bi-clipboard-check"></i> Enrollment</a>'
     . '<a class="btn btn-ui-gold" href="students.php"><i class="bi bi-people"></i> Students</a>');
 ?>
 
@@ -41,6 +43,17 @@ admin_page_header('Registrar dashboard', $term['label'], 'bi-speedometer2',
     ['label' => 'Enrolled, no section', 'value' => $noSection, 'icon' => 'bi-grid-3x3-gap', 'tone' => $noSection ? 'alert' : 'muted'],
     ['label' => 'Missing LRN', 'value' => $missingLrn, 'icon' => 'bi-123', 'tone' => $missingLrn ? 'alert' : 'muted'],
 ]); ?>
+
+<?php if ($gradesWaiting || $requestsPending): ?>
+    <div class="ui-callout is-alert">
+        <i class="bi bi-bell"></i>
+        <div>
+            <?php if ($gradesWaiting): ?><a href="grades.php"><strong><?= $gradesWaiting ?></strong> class<?= $gradesWaiting === 1 ? '' : 'es' ?> waiting for grade review</a><?php endif; ?>
+            <?= $gradesWaiting && $requestsPending ? ' · ' : '' ?>
+            <?php if ($requestsPending): ?><a href="requests.php"><strong><?= $requestsPending ?></strong> pending document request<?= $requestsPending === 1 ? '' : 's' ?></a><?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
 
 <section class="ui-panel">
     <div class="ui-panel-head">

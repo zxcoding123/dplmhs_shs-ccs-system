@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/grading.php';
 session_start();
 if (!isset($_SESSION['student_id'])) {
 	$_SESSION['STATUS'] = "STUDENT_NOT_LOGGED_IN";
@@ -1906,8 +1907,8 @@ $stmt->execute();
 															echo '<tr>';
 															echo '<th><i class="bi bi-journal"></i> Subject</th>';
 															echo '<th><i class="bi bi-building"></i> Class</th>';
-															echo '<th><i class="bi bi-star"></i> Midterm Grade</th>';
-															echo '<th><i class="bi bi-star-fill"></i> Final Grade</th>';
+															echo '<th><i class="bi bi-star"></i> 1st Quarter</th>';
+															echo '<th><i class="bi bi-star-fill"></i> 2nd Quarter</th>';
 															echo '<th><i class="bi bi-award"></i> Numerical Grade Rating</th>';
 
 															echo '<th><i class="bi bi-info-circle"></i> Overall Grade <br>
@@ -1987,7 +1988,7 @@ $stmt->execute();
 
 
 																		// Calculation (from your last snippet)
-																		$allowedGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 'INC', 'N/A', 0];
+																		$allowedGrades = array_merge(range(60, 100), ['INC', 'N/A', 0]); // DepEd whole-number grades
 																		$numericAllowedGrades = array_filter($allowedGrades, 'is_numeric');
 																		$combinedOverallGrade = null;
 
@@ -1996,7 +1997,7 @@ $stmt->execute();
 																				$combinedOverallGrade = 'INC';
 																			} else {
 																				if (is_numeric($lecOverallGrade) && is_numeric($labOverallGrade)) {
-																					$combinedOverallGrade = ($lecOverallGrade * 0.7) + ($labOverallGrade * 0.3);
+																					$combinedOverallGrade = ($lecOverallGrade * 0.6) + ($labOverallGrade * 0.4);
 																					$nearestGrade = $numericAllowedGrades[0];
 																					$minDifference = abs($combinedOverallGrade - $nearestGrade);
 																					foreach ($numericAllowedGrades as $grade) {
@@ -2087,8 +2088,8 @@ $stmt->execute();
 															echo '<tr>';
 															echo '<th><i class="bi bi-journal"></i> Subject</th>';
 															echo '<th><i class="bi bi-building"></i> Class</th>';
-															echo '<th><i class="bi bi-star"></i> Midterm Grade</th>';
-															echo '<th><i class="bi bi-star-fill"></i> Final Grade</th>';
+															echo '<th><i class="bi bi-star"></i> 1st Quarter</th>';
+															echo '<th><i class="bi bi-star-fill"></i> 2nd Quarter</th>';
 															echo '<th><i class="bi bi-award"></i> Numerical Grade Rating</th>';
 															echo '</tr>';
 															echo '</thead>';

@@ -1,0 +1,787 @@
+/* =========================================================
+   Staff UI layer — teacher/adviser portal.
+
+   Loaded after css/app.css and ../admin/css/admin-ui.css (which supplies the
+   shared modals, DataTables, buttons and SweetAlert look). This file restyles
+   the markup the staff pages still carry: per-page <style> blocks, heading
+   tags used for labels, the class-details block, the class tabs and the
+   black-bordered tables. Screen only, so the pages' print layouts are untouched.
+   ========================================================= */
+
+@media screen {
+
+/* ---------- Page rhythm ---------- */
+html body .content {
+    padding: 1.75rem 2rem 2.5rem;
+}
+
+/* Several pages nest a second <main class="content"> inside a card header */
+html body .content .content,
+html body .card .content {
+    width: auto;
+    max-width: 100%;
+    padding: 0;
+    background: transparent;
+}
+
+html body .content .card-header:has(> .content) {
+    padding: 1.4rem 1.5rem 0.5rem;
+    border-bottom: 0;
+}
+
+html body .content .card {
+    border-color: var(--ui-line);
+    border-radius: 12px;
+    box-shadow: var(--ui-shadow);
+}
+
+html body .content .card-body {
+    padding: 1.4rem 1.5rem;
+}
+
+/* Some pages leave an empty header strip above the body */
+html body .content .card-header:not(:has(*)) {
+    display: none;
+}
+
+html body .content hr {
+    margin: 1.25rem 0;
+    border-color: var(--ui-line);
+    opacity: 1;
+}
+
+/* ---------- Headings ---------- */
+/* Titles keep the serif; headings the pages use as labels read as UI text */
+html body .content h1 {
+    font-size: 1.6rem;
+    line-height: 1.25;
+}
+
+html body .content h1.h3,
+html body .content .h3 {
+    font-size: 1.45rem;
+}
+
+html body .content h2 {
+    font-size: 1.3rem;
+    line-height: 1.3;
+}
+
+html body .content h3,
+html body .content h4,
+html body .content h5 {
+    font-family: var(--au-sans);
+    line-height: 1.35;
+}
+
+html body .content h3 { font-size: 1.1rem; }
+html body .content h4 { font-size: 1rem; }
+html body .content h5,
+html body .content .card-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--ui-navy);
+}
+
+html body .content p {
+    color: var(--ui-ink);
+}
+
+/* ---------- Back link ---------- */
+html body .content a:has(> i.bi-arrow-left-circle) {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    padding: 0.35rem 0.85rem 0.35rem 0.6rem;
+    border: 1px solid #d5d9e2;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--ui-navy) !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+html body .content a:has(> i.bi-arrow-left-circle):hover {
+    background: var(--ui-soft);
+    border-color: #c3c8d4;
+}
+
+html body .content a > i.bi-arrow-left-circle {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+}
+
+html body .content a:has(> i.bi-arrow-left-circle) p {
+    margin: 0;
+    color: inherit;
+}
+
+/* ---------- Class details block ---------- */
+/* <h3><b><i class="bi …"></i> Teacher:</b> <span>…</span></h3> */
+html body .content h3:has(> b > i.bi),
+html body .content h4:has(> b > i.bi) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.55rem;
+    font-family: var(--au-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ui-ink);
+}
+
+html body .content h3:has(> b > i.bi) > b,
+html body .content h4:has(> b > i.bi) > b {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    min-width: 11.5rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ui-muted);
+}
+
+html body .content h3:has(> b > i.bi) > b > i.bi,
+html body .content h4:has(> b > i.bi) > b > i.bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    margin: 0 !important;
+    border-radius: 8px;
+    background: rgba(6, 30, 78, 0.07);
+    color: var(--ui-navy);
+    font-size: 0.95rem;
+}
+
+/* The row that holds those lines becomes a panel */
+html body .content .row:has(> .col > h3 > b > i.bi) {
+    margin: 0.5rem 0 0;
+    padding: 1.1rem 1.25rem 0.6rem;
+    border: 1px solid var(--ui-line);
+    border-radius: 12px;
+    background: #faf9f5;
+}
+
+html body .content .row:has(> .col > h3 > b > i.bi) > h2 {
+    width: 100%;
+    margin: 0 0 0.85rem;
+    font-family: var(--au-sans);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ui-muted);
+}
+
+/* ---------- Class tabs (Announcements · People · Activity …) ---------- */
+html body .content .row:has(> .linkism) {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    margin: 0 0 1.5rem;
+    padding: 0.3rem;
+    overflow-x: auto;
+    border: 1px solid var(--ui-line);
+    border-radius: 12px;
+    background: #faf9f5;
+    scrollbar-width: thin;
+}
+
+html body .content .linkism {
+    flex: 1 0 auto;
+    width: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent;
+}
+
+html body .content .linkism > a,
+html body .content a.linker {
+    display: block;
+    padding: 0.55rem 1rem;
+    border-radius: 9px;
+    color: var(--ui-muted) !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+html body .content .linkism > a:hover {
+    background: #fff;
+    color: var(--ui-navy) !important;
+}
+
+html body .content .linkism.is-current > a {
+    background: var(--ui-navy);
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(6, 30, 78, 0.2);
+}
+
+/* ---------- People list ---------- */
+html body .content .view-person {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--ui-line);
+    border-radius: 10px;
+    background: #fff;
+    font-family: var(--au-sans);
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--ui-ink);
+}
+
+/* Student rows wrap an <h2> name and a <br> spacer */
+html body .content .view-person > h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-family: var(--au-sans);
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--ui-ink);
+}
+
+html body .content .view-person small {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--ui-muted);
+}
+
+html body .content .view-person + br {
+    display: none;
+}
+
+html body .content .view-person .btn-danger {
+    background: #fff;
+    border-color: rgba(180, 35, 56, 0.4);
+    color: var(--ui-red);
+}
+
+html body .content .view-person .btn-danger:hover,
+html body .content .view-person .btn-danger:focus {
+    background: var(--ui-red);
+    border-color: var(--ui-red);
+    color: #fff;
+}
+
+/* Section headings with a leading icon (Teacher, Students, …) */
+html body .content h1:has(> i.icon) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.5rem 0 0.75rem !important;
+    font-size: 1.15rem;
+}
+
+html body .content h1 > i.icon {
+    color: var(--ui-gold);
+}
+
+html body .content .view-person .icon,
+html body .content .view-person > h2 > i.bi,
+html body .content .view-person > i.bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--ui-navy);
+    color: var(--ui-gold-light);
+    font-size: 0.9rem;
+}
+
+/* ---------- Buttons ---------- */
+html body .content .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 8px;
+    font-weight: 600;
+    line-height: 1.25;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html body .content .btn:not(.btn-sm):not(.btn-lg):not(.btn-link):not(.btn-close) {
+    min-height: 2.4rem;
+    padding: 0.45rem 1rem;
+    font-size: 0.88rem;
+}
+
+html body .content .btn-sm {
+    padding: 0.3rem 0.65rem;
+    border-radius: 7px;
+    font-size: 0.8rem;
+}
+
+html body .content .btn:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(194, 167, 77, 0.45) !important;
+}
+
+/* Pages override .btn-csms with a white hover; keep it navy like .btn-primary */
+html body .btn-csms {
+    border-radius: 8px;
+}
+
+html body .content .btn-success {
+    background-color: var(--ui-green);
+    border-color: var(--ui-green);
+    color: #fff;
+}
+
+html body .content .btn-success:hover,
+html body .content .btn-success:focus {
+    background-color: #186330;
+    border-color: #186330;
+    color: #fff;
+}
+
+html body .content .btn-danger {
+    background-color: var(--ui-red);
+    border-color: var(--ui-red);
+    color: #fff;
+}
+
+html body .content .btn-danger:hover,
+html body .content .btn-danger:focus {
+    background-color: #951c2e;
+    border-color: #951c2e;
+    color: #fff;
+}
+
+html body .content .btn-warning {
+    background-color: var(--ui-gold);
+    border-color: var(--ui-gold);
+    color: var(--ui-navy);
+}
+
+html body .content .btn-warning:hover,
+html body .content .btn-warning:focus {
+    background-color: var(--ui-gold-light);
+    border-color: var(--ui-gold-light);
+    color: var(--ui-navy);
+}
+
+html body .content .btn-info {
+    background-color: var(--ui-blue);
+    border-color: var(--ui-blue);
+    color: #fff;
+}
+
+html body .content .btn-info:hover,
+html body .content .btn-info:focus {
+    background-color: #264a96;
+    border-color: #264a96;
+    color: #fff;
+}
+
+html body .content .btn-outline-secondary,
+html body .content .btn-outline-dark,
+html body .content .btn-light {
+    background-color: #fff;
+    border: 1px solid #d5d9e2;
+    color: var(--ui-ink);
+}
+
+html body .content .btn-outline-secondary:hover,
+html body .content .btn-outline-dark:hover,
+html body .content .btn-light:hover {
+    background-color: var(--ui-soft);
+    border-color: #c3c8d4;
+    color: var(--ui-navy);
+}
+
+/* Table action cells: buttons sit in a tidy row */
+html body .content td:has(> .btn + .btn),
+html body .content td:has(> a + a > .btn),
+html body .content td:has(> a > .btn) {
+    white-space: nowrap;
+}
+
+html body .content td .btn {
+    min-height: 2rem !important;
+    margin: 0.1rem;
+    padding: 0.3rem 0.65rem !important;
+    font-size: 0.8rem !important;
+}
+
+/* ---------- Tables ---------- */
+html body .content table.dataTable thead th,
+html body .content table.dataTable thead td,
+html body .content .table thead th,
+html body .content .responsive-table th {
+    padding: 0.7rem 0.75rem;
+    border-color: var(--ui-line) !important;
+    border-bottom: 2px solid var(--ui-line) !important;
+    background: #faf9f5 !important;
+    background-image: none;
+    color: var(--ui-muted) !important;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* DataTables sort arrows stay visible on the light header */
+html body .content table.dataTable thead .sorting::before,
+html body .content table.dataTable thead .sorting::after,
+html body .content table.dataTable thead .sorting_asc::before,
+html body .content table.dataTable thead .sorting_asc::after,
+html body .content table.dataTable thead .sorting_desc::before,
+html body .content table.dataTable thead .sorting_desc::after {
+    color: var(--ui-muted);
+}
+
+/* Pages set "td { border-bottom: 1px solid black }"; soften every table grid */
+html body .content td,
+html body .content th {
+    border-color: #e3e6ec !important;
+    vertical-align: middle;
+}
+
+html body .content table.dataTable tbody td,
+html body .content .table tbody td {
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid #eceef3;
+    font-size: 0.86rem;
+}
+
+html body .content table.dataTable tbody tr:hover > td,
+html body .content .table-hover tbody tr:hover > td {
+    background: #f8f7f2;
+}
+
+html body .content table.dataTable.no-footer,
+html body .content table.dataTable {
+    border-bottom-color: var(--ui-line) !important;
+}
+
+/* Staff pages use DataTables' default layout: length left, search right */
+html body .content .dataTables_wrapper .dataTables_length {
+    float: left;
+    margin-bottom: 0.9rem;
+}
+
+html body .content .dataTables_wrapper .dataTables_filter {
+    float: right;
+    margin-bottom: 0.9rem;
+}
+
+html body .content .dataTables_wrapper .dataTables_info {
+    float: left;
+    padding-top: 1rem;
+}
+
+html body .content .dataTables_wrapper .dataTables_paginate {
+    float: right;
+    padding-top: 0.75rem;
+}
+
+html body .content .table {
+    --bs-table-border-color: #e3e6ec;
+    color: var(--ui-ink);
+}
+
+html body .content .table-responsive,
+html body .content .dataTables_wrapper {
+    border-radius: 10px;
+}
+
+/* ---------- Accordions (class grades) ---------- */
+html body .content .accordion-item {
+    margin-bottom: 0.6rem;
+    border: 1px solid var(--ui-line) !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+}
+
+html body .content .accordion-button {
+    font-family: var(--au-sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ui-navy);
+    background: #fff;
+}
+
+html body .content .accordion-button:not(.collapsed) {
+    background: #faf9f5;
+    color: var(--ui-navy);
+    box-shadow: inset 0 -1px 0 var(--ui-line);
+}
+
+html body .content .accordion-button:focus {
+    box-shadow: 0 0 0 3px rgba(194, 167, 77, 0.3);
+}
+
+html body .content .accordion-body {
+    background: #fff;
+}
+
+/* ---------- Alerts ---------- */
+html body .content .alert {
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+html body .content .alert-warning {
+    border-color: rgba(194, 167, 77, 0.45);
+    background: #fbf7ea;
+    color: var(--ui-ink);
+}
+
+html body .content .alert-info {
+    border-color: rgba(47, 91, 183, 0.25);
+    background: #f1f5fd;
+    color: var(--ui-ink);
+}
+
+/* ---------- Badges ---------- */
+html body .content .badge {
+    padding: 0.35em 0.65em;
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* ---------- Forms ---------- */
+html body .content .form-control,
+html body .content .form-select {
+    border-color: #d5d9e2;
+    border-radius: 8px;
+}
+
+/* ---------- FullCalendar (class meetings) ---------- */
+html body .content .fc .fc-toolbar-title {
+    font-family: var(--au-serif);
+    font-size: 1.35rem;
+    color: var(--ui-navy);
+}
+
+html body .content .fc .fc-button {
+    min-height: 2.25rem;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid #d5d9e2;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ui-navy);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    box-shadow: none !important;
+}
+
+html body .content .fc .fc-button:hover {
+    background: var(--ui-soft);
+    color: var(--ui-navy);
+}
+
+html body .content .fc .fc-button-primary:not(:disabled).fc-button-active,
+html body .content .fc .fc-button-primary:not(:disabled):active {
+    background: var(--ui-navy);
+    border-color: var(--ui-navy);
+    color: #fff;
+}
+
+html body .content .fc .fc-button:disabled {
+    opacity: 0.5;
+}
+
+html body .content .fc .fc-button-group > .fc-button:not(:first-child) {
+    margin-left: -1px;
+}
+
+html body .content .fc-theme-standard td,
+html body .content .fc-theme-standard th,
+html body .content .fc-theme-standard .fc-scrollgrid {
+    border-color: #e3e6ec !important;
+}
+
+html body .content .fc .fc-col-header-cell {
+    padding: 0.45rem 0;
+    background: #faf9f5;
+}
+
+html body .content .fc .fc-col-header-cell-cushion {
+    color: var(--ui-muted) !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+html body .content .fc .fc-daygrid-day-number {
+    color: var(--ui-ink) !important;
+    font-size: 0.82rem;
+    text-decoration: none;
+}
+
+html body .content .fc .fc-day-today {
+    background: rgba(194, 167, 77, 0.1) !important;
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 767.98px) {
+    html body .content {
+        padding: 1.1rem 1rem 2rem;
+    }
+
+    html body .content .card-body,
+    html body .content .card-header:has(> .content) {
+        padding: 1.1rem 1rem;
+    }
+
+    html body .content h3:has(> b > i.bi) {
+        flex-wrap: wrap;
+    }
+
+    html body .content h3:has(> b > i.bi) > b {
+        min-width: 0;
+    }
+
+    html body .content .row:has(> .col > h3 > b > i.bi) > .col {
+        flex: 0 0 100%;
+    }
+
+    /* Wide tables scroll sideways instead of widening the page */
+    html body .content .dataTables_wrapper,
+    html body .content .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    html body .content .dataTables_wrapper .dataTables_length,
+    html body .content .dataTables_wrapper .dataTables_filter,
+    html body .content .dataTables_wrapper .dataTables_info,
+    html body .content .dataTables_wrapper .dataTables_paginate {
+        position: sticky;
+        left: 0;
+        float: none;
+        text-align: left;
+    }
+
+    html body .content .dataTables_wrapper .dataTables_filter input {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    /* Equal-width columns are too narrow on phones; stack them */
+    html body .content .row > .col:not(.linkism) {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Page title rows: title above, action button below */
+    html body .content .d-flex:has(> h1 + .ms-auto),
+    html body .content .d-flex:has(> h2 + .ms-auto) {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+}
+
+/* Weekly timetable: one column per day (class_schedule, class_management) */
+.cs-week {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.75rem;
+}
+
+.cs-day {
+    min-width: 0;
+    border: 1px solid var(--au-line);
+    border-radius: 8px;
+    background-color: #faf9f5;
+    overflow: hidden;
+}
+
+.cs-day-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--au-line);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--au-muted);
+}
+
+.cs-day.is-today {
+    border-color: var(--au-gold);
+}
+
+.cs-day.is-today .cs-day-head {
+    background-color: rgba(194, 167, 77, 0.14);
+    color: #7a6420;
+}
+
+.cs-day-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem;
+}
+
+.cs-slot {
+    padding: 0.55rem 0.7rem;
+    border-left: 3px solid var(--au-navy);
+    border-radius: 6px;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(6, 30, 78, 0.06);
+}
+
+.cs-slot-time {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--au-navy);
+}
+
+.cs-slot-subject {
+    font-weight: 700;
+    color: var(--au-ink);
+    font-size: 0.88rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.cs-slot-teacher {
+    color: var(--au-muted);
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.cs-slot .fd-pill {
+    margin-top: 0.3rem;
+}
+
+.cs-day-empty {
+    padding: 0.75rem 0.25rem;
+    text-align: center;
+    color: var(--au-muted);
+    font-size: 0.8rem;
+}

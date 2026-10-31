@@ -176,6 +176,7 @@ function registrar_fields(?array $r, array $genders, string $prefix): void
                                                         title="<?= $isActive ? 'Deactivate' : 'Activate' ?>" aria-label="<?= $isActive ? 'Deactivate' : 'Activate' ?> <?= admin_e($r['fullName']) ?>">
                                                         <i class="bi <?= $isActive ? 'bi-person-dash' : 'bi-person-check' ?>"></i>
                                                     </button>
+                                                    <button type="button" class="ui-act is-danger" onclick="deleteRegistrar(<?= $id ?>, <?= admin_e(json_encode($r['fullName'])) ?>)" title="Delete" aria-label="Delete <?= admin_e($r['fullName']) ?>"><i class="bi bi-trash"></i></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -241,6 +242,11 @@ function registrar_fields(?array $r, array $genders, string $prefix): void
         </div>
     <?php endforeach; ?>
 
+    <form id="deleteRegistrarForm" method="POST" action="processes/admin/registrars/delete.php" hidden>
+        <input type="hidden" name="csrf" value="<?= admin_e($csrf) ?>">
+        <input type="hidden" name="id" id="deleteRegistrarId">
+    </form>
+
     <form id="statusForm" method="POST" action="processes/admin/registrars/status.php" hidden>
         <input type="hidden" name="csrf" value="<?= admin_e($csrf) ?>">
         <input type="hidden" name="id" id="statusId">
@@ -282,6 +288,22 @@ function registrar_fields(?array $r, array $genders, string $prefix): void
                 document.getElementById('statusId').value = id;
                 document.getElementById('statusValue').value = status;
                 document.getElementById('statusForm').submit();
+            });
+        }
+
+        function deleteRegistrar(id, name) {
+            Swal.fire({
+                title: 'Delete ' + name + '?',
+                text: 'Their registrar account is removed for good. Records they entered stay, still showing their name.',
+                icon: 'warning',
+                showCancelButton: true,
+                reverseButtons: true,
+                confirmButtonText: 'Delete account',
+                customClass: { popup: 'ui-swal-danger' }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                document.getElementById('deleteRegistrarId').value = id;
+                document.getElementById('deleteRegistrarForm').submit();
             });
         }
     </script>

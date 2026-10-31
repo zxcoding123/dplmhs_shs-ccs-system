@@ -1,0 +1,405 @@
+/* =========================================================
+   Tabular gradebook (lecture/lab_class_grades_tabular*.php)
+
+   Loaded after staff-ui.css and dashboard.css. The print window
+   (printDiv) links this file too, so rules that matter on paper sit
+   outside the screen-only block at the bottom.
+   ========================================================= */
+
+/* ---------- Print header (letterhead) ---------- */
+.gb-letterhead {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.gb-letterhead img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+.gb-letterhead strong {
+    display: block;
+    font-size: 14px;
+}
+
+.gb-letterhead span {
+    display: block;
+    font-size: 11px;
+}
+
+/* ---------- Class details strip ---------- */
+.gb-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem 1.25rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.gb-details li span {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5d6475;
+}
+
+.gb-details li strong {
+    font-size: 0.9rem;
+    color: #1f2430;
+}
+
+/* ---------- Grade sheet ---------- */
+.gb-table {
+    width: max-content;
+    min-width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+}
+
+.gb-table th,
+.gb-table td {
+    padding: 0.45rem 0.6rem;
+    border-right: 1px solid #e3e6ec;
+    border-bottom: 1px solid #e3e6ec;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.gb-table .gb-name {
+    text-align: left;
+}
+
+.gb-table .gb-group-start {
+    border-left: 2px solid #c9cdd6;
+}
+
+.gb-table .gb-total {
+    font-weight: 700;
+    background-color: #f6f4ee;
+}
+
+.gb-table .gb-grade {
+    min-width: 4.5rem;
+    font-weight: 700;
+    background-color: rgba(6, 30, 78, 0.04);
+}
+
+.gb-table .gb-grade.is-result {
+    background-color: rgba(6, 30, 78, 0.08);
+    color: #061e4e;
+}
+
+.gb-table .is-fail {
+    color: #a3191b;
+}
+
+.gb-table td.gb-grade.is-fail {
+    background-color: rgba(163, 25, 27, 0.08);
+}
+
+.gb-table .gb-missing {
+    color: #a0a5b1;
+}
+
+.gb-table .gb-absent {
+    color: #a3191b;
+    font-weight: 600;
+}
+
+.gb-table .gb-late {
+    color: #8a6a12;
+    font-weight: 600;
+}
+
+.gb-table thead .gb-group th,
+.gb-table thead tr:first-child th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.gb-table thead .gb-weight {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.8;
+}
+
+.gb-table thead .gb-label th {
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.gb-table thead .gb-label small {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 500;
+    opacity: 0.75;
+}
+
+/* ---------- Legend / footer note ---------- */
+.gb-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
+    margin-top: 0.85rem;
+    font-size: 0.78rem;
+    color: #5d6475;
+}
+
+.gb-legend b {
+    font-weight: 700;
+}
+
+/* ---------- Screen only ---------- */
+@media screen {
+    html body .content .gb-page {
+        max-width: 100%;
+    }
+
+    /* The page header already shows these; they're for the printout */
+    html body .content .gb-details {
+        display: none;
+    }
+
+    /* The sheet scrolls inside its card; the header row and the
+       student columns stay put while scrolling */
+    html body .content .gb-scroll {
+        max-height: 72vh;
+        overflow: auto;
+        border: 1px solid var(--au-line);
+        border-radius: 10px;
+        background-color: #fff;
+    }
+
+    html body .content .gb-table th,
+    html body .content .gb-table td {
+        border-color: #e3e6ec !important;
+        border-top: 0;
+        border-left: 0;
+        font-size: 0.82rem;
+    }
+
+    html body .content .gb-table .gb-group-start {
+        border-left: 2px solid #d5d9e2 !important;
+    }
+
+    html body .content .gb-table thead th {
+        position: sticky;
+        z-index: 2;
+        background-color: #faf9f5 !important;
+        color: var(--au-muted) !important;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    html body .content .gb-table thead tr:first-child th {
+        top: 0;
+        height: 2.6rem;
+        color: var(--au-navy) !important;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-size: 0.72rem !important;
+    }
+
+    html body .content .gb-table thead tr.gb-label th {
+        top: 2.6rem;
+        font-size: 0.72rem !important;
+    }
+
+    html body .content .gb-table thead th.gb-grade {
+        background-color: #f0efe8 !important;
+        color: var(--au-navy) !important;
+    }
+
+    /* Student ID + name columns */
+    html body .content .gb-table .gb-sid,
+    html body .content .gb-table .gb-name {
+        position: sticky;
+        z-index: 1;
+        background-color: #fff;
+    }
+
+    html body .content .gb-table .gb-sid {
+        left: 0;
+        min-width: 6.5rem;
+        max-width: 6.5rem;
+        color: var(--au-muted);
+        font-size: 0.78rem;
+    }
+
+    html body .content .gb-table .gb-name {
+        left: 6.5rem;
+        min-width: 13rem;
+        font-weight: 600;
+        color: var(--au-ink);
+        box-shadow: 4px 0 6px -4px rgba(6, 30, 78, 0.18);
+    }
+
+    html body .content .gb-table thead .gb-sid,
+    html body .content .gb-table thead .gb-name,
+    html body .content .gb-table thead .gb-criteria {
+        z-index: 3;
+        left: 0;
+    }
+
+    html body .content .gb-table thead .gb-name {
+        left: 6.5rem;
+    }
+
+    html body .content .gb-table tbody tr:nth-child(even) td {
+        background-color: #fcfbf8;
+    }
+
+    html body .content .gb-table tbody tr:nth-child(even) .gb-total {
+        background-color: #f3f1ea;
+    }
+
+    html body .content .gb-table tbody tr:hover td {
+        background-color: #f4f1e6 !important;
+    }
+
+    html body .content .gb-table tbody td.gb-grade.is-fail {
+        background-color: rgba(163, 25, 27, 0.08);
+    }
+
+    html body .content .gb-table tbody td.gb-grade:not(.is-fail) {
+        background-color: rgba(6, 30, 78, 0.04);
+    }
+
+    html body .content .gb-table tbody td.gb-grade.is-result:not(.is-fail) {
+        background-color: rgba(6, 30, 78, 0.08);
+    }
+
+    /* Rubrics modal */
+    html body #rubricList {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border: 1px solid var(--au-line);
+        border-radius: 8px;
+    }
+
+    html body #rubricList li {
+        padding: 0.55rem 0.8rem;
+        border-bottom: 1px solid var(--au-line);
+    }
+
+    html body #rubricList li:last-child {
+        border-bottom: 0;
+    }
+
+    html body #rubricList a {
+        display: inline-flex;
+        padding: 0.2rem 0.35rem;
+        border-radius: 4px;
+        color: var(--au-navy);
+    }
+
+    html body #rubricList a.deleteRubric {
+        color: var(--au-crimson) !important;
+    }
+
+    html body #rubricList a:hover {
+        background-color: rgba(6, 30, 78, 0.06);
+    }
+
+    html body #rubricModal .nav-tabs .nav-link {
+        color: var(--au-muted);
+        font-weight: 600;
+    }
+
+    html body #rubricModal .nav-tabs .nav-link.active {
+        color: var(--au-navy);
+    }
+
+    @media (max-width: 767.98px) {
+        html body .content .gb-table .gb-sid {
+            position: static;
+        }
+
+        html body .content .gb-table .gb-name {
+            left: 0;
+            min-width: 10rem;
+        }
+
+        html body .content .gb-table thead .gb-name {
+            left: 0;
+        }
+
+        html body .content .gb-scroll {
+            max-height: none;
+        }
+    }
+}
+
+/* ---------- Paper ---------- */
+@media print {
+    @page {
+        size: landscape;
+        margin: 0.3in;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 10px;
+        color: #000;
+    }
+
+    .gb-no-print {
+        display: none !important;
+    }
+
+    .gb-letterhead {
+        display: flex;
+    }
+
+    .gb-details {
+        grid-template-columns: repeat(3, 1fr);
+        margin-bottom: 8px;
+    }
+
+    .gb-details li strong {
+        font-size: 11px;
+    }
+
+    .gb-table {
+        width: 100%;
+        font-size: 9px;
+    }
+
+    .gb-table th,
+    .gb-table td {
+        padding: 2px 4px;
+        border: 1px solid #000;
+        white-space: normal;
+    }
+
+    .gb-table thead {
+        display: table-header-group;
+    }
+
+    .gb-table tr {
+        break-inside: avoid;
+    }
+
+    .gb-table .gb-total,
+    .gb-table .gb-grade,
+    .gb-table td.gb-grade.is-fail {
+        background: none;
+    }
+}

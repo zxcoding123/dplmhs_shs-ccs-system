@@ -67,16 +67,12 @@ $year_level = $section['grade_level'];
 $firstName  = trim($_POST['first_name'] ?? '');
 $middleName = trim($_POST['middle_name'] ?? '');
 $lastName   = trim($_POST['last_name'] ?? '');
-$studentId  = trim($_POST['student_id'] ?? '');
 $gender     = $_POST['gender'] ?? '';
 $email      = strtolower(trim($_POST['email'] ?? ''));
 $password   = $_POST['password'] ?? '';
 
-if ($firstName === '' || $lastName === '' || $studentId === '' || $email === '' || $password === '') {
+if ($firstName === '' || $lastName === '' || $email === '' || $password === '') {
     fail_back('Please fill in all required fields.', $returnUrl);
-}
-if (!ctype_digit($studentId) || strlen($studentId) > 9) {
-    fail_back('Student ID must be a number of up to 9 digits.', $returnUrl);
 }
 if (!in_array($gender, ['Male', 'Female', 'Others'], true)) {
     fail_back('Please select a gender.', $returnUrl);
@@ -94,12 +90,6 @@ if ($dup->fetchColumn()) {
     fail_back('That email address is already used by another account.', $returnUrl);
 }
 
-$dup = $pdo->prepare("SELECT 1 FROM students WHERE student_id = :student_id");
-$dup->execute(['student_id' => $studentId]);
-if ($dup->fetchColumn()) {
-    fail_back("Student ID $studentId is already registered.", $returnUrl);
-}
-
 /* -------------------------------------------------
  * 3. Create the account and add it to the section
  * ------------------------------------------------- */
@@ -113,21 +103,18 @@ try {
         ->execute(['email' => $email, 'password' => $hash]);
     $userId = (int) $pdo->lastInsertId();
 
-    // The adviser vouches for the student, so the account is active right away (no activation email)
-    $pdo->prepare("
-        INSERT INTO students (user_id, first_name, middle_name, last_name, student_id, gender, course, year_level, status)
-        VALUES (:user_id, :first_name, :middle_name, :last_name, :student_id, :gender, :course, :year_level, 'active')
-    ")->execute([
+    // The adviser vouches for the student, so the account is active right away (no activation email).
+    // The student ID is assigned by the system (unique, e.g. 202600001).
+    [$studentRowId, $studentId] = registrar_insert_student($pdo, [
         'user_id'     => $userId,
         'first_name'  => $firstName,
         'middle_name' => $middleName,
         'last_name'   => $lastName,
-        'student_id'  => $studentId,
         'gender'      => $gender,
         'course'      => $course,
         'year_level'  => $year_level,
+        'status'      => 'active',
     ]);
-    $studentRowId = (int) $pdo->lastInsertId();
 
     $pdo->prepare("INSERT INTO students_advising (student_id, staff_advising_id) VALUES (:sid, :sa_id)")
         ->execute(['sid' => $studentRowId, 'sa_id' => $staff_advising_id]);
@@ -154,7 +141,7 @@ try {
     ]);
 
     $pdo->commit();
-} catch (PDOException $e) {
+} catch (PDOException | RuntimeException $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
@@ -165,9 +152,10 @@ try {
 unset($_SESSION['new_student_form']);
 // Shown once on the class page so the adviser can hand the login details to the student
 $_SESSION['new_student_credentials'] = [
-    'name'     => $fullName,
-    'email'    => $email,
-    'password' => $password,
+    'name'       => $fullName,
+    'student_id' => $studentId,
+    'email'      => $email,
+    'password'   => $password,
 ];
 header("Location: $returnUrl");
 exit();

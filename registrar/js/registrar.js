@@ -5,6 +5,37 @@
 (function () {
     'use strict';
 
+    // ---------- Delete a student account: type the student ID to confirm ----------
+    document.addEventListener('click', function (e) {
+        var button = e.target.closest('[data-delete-student]');
+        if (!button) return;
+        var studentId = button.dataset.deleteStudent;
+        Swal.fire({
+            title: 'Delete ' + button.dataset.name + '\'s account?',
+            html: 'This permanently removes their login, class enrollments, scores, attendance, messages, enrollment history and document requests. It can\'t be undone.<br><br>Type the student ID <b>' + studentId + '</b> to confirm.',
+            icon: 'warning',
+            input: 'text',
+            inputAttributes: { inputmode: 'numeric', autocomplete: 'off' },
+            inputValidator: function (v) { return v.trim() !== studentId ? 'Type ' + studentId + ' exactly.' : undefined; },
+            showCancelButton: true,
+            reverseButtons: true,
+            confirmButtonText: 'Delete account',
+            customClass: { popup: 'ui-swal-danger' }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            document.getElementById('confirmStudentId').value = result.value.trim();
+            document.getElementById('deleteStudentForm').submit();
+        });
+    });
+
+    // ---------- Tooltips on row action buttons (delegated, so DataTables redraws keep them) ----------
+    new bootstrap.Tooltip(document.body, { selector: '.ui-act[title]', trigger: 'hover focus', container: 'body' });
+    document.addEventListener('click', function (e) {
+        var act = e.target.closest('.ui-act');
+        var tip = act && bootstrap.Tooltip.getInstance(act);
+        if (tip) tip.hide();
+    });
+
     // ---------- Section list follows the chosen strand + grade ----------
     function filterSections(form) {
         var strand = form.querySelector('[name=strand]');

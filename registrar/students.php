@@ -21,6 +21,10 @@ $notEnrolled = count(array_filter($students, fn($s) => !$s['term_status']));
 $missingLrn = count(array_filter($students, fn($s) => !$s['lrn']));
 $inactive = count(array_filter($students, fn($s) => $s['account_status'] !== 'active'));
 
+// Preview of the next system-assigned student ID (the real one is taken when saving)
+$idBase = (int) substr($term['school_year'], 0, 4) * 100000;
+$nextStudentId = (int) admin_count($pdo, "SELECT COALESCE(MAX(student_id), ?) + 1 FROM students WHERE student_id BETWEEN ? AND ?", [$idBase, $idBase + 1, $idBase + 99999], $idBase + 1);
+
 // Refill the form after a failed attempt
 $form = $_SESSION['registrar_student_form'] ?? [];
 unset($_SESSION['registrar_student_form']);
@@ -137,8 +141,8 @@ admin_stat_tiles([
                     </div>
                     <div class="col-md-4">
                         <label for="newStudentId" class="form-label">Student ID</label>
-                        <input type="text" class="form-control" id="newStudentId" name="student_id" value="<?= admin_e($form['student_id'] ?? '') ?>" inputmode="numeric" pattern="\d{1,9}" maxlength="9" required title="Up to 9 digits">
-                        <small class="text-muted">Can't be changed later.</small>
+                        <input type="text" class="form-control" id="newStudentId" value="Assigned automatically" disabled>
+                        <small class="text-muted">Next number: <?= admin_e($nextStudentId) ?>. It never changes.</small>
                     </div>
                     <div class="col-md-5">
                         <label for="newLrn" class="form-label">LRN <span class="text-muted fw-normal">(optional)</span></label>

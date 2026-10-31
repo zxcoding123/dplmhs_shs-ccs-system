@@ -1,14 +1,60 @@
 ﻿<?php
+require_once __DIR__ . '/../includes/grading.php';
 session_start();
 if (!isset($_SESSION['teacher_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
     header("Location: ../login/index.php");
+    exit;
 }
 
-
-
 include __DIR__ . '/../database/connection.php';
-// include('processes/server/automatic_grader_cron.php');
+
+// Both ids are integer columns. Casting them here also makes the many places further
+// down that echo $_GET['class_id'] / $_GET['subject_id'] into HTML and JS safe.
+$_GET['class_id'] = (int) ($_GET['class_id'] ?? 0);
+$_GET['subject_id'] = (int) ($_GET['subject_id'] ?? 0);
+$class_id = $_GET['class_id'];
+
+$tabs = [
+    'announcements' => ['Announcements', 'bi-megaphone'],
+    'people' => ['People', 'bi-people'],
+    'activity' => ['Activity', 'bi-journal-text'],
+    'scores' => ['Scores', 'bi-clipboard-check'],
+    'grades' => ['Grades', 'bi-award'],
+    'resources' => ['Resources', 'bi-folder2-open'],
+];
+$url = isset($tabs[$_GET['url'] ?? '']) ? $_GET['url'] : 'announcements';
+
+$classData = null;
+if ($class_id) {
+    $stmt = $pdo->prepare("SELECT id, name, type, subject, subject_id, teacher, semester, studentTotal FROM classes WHERE id = :class_id LIMIT 1");
+    $stmt->execute(['class_id' => $class_id]);
+    $classData = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+if (!$classData) {
+    $_SESSION['STATUS'] = 'ERROR';
+    $_SESSION['STATUS_MSG'] = 'That class could not be found.';
+    header('Location: class_management.php');
+    exit;
+}
+
+$name = $classData['name'];
+$type = $classData['type'];
+$subject = $classData['subject'];
+$subject_id = $classData['subject_id'];
+$semester = $classData['semester'];
+$studentTotal = $classData['studentTotal'];
+
+$schoolYear = null;
+$semesterId = null;
+$stmt = $pdo->prepare("SELECT id, school_year FROM semester WHERE name = :name LIMIT 1");
+$stmt->execute(['name' => $semester]);
+if ($semester_found = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $schoolYear = $semester_found['school_year'];
+    $semesterId = $semester_found['id'];
+}
+$schoolYearLabel = is_numeric($schoolYear) ? $schoolYear . ' – ' . ($schoolYear + 1) : 'Not set';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,10 +68,14 @@ include __DIR__ . '/../database/connection.php';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="<?php require_once __DIR__ . '/../includes/asset-version.php'; echo csms_asset('css/app.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('../admin/css/admin-ui.css', __DIR__); ?>" rel="stylesheet">
+    <link href="<?php echo csms_asset('css/staff-ui.css', __DIR__); ?>" rel="stylesheet">
+    <script src="<?php echo csms_asset('js/staff-ui.js', __DIR__); ?>" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <link href="<?php echo csms_asset('css/dashboard.css', __DIR__); ?>" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
@@ -44,7 +94,40 @@ include __DIR__ . '/../database/connection.php';
     td {
         text-align: center;
         vertical-align: middle;
-        border-bottom: 1px solid black;
+    }
+
+    .sa-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+    }
+
+    .sa-meta .fd-chip i {
+        color: var(--au-gold);
+        margin-right: 0.2rem;
+    }
+
+    .sa-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+    }
+
+    .sa-tabs .fd-btn-ghost.is-current {
+        background-color: var(--au-navy);
+        border-color: var(--au-navy);
+        color: #fff !important;
+    }
+
+    .sa-panel > .card-body {
+        padding: 1.25rem;
+    }
+
+    .sa-panel h1.bold {
+        font-size: 1.35rem;
+        color: var(--au-navy);
     }
 
     .btn-csms {
@@ -63,17 +146,6 @@ include __DIR__ . '/../database/connection.php';
         border: 1px solid #709775;
         border-radius: 10px;
         padding: 10px;
-    }
-
-    .linkism {
-        border: 1px solid #709775;
-        padding: 10px;
-        border-radius: 10px;
-        margin: 5px;
-    }
-
-    .linker {
-        color: black !important;
     }
 
     .grades-table {
@@ -114,156 +186,44 @@ include __DIR__ . '/../database/connection.php';
                     <?php include('top-bar.php') ?>
                 </div>
             </nav>
-
             <?php
-            $class_id = $_GET['class_id'];
-            $subject_id = $_GET['subject_id'];
-
-            // Initialize variables
-            $id = $name = $type = $subject = $subject_id = $code = $teacher = $semester = $studentTotal = $description = $classCode = $requestor = $status = $reason = $datetime_added = $is_archived = null;
-
-            if ($class_id) {
-                // Prepare the SQL query
-                $stmt = $pdo->prepare("SELECT id, name, type, subject, subject_id, code, teacher, semester, studentTotal, description, classCode, requestor, status, reason, datetime_added, is_archived FROM classes WHERE id = :class_id LIMIT 1");
-                $stmt->bindParam(':class_id', $class_id, PDO::PARAM_INT);
-
-                // Execute the query
-                $stmt->execute();
-
-                // Fetch the result
-                $classData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($classData) {
-                    // Assign values to variables
-                    $id = $classData['id'];
-                    $name = $classData['name'];
-                    $type = $classData['type'];
-                    $subject = $classData['subject'];
-                    $subject_id = $classData['subject_id'];
-                    $code = $classData['code'];
-                    $teacher = $classData['teacher'];
-                    $semester = $classData['semester'];
-                    $studentTotal = $classData['studentTotal'];
-                    $description = $classData['description'];
-                    $classCode = $classData['classCode'];
-                    $requestor = $classData['requestor'];
-                    $status = $classData['status'];
-                    $reason = $classData['reason'];
-                    $datetime_added = $classData['datetime_added'];
-                    $is_archived = $classData['is_archived'];
-                } else {
-                    echo "Class not found.";
-                }
-            } else {
-                echo "Invalid class ID.";
-            }
+            // sidebar.php reuses $teacher for the logged-in account, so set the class's teacher after it
+            $teacher = $classData['teacher'];
             ?>
 
-            <div class="container-fluid">
-                <div class="card">
-                    <div class="card-header">
+            <main class="content">
+                <div class="container-fluid p-0">
 
-
-                        <main class="content">
-                            <div id="page-content-wrapper">
-                                <a href="class_management.php" class="d-flex align-items-center mb-3">
-                                    <i class="bi bi-arrow-left-circle"
-                                        style="font-size: 1.5rem; margin-right: 5px;"></i>
-                                    <p class="m-0">Back</p>
-                                </a>
-                                <h2 class="bold">Subjects / <?php echo $subject ?> </h2>
-                                <?php
-                                require __DIR__ . '/../database/connection.php';
-                                // Set class_id and semester (these could come from URL parameters or form inputs)
-                                $class_id = $_GET['class_id'] ?? null;
-                                $semester = $_GET['semester'] ?? null;
-                                $classData = null;
-                                if ($class_id) {
-                                    // Query database to get class details
-                                    $stmt = $pdo->prepare("SELECT id, name, subject, teacher, semester, type FROM classes WHERE id = :class_id LIMIT 1");
-                                    $stmt->execute(['class_id' => $class_id]);
-                                    $classData = $stmt->fetch(PDO::FETCH_ASSOC);
-                                }
-                                $semester_matcher = $classData['semester'];
-                                $stmt = $pdo->prepare("SELECT id, school_year FROM semester WHERE name = :name");
-                                $stmt->bindParam(':name', $semester_matcher, PDO::PARAM_STR);
-                                $stmt->execute();
-                                $semester_found = $stmt->fetch(PDO::FETCH_ASSOC);
-                                if ($semester_found) {
-                                    $schoolYear = $semester_found['school_year'];
-                                    $semesterId = $semester_found['id'];
-                                }
-                                ?>
-                                <br>
-                                <div class="row">
-                                    <h2 class="bold">Class Details</h2>
-                                    <div class="col">
-                                        <h3><b><i class="bi bi-person-circle" style="margin-right: 5px;"></i>
-                                                Teacher:</b>
-                                            <span><?php echo htmlspecialchars($classData['teacher'] ?? 'Not Assigned'); ?></span>
-                                        </h3>
-                                        <h3><b><i class="bi bi-book" style="margin-right: 5px;"></i> Subject:</b>
-                                            <span><?php echo htmlspecialchars($classData['subject'] ?? 'No Subject'); ?></span>
-                                        </h3>
-                                        <h3><b><i class="bi bi-building" style="margin-right: 5px;"></i> Year and
-                                                Section:</b>
-                                            <span><?php echo htmlspecialchars($classData['name'] ?? 'Not Available'); ?></span>
-                                        </h3>
-                                    </div>
-                                    <div class="col">
-                                        <h3><b><i class="bi bi-calendar3" style="margin-right: 5px;"></i> Semester:</b>
-                                            <span><?php echo htmlspecialchars($classData['semester'] ?? 'No Semester'); ?></span>
-                                        </h3>
-                                        <h3><b><i class="bi bi-calendar-range" style="margin-right: 5px;"></i> School
-                                                Year:</b>
-                                            <span><?php echo $schoolYear ?> - <?php echo $schoolYear + 1 ?></span>
-                                            <!-- Replace with actual school year if dynamic -->
-                                        </h3>
-                                        <h3><b><i class="bi bi-calendar-check" style="margin-right: 5px;"></i> Class
-                                                Type:</b> <span><?php echo htmlspecialchars($type); ?></span></h3>
+                            <div class="fd-hero">
+                                <div>
+                                    <div class="fd-eyebrow">Subject Class</div>
+                                    <h1 class="fd-title"><?= htmlspecialchars($subject ?: 'No Subject') ?></h1>
+                                    <div class="sa-meta">
+                                        <span class="fd-chip"><i class="bi bi-diagram-3"></i><?= htmlspecialchars($name ?: 'No section') ?></span>
+                                        <span class="fd-chip"><i class="bi bi-easel"></i><?= htmlspecialchars($type ?: 'Class') ?></span>
+                                        <span class="fd-chip"><i class="bi bi-calendar3"></i><?= htmlspecialchars($semester ?: 'No semester') ?> · S.Y. <?= htmlspecialchars($schoolYearLabel) ?></span>
+                                        <span class="fd-chip"><i class="bi bi-person"></i><?= htmlspecialchars($teacher ?: 'Not assigned') ?></span>
                                     </div>
                                 </div>
-
-
-
+                                <div class="fd-quick">
+                                    <a class="fd-btn-ghost" href="class_management.php"><i class="bi bi-arrow-left"></i> Back</a>
+                                </div>
                             </div>
-                            <hr>
-                            <div class="card-body">
 
-                                <div class="row text-center">
-                                    <div class="col linkism">
-                                        <a class="linker"
-                                            href="subject_activities.php?url=announcements&class_id=<?php echo $class_id ?>&subject_id=<?php echo $subject_id ?>">Announcements</a>
-                                    </div>
-                                    <div class="col linkism">
-                                        <a class="linker"
-                                            href="subject_activities.php?url=people&class_id=<?php echo $class_id ?>&subject_id=<?php echo $subject_id ?>">People</a>
-                                    </div>
-                                    <div class="col linkism">
-                                        <a class="linker"
-                                            href="subject_activities.php?url=activity&class_id=<?php echo $class_id ?>&subject_id=<?php echo $subject_id ?>">Activity</a>
-                                    </div>
-                                    <div class="col linkism">
-                                        <a class="linker"
-                                            href="subject_activities.php?url=scores&class_id=<?php echo $class_id ?>&subject_id=<?php echo $subject_id ?>">Scores</a>
-                                    </div>
-                                    <div class="col linkism">
-                                        <a class="linker"
-                                            href="subject_activities.php?url=grades&class_id=<?php echo $class_id ?>&subject_id=<?php echo $subject_id ?>">Grades</a>
-                                    </div>
-                                    <div class="col linkism">
-                                        <a class="linker"
-                                            href="subject_activities.php?url=resources&class_id=<?php echo $class_id ?>&subject_id=<?php echo $subject_id ?>">Resources</a>
-                                    </div>
+                            <nav class="sa-tabs" aria-label="Class sections">
+                                <?php foreach ($tabs as $key => [$label, $icon]):
+                                    $is_current = $key === $url; ?>
+                                    <a href="subject_activities.php?url=<?= $key ?>&class_id=<?= $class_id ?>&subject_id=<?= (int) $subject_id ?>"
+                                        class="fd-btn-ghost <?= $is_current ? 'is-current' : '' ?>"
+                                        <?= $is_current ? 'aria-current="page"' : '' ?>>
+                                        <i class="bi <?= $icon ?>"></i> <?= $label ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </nav>
 
-                                </div>
-
-                                <br>
+                            <div class="card fd-panel sa-panel">
+                                <div class="card-body">
                                 <?php
-
-                                // people separator
-
-                                $url = $_GET['url'];
                                 if ($url == 'people') {
                                 ?>
                                     <div class="d-flex align-items-center">
@@ -543,1120 +503,6 @@ include __DIR__ . '/../database/connection.php';
 
                         <?php
                                 } else if ($url == 'activity') { ?>
-                            <?php
-                                    if ($classData['type'] == 'Lecture') { ?>
-                                <div class="container-fluid">
-                                    <div class="d-flex align-items-center">
-                                        <h1 class="mb-4 bold">Activities</h1>
-
-                                        <div class="ms-auto">
-                                            <button class="btn btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#createRubricModal">Rubrics</button>
-                                            <button class="btn btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#createActivityModal">Create Activity</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Category Buttons -->
-                                    <div id="filterStatus" class="mb-3 text-muted">Showing all activities</div>
-                                    <div class="container-fluid my-5">
-                                        <!-- Filter Buttons -->
-
-
-                                        <div class="container-fluid my-5">
-                                            <!-- Filter Buttons -->
-                                            <div class="d-flex align-items-center">
-                                                <div class="mb-3" id="filterButtons">
-                                                    <!-- Dynamic rubric buttons will be inserted here -->
-                                                </div>
-                                            </div>
-
-                                            <!-- Rubrics Display -->
-                                            <div id="rubricDisplay" class="mb-3">
-                                                <ul id="rubricListDisplay">
-                                                    <li>Loading rubrics...</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <script>
-                                            document.addEventListener('DOMContentLoaded', function() {
-                                                const classId = '<?php echo $_GET['class_id']; ?>';
-                                                const subjectId = '<?php echo $_GET['subject_id']; ?>';
-                                                const rubricListDisplay = document.getElementById('rubricListDisplay');
-                                                const filterStatus = document.getElementById('filterStatus');
-                                                const filterButtons = document.getElementById('filterButtons');
-
-                                                // Function to fetch and display rubrics
-                                                function loadRubrics(filter = 'all') {
-                                                    fetch(`processes/teachers/rubrics/display_rubrics.php?class_id=${classId}&subject_id=${subjectId}`)
-                                                        .then(response => response.json())
-                                                        .then(data => {
-                                                            rubricListDisplay.innerHTML = '';
-                                                            filterButtons.innerHTML = `
-                    <button class="btn btn-outline-primary" onclick="filterActivities('all')">All</button>
-                `;
-
-                                                            if (data.success && data.rubrics && data.rubrics.length > 0) {
-                                                                // Generate buttons for each rubric title, excluding "Attendance"
-                                                                data.rubrics.forEach(rubric => {
-                                                                    if (rubric.title.toLowerCase() !== 'attendance') { // Skip "Attendance"
-                                                                        filterButtons.innerHTML += `
-                                <button class="btn btn-outline-primary" onclick="filterActivities('${rubric.id}')">${rubric.title}</button>
-                            `;
-                                                                    }
-                                                                });
-
-                                                                // Display rubrics based on filter
-                                                                if (filter === 'all') {
-                                                                    filterStatus.textContent = 'Showing all rubrics';
-                                                                } else {
-                                                                    const selectedRubric = data.rubrics.find(r => r.id === parseInt(filter));
-                                                                    if (selectedRubric) {
-                                                                        filterStatus.textContent = `Showing "${selectedRubric.title}" rubric`;
-                                                                    } else {
-                                                                        filterStatus.textContent = 'Showing no rubrics';
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                filterButtons.innerHTML = '<button class="btn btn-outline-primary" onclick="filterActivities(\'all\')">All</button>';
-                                                                filterStatus.textContent = 'Showing no rubrics';
-                                                            }
-                                                        })
-                                                        .catch(error => {
-                                                            rubricListDisplay.innerHTML = '<li>Error loading rubrics.</li>';
-                                                            filterStatus.textContent = 'Error loading rubrics';
-                                                            console.error('Error:', error);
-                                                        });
-                                                }
-
-                                                // Initial load
-                                                loadRubrics('all');
-
-                                                // Filter function using rubric ID
-                                                window.filterActivities = function(filter) {
-                                                    loadRubrics(filter);
-                                                };
-                                            });
-                                        </script>
-
-                                        <style>
-                                            #courseRequirementsModal ul {
-                                                list-style: none;
-                                                padding: 0;
-                                                margin: 0;
-                                            }
-                                        </style>
-
-                                        <?php
-                                        // Assuming $pdo, $class_id, $subject_id, $classData, and $semesterId are defined earlier
-                                        $class_id = $_GET['class_id'];
-                                        $subject_id = $_GET['subject_id'];
-
-                                        // Fetch existing rubrics
-                                        $stmt = $pdo->prepare("SELECT DISTINCT title FROM rubrics WHERE class_id = :class_id AND subject_id = :subject_id");
-                                        $stmt->execute([':class_id' => $class_id, ':subject_id' => $subject_id]);
-                                        $rubrics = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        // Fetch existing rubric requirements to prefill the form
-                                        $stmt = $pdo->prepare("SELECT rubric_title, midterm_count, final_count FROM rubric_requirements WHERE class_id = :class_id");
-                                        $stmt->execute([':class_id' => $class_id]);
-                                        $rubricRequirements = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                                        $requirementsMap = [];
-                                        foreach ($rubricRequirements as $req) {
-                                            $requirementsMap[strtolower($req['rubric_title'])] = [
-                                                'midterm' => $req['midterm_count'],
-                                                'final' => $req['final_count']
-                                            ];
-                                        }
-                                        ?>
-
-                                        <div class="modal fade" id="courseRequirementsModal" tabindex="-1" aria-labelledby="courseRequirementsLabel" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h1 class="modal-title fs-5" id="courseRequirementsLabel">Course Requirements for <?php echo ($classData['type'] == 'Lecture') ? "Lecture" : "Laboratory"; ?></h1>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-
-                                                    <form action="processes/teachers/assessments/save_course_requirements.php" method="POST">
-                                                        <div class="modal-body">
-                                                            <input type="hidden" name="class_id" value="<?php echo $class_id; ?>">
-
-                                                            <?php if (!empty($rubrics)) { ?>
-                                                                <?php foreach ($rubrics as $rubric) {
-                                                                    $rubricTitle = htmlspecialchars($rubric['title']);
-                                                                    $lowerTitle = strtolower($rubricTitle);
-                                                                    $midtermKey = strtolower(str_replace(' ', '_', $rubricTitle)) . '_midterm';
-                                                                    $finalKey = strtolower(str_replace(' ', '_', $rubricTitle)) . '_final';
-                                                                    $midtermValue = $requirementsMap[$lowerTitle]['midterm'] ?? '';
-                                                                    $finalValue = $requirementsMap[$lowerTitle]['final'] ?? '';
-                                                                ?>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label bold"><?php echo $rubricTitle; ?></label>
-                                                                        <?php if ($lowerTitle !== 'attendance') { ?>
-                                                                            <ul style="list-style: none; padding: 0;">
-                                                                                <li>
-                                                                                    Number of Midterm <?php echo $rubricTitle; ?>
-                                                                                    <input type="number" class="form-control" name="<?php echo $midtermKey; ?>"
-                                                                                        min="0" value="<?php echo $midtermValue; ?>" required>
-                                                                                </li>
-                                                                                <li>
-                                                                                    Number of Final <?php echo $rubricTitle; ?>
-                                                                                    <input type="number" class="form-control" name="<?php echo $finalKey; ?>"
-                                                                                        min="0" value="<?php echo $finalValue; ?>" required>
-                                                                                </li>
-                                                                            </ul>
-                                                                        <?php } ?>
-                                                                        <?php if ($lowerTitle === 'attendance') { ?>
-                                                                            <p><b>NOTE:</b> Your number of Attendance is defined by your
-                                                                                <a href="class_attendance.php?class_id=<?php echo $class_id ?>&semester_id=<?php echo $semesterId; ?>">
-                                                                                    'Meetings'
-                                                                                </a> option.
-                                                                            </p>
-                                                                        <?php } ?>
-                                                                    </div>
-                                                                <?php } ?>
-                                                            <?php } else { ?>
-                                                                <div class="alert alert-warning text-center">
-                                                                    <p>No rubrics have been added yet. Please add rubrics first!</p>
-                                                                </div>
-                                                            <?php } ?>
-                                                        </div>
-
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                            <?php if (!empty($rubrics)) { ?>
-                                                                <button type="submit" class="btn btn-primary">Save changes</button>
-                                                            <?php } ?>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-
-                                        <?php
-                                        // Assuming $pdo and $class_id are defined earlier in your script
-                                        $class_id = $_GET['class_id'];
-
-                                        // Fetch rubric requirements for the class
-                                        $stmt = $pdo->prepare("SELECT rubric_title, midterm_count, final_count FROM rubric_requirements WHERE class_id = :class_id");
-                                        $stmt->execute([':class_id' => $class_id]);
-                                        $rubricRequirements = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                                        ?>
-
-                                        <div id="activityList" class="container-fluid">
-                                            <div class="row">
-                                                <div class="col">
-                                                    <div class="d-flex align-items-center mb-3">
-                                                        <h3 class="bold">Course Requirements</h3>
-                                                        <div class="ms-auto" aria-hidden="true">
-                                                            <?php if (!empty($rubricRequirements)) { ?>
-                                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#courseRequirementsModal">
-                                                                    Edit Requirements
-                                                                </button>
-                                                            <?php } ?>
-                                                        </div>
-                                                    </div>
-
-                                                    <?php if (!empty($rubricRequirements)) { ?>
-                                                        <div class="card">
-                                                            <div class="card-body">
-                                                                <?php foreach ($rubricRequirements as $req) {
-                                                                    $total = $req['midterm_count'] + $req['final_count'];
-                                                                    // Assign alert class based on rubric title (optional styling)
-                                                                    $alertClass = 'alert-info'; // Default
-                                                                    if (strtolower($req['rubric_title']) === 'attendance') {
-                                                                        $alertClass = 'alert-secondary';
-                                                                    } elseif (strpos(strtolower($req['rubric_title']), 'quiz') !== false) {
-                                                                        $alertClass = 'alert-warning';
-                                                                    } elseif (strpos(strtolower($req['rubric_title']), 'assignment') !== false) {
-                                                                        $alertClass = 'alert-danger';
-                                                                    } elseif (strpos(strtolower($req['rubric_title']), 'activity') !== false) {
-                                                                        $alertClass = 'alert-success';
-                                                                    }
-                                                                ?>
-                                                                    <div class="alert <?php echo $alertClass; ?>">
-                                                                        <b><?php echo htmlspecialchars($req['rubric_title']); ?>:</b>
-                                                                        Total: <?php echo htmlspecialchars($total); ?> |
-                                                                        Midterm: <?php echo htmlspecialchars($req['midterm_count']); ?> |
-                                                                        Finals: <?php echo htmlspecialchars($req['final_count']); ?>
-                                                                    </div>
-                                                                <?php } ?>
-                                                            </div>
-                                                        </div>
-                                                    <?php } else { ?>
-                                                        <div class="alert alert-warning text-center" role="alert">
-                                                            <p>Your course requirements are empty. Please fill them up!</p>
-                                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseRequirementsModal">
-                                                                Add Requirements
-                                                            </button>
-                                                        </div>
-                                                    <?php } ?>
-                                                </div>
-
-
-                                                <div class="col">
-                                                    <h3 class="bold">Current Academic Stats</h3>
-                                                    <?php
-                                                    $class_id = $_GET['class_id']; // Assuming class_id is from the URL
-
-                                                    // Fetch all rubric titles for this class
-                                                    $stmt = $pdo->prepare("SELECT DISTINCT title FROM rubrics WHERE class_id = :class_id");
-                                                    $stmt->execute([':class_id' => $class_id]);
-                                                    $rubricTitles = $stmt->fetchAll(PDO::FETCH_COLUMN); // Array of rubric titles (e.g., ["Projects", "Math Quiz", "Attendance"])
-
-                                                    // Fetch all activities for midterm and final terms
-                                                    $stmt = $pdo->prepare("SELECT title, term, type
-                           FROM activities 
-                           WHERE term IN ('midterm', 'final') AND class_id = :class_id");
-                                                    $stmt->execute([':class_id' => $class_id]);
-                                                    $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                                    // Initialize totals array based on rubric titles, excluding "Attendance"
-                                                    $totals = [];
-                                                    foreach ($rubricTitles as $rubricTitle) {
-                                                        $lowerTitle = strtolower($rubricTitle);
-                                                        if ($lowerTitle !== 'attendance') { // Skip "Attendance"
-                                                            $totals[$lowerTitle] = [
-                                                                'midterm' => 0,
-                                                                'final' => 0
-                                                            ];
-                                                        }
-                                                    }
-
-                                                    // Count activities based on type matches, excluding "Attendance"
-                                                    foreach ($activities as $activity) {
-                                                        $activityType = strtolower($activity['type']);
-                                                        $term = strtolower($activity['term']);
-                                                        foreach ($rubricTitles as $rubricTitle) {
-                                                            $lowerRubricTitle = strtolower($rubricTitle);
-                                                            if ($activityType === $lowerRubricTitle && $lowerRubricTitle !== 'attendance') {
-                                                                $totals[$activityType][$term]++;
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-
-                                                    // Function to format the display
-                                                    function displayCount($title, $totals)
-                                                    {
-                                                        $midtermCount = $totals[$title]['midterm'] ?? 0;
-                                                        $finalCount = $totals[$title]['final'] ?? 0;
-                                                        $total = $midtermCount + $finalCount;
-                                                        $label = ucwords(str_replace('_', ' ', $title)); // Capitalize and replace underscores
-                                                        echo "<li><b>$label:</b> $total | Midterms: $midtermCount | Finals: $finalCount</li>";
-                                                    }
-                                                    ?>
-
-                                                    <div class="container-fluid mt-2">
-                                                        <ul>
-                                                            <?php
-                                                            if (!empty($totals)) {
-                                                                foreach (array_keys($totals) as $title) {
-                                                                    displayCount($title, $totals);
-                                                                }
-                                                            } else {
-                                                                echo "<li>No academic stats available yet.</li>";
-                                                            }
-                                                            ?>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-
-                                                <?php
-                                                $class_id = $_GET['class_id']; // Assuming class_id comes from the URL
-
-                                                // Fetch all rubric titles for this class, excluding "Attendance"
-                                                $stmt = $pdo->prepare("SELECT DISTINCT title FROM rubrics WHERE class_id = :class_id AND LOWER(title) != 'attendance'");
-                                                $stmt->execute([':class_id' => $class_id]);
-                                                $rubricTitles = $stmt->fetchAll(PDO::FETCH_COLUMN); // Array of rubric titles (e.g., ["Projects", "Math Quiz"])
-
-                                                // Function to fetch and group activities by rubric title for a given term
-                                                function fetchActivitiesByRubric($pdo, $class_id, $term)
-                                                {
-                                                    $stmt = $pdo->prepare("SELECT id, title, type, due_date, due_time 
-                           FROM activities 
-                           WHERE term = :term AND class_id = :class_id 
-                           ORDER BY title");
-                                                    $stmt->execute([':term' => $term, ':class_id' => $class_id]);
-                                                    $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                                    // Group activities by rubric title (match by title if possible, else type)
-                                                    $groupedActivities = [];
-                                                    foreach ($activities as $activity) {
-                                                        $activityTitle = strtolower($activity['title']);
-                                                        $matched = false;
-                                                        foreach ($GLOBALS['rubricTitles'] as $rubricTitle) {
-                                                            if (strtolower($rubricTitle) === $activityTitle) {
-                                                                $groupedActivities[$rubricTitle][] = $activity;
-                                                                $matched = true;
-                                                                break;
-                                                            }
-                                                        }
-                                                        // If no exact title match, fall back to type (excluding "Attendance")
-                                                        if (!$matched && strtolower($activity['type']) !== 'attendance') {
-                                                            $groupedActivities[$activity['type']][] = $activity;
-                                                        }
-                                                    }
-                                                    return $groupedActivities;
-                                                }
-
-                                                // Fetch Midterm Activities
-                                                $midtermActivities = fetchActivitiesByRubric($pdo, $class_id, 'midterm');
-                                                ?>
-
-                                                <div class="container-fluid mt-2">
-                                                    <h3 class="bold">Midterms</h3>
-                                                    <?php foreach ($rubricTitles as $rubricTitle):
-                                                        $items = $midtermActivities[$rubricTitle] ?? [];
-                                                    ?>
-                                                        <h4><?php echo htmlspecialchars($rubricTitle); ?> (<?php echo count($items); ?>)</h4>
-                                                        <?php if (!empty($items)): ?>
-                                                            <?php foreach ($items as $item): ?>
-                                                                <div class="card mb-3">
-                                                                    <div class="card-body">
-                                                                        <div class="d-flex align-items-center">
-                                                                            <p class="bold"><?php echo htmlspecialchars($item['title']); ?></p>
-                                                                            <div class="ms-auto" aria-hidden="true">
-                                                                                <button type="button" class="btn btn-primary" onclick="viewActivity(<?php echo $item['id']; ?>)">View</button>
-                                                                                <button type="button" class="btn btn-warning" onclick="editActivity(<?php echo $item['id']; ?>)">Edit</button>
-                                                                                <button type="button" class="btn btn-danger" onclick="deleteActivity(<?php echo $item['id']; ?>, this)">Delete</button>
-                                                                            </div>
-                                                                        </div>
-                                                                        <span class="badge text-bg-secondary mb-2">Type: <?php echo ucfirst($item['type']); ?></span>
-                                                                        <br>
-                                                                        <p><span class="bold">Due Date and Time:</span>
-                                                                            <?php
-                                                                            $formattedDate = date("F j, Y", strtotime($item['due_date']));
-                                                                            $formattedTime = date("h:i A", strtotime($item['due_time']));
-                                                                            echo htmlspecialchars($formattedDate . ' at ' . $formattedTime);
-                                                                            ?>
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            <?php endforeach; ?>
-                                                        <?php else: ?>
-                                                            <p>No <?php echo htmlspecialchars($rubricTitle); ?> available.</p>
-                                                        <?php endif; ?>
-                                                    <?php endforeach; ?>
-                                                </div>
-
-                                                <?php
-                                                // Fetch Final Activities
-                                                $finalActivities = fetchActivitiesByRubric($pdo, $class_id, 'final');
-                                                ?>
-
-                                                <div class="container-fluid mt-2">
-                                                    <h3 class="bold">Finals</h3>
-                                                    <?php foreach ($rubricTitles as $rubricTitle):
-                                                        $items = $finalActivities[$rubricTitle] ?? [];
-                                                    ?>
-                                                        <h4><?php echo htmlspecialchars($rubricTitle); ?> (<?php echo count($items); ?>)</h4>
-                                                        <?php if (!empty($items)): ?>
-                                                            <?php foreach ($items as $item): ?>
-                                                                <div class="card mb-3">
-                                                                    <div class="card-body">
-                                                                        <div class="d-flex align-items-center">
-                                                                            <p class="bold"><?php echo htmlspecialchars($item['title']); ?></p>
-                                                                            <div class="ms-auto" aria-hidden="true">
-                                                                                <button type="button" class="btn btn-primary" onclick="viewActivity(<?php echo $item['id']; ?>)">View</button>
-                                                                                <button type="button" class="btn btn-warning" onclick="editActivity(<?php echo $item['id']; ?>)">Edit</button>
-                                                                                <button type="button" class="btn btn-danger" onclick="deleteActivity(<?php echo $item['id']; ?>, this)">Delete</button>
-                                                                            </div>
-                                                                        </div>
-                                                                        <span class="badge text-bg-secondary mb-2">Type: <?php echo ucfirst($item['type']); ?></span>
-                                                                        <br>
-                                                                        <p><span class="bold">Due Date and Time:</span>
-                                                                            <?php
-                                                                            $formattedDate = date("F j, Y", strtotime($item['due_date']));
-                                                                            $formattedTime = date("h:i A", strtotime($item['due_time']));
-                                                                            echo htmlspecialchars($formattedDate . ' at ' . $formattedTime);
-                                                                            ?>
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            <?php endforeach; ?>
-                                                        <?php else: ?>
-                                                            <p>No <?php echo htmlspecialchars($rubricTitle); ?> available.</p>
-                                                        <?php endif; ?>
-                                                    <?php endforeach; ?>
-                                                </div>
-
-
-
-
-                                                <div class="modal fade" id="createRubricModal" tabindex="-1" aria-labelledby="createRubricModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content">
-                                                            <form id="createActivityForm" enctype="multipart/form-data" method="POST">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="createRubricModalLabel">Create New Rubric</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <div class="mb-3">
-                                                                        <label for="activityTitle" class="form-label">Rubric Title</label>
-                                                                        <input type="text" class="form-control" id="activityTitle" name="title" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="existingRubrics" class="form-label">Existing Rubrics</label>
-                                                                        <ul id="rubricList">
-                                                                            <li>
-                                                                                <div class="d-flex align-items-center"><strong role="status">Loading...</strong></div>
-                                                                            </li>
-                                                                        </ul>
-                                                                    </div>
-                                                                </div>
-                                                                <input type="hidden" name="class_id" value="<?php echo $_GET['class_id']; ?>">
-                                                                <input type="hidden" name="subject_id" value="<?php echo $_GET['subject_id']; ?>">
-                                                                <input type="hidden" name="rubric_id" id="rubricId" value="">
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                                    <button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <script>
-                                                    document.addEventListener('DOMContentLoaded', function() {
-                                                        const classId = '<?php echo $_GET['class_id']; ?>';
-                                                        const subjectId = '<?php echo $_GET['subject_id']; ?>';
-                                                        const form = document.getElementById('createActivityForm');
-                                                        const rubricList = document.getElementById('rubricList');
-                                                        const submitBtn = document.getElementById('submitBtn');
-                                                        const titleInput = document.getElementById('activityTitle');
-                                                        const rubricIdInput = document.getElementById('rubricId');
-
-                                                        // Fetch existing rubrics
-                                                        fetch(`processes/teachers/rubrics/add.php?class_id=${classId}&subject_id=${subjectId}`)
-                                                            .then(response => response.json())
-                                                            .then(data => {
-                                                                rubricList.innerHTML = '';
-                                                                if (data.success && data.rubrics && data.rubrics.length > 0) {
-                                                                    data.rubrics.forEach(rubric => {
-                                                                        rubricList.innerHTML += `
-                        <li>
-                            <div class="d-flex align-items-center">
-                                <span>${rubric.title}</span>
-                                <div class="ms-auto">
-                                    <a href="#" class="editRubric" data-id="${rubric.id}" data-title="${rubric.title}">
-                                        <i class="bi bi-pen-fill"></i>
-                                    </a>
-                                    <a href="#" class="deleteRubric" data-id="${rubric.id}" style="color:red">
-                                        <i class="bi bi-trash-fill"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </li>`;
-                                                                    });
-                                                                } else {
-                                                                    rubricList.innerHTML = '<li>No rubrics found.</li>';
-                                                                }
-
-                                                                // Edit rubric
-                                                                document.querySelectorAll('.editRubric').forEach(link => {
-                                                                    link.addEventListener('click', function(e) {
-                                                                        e.preventDefault();
-                                                                        const id = this.getAttribute('data-id');
-                                                                        const title = this.getAttribute('data-title');
-                                                                        titleInput.value = title;
-                                                                        rubricIdInput.value = id;
-                                                                        submitBtn.textContent = 'Update';
-                                                                    });
-                                                                });
-
-                                                                // Delete rubric with SweetAlert2 confirmation
-                                                                document.querySelectorAll('.deleteRubric').forEach(link => {
-                                                                    link.addEventListener('click', function(e) {
-                                                                        e.preventDefault();
-                                                                        const id = this.getAttribute('data-id');
-
-                                                                        Swal.fire({
-                                                                            title: 'Are you sure?',
-                                                                            text: 'Do you really want to delete this rubric? This action cannot be undone.',
-                                                                            icon: 'warning',
-                                                                            showCancelButton: true,
-                                                                            confirmButtonColor: '#3085d6',
-                                                                            cancelButtonColor: '#d33',
-                                                                            confirmButtonText: 'Yes, delete it!'
-                                                                        }).then((result) => {
-                                                                            if (result.isConfirmed) {
-                                                                                fetch(`processes/teachers/rubrics/add.php?delete=true&rubric_id=${id}&class_id=${classId}&subject_id=${subjectId}`, {
-                                                                                        method: 'GET'
-                                                                                    })
-                                                                                    .then(response => response.json())
-                                                                                    .then(data => {
-                                                                                        if (data.success) {
-                                                                                            Swal.fire({
-                                                                                                title: 'Deleted!',
-                                                                                                text: data.message,
-                                                                                                icon: 'success',
-                                                                                                confirmButtonText: 'OK'
-                                                                                            }).then(() => {
-                                                                                                location.reload(); // Refresh to update list
-                                                                                            });
-                                                                                        } else {
-                                                                                            Swal.fire({
-                                                                                                title: 'Error',
-                                                                                                text: data.message,
-                                                                                                icon: 'error',
-                                                                                                confirmButtonText: 'OK'
-                                                                                            });
-                                                                                        }
-                                                                                    })
-                                                                                    .catch(error => {
-                                                                                        Swal.fire({
-                                                                                            title: 'Error',
-                                                                                            text: 'Something went wrong: ' + error.message,
-                                                                                            icon: 'error',
-                                                                                            confirmButtonText: 'OK'
-                                                                                        });
-                                                                                    });
-                                                                            }
-                                                                        });
-                                                                    });
-                                                                });
-                                                            })
-                                                            .catch(error => {
-                                                                Swal.fire({
-                                                                    title: 'Error',
-                                                                    text: 'Failed to load rubrics: ' + error.message,
-                                                                    icon: 'error',
-                                                                    confirmButtonText: 'OK'
-                                                                });
-                                                            });
-
-                                                        // Form submission (Create/Edit) with SweetAlert2
-                                                        form.addEventListener('submit', function(e) {
-                                                            e.preventDefault();
-                                                            const formData = new FormData(this);
-
-                                                            fetch('processes/teachers/rubrics/add.php', {
-                                                                    method: 'POST',
-                                                                    body: formData
-                                                                })
-                                                                .then(response => response.json())
-                                                                .then(data => {
-                                                                    if (data.success) {
-                                                                        Swal.fire({
-                                                                            title: 'Success!',
-                                                                            text: data.message,
-                                                                            icon: 'success',
-                                                                            confirmButtonText: 'OK'
-                                                                        }).then(() => {
-                                                                            location.reload(); // Refresh to update list
-                                                                        });
-                                                                    } else {
-                                                                        Swal.fire({
-                                                                            title: 'Error',
-                                                                            text: data.message,
-                                                                            icon: 'error',
-                                                                            confirmButtonText: 'OK'
-                                                                        });
-                                                                    }
-                                                                })
-                                                                .catch(error => {
-                                                                    Swal.fire({
-                                                                        title: 'Error',
-                                                                        text: 'Something went wrong: ' + error.message,
-                                                                        icon: 'error',
-                                                                        confirmButtonText: 'OK'
-                                                                    });
-                                                                });
-                                                        });
-                                                    });
-                                                </script>
-
-
-
-                                                <!-- Create Activity Modal -->
-                                                <div class="modal fade" id="createActivityModal" tabindex="-1" aria-labelledby="createActivityModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <form id="createActivityForm" enctype="multipart/form-data" method="POST" action="processes/teachers/assessments/add.php">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="createActivityModalLabel">Create New Activity</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <div class="mb-3">
-                                                                        <label for="activityTitle" class="form-label">Title</label>
-                                                                        <input type="text" class="form-control" id="activityTitle" name="title" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="activityType" class="form-label">Type</label>
-                                                                        <select class="form-select" id="activityType" name="type" required>
-                                                                            <?php
-                                                                            // Fetch rubric titles for this class, excluding "Attendance"
-                                                                            $class_id = $_GET['class_id'];
-                                                                            $stmt = $pdo->prepare("SELECT DISTINCT title FROM rubrics WHERE class_id = :class_id AND LOWER(title) != 'attendance'");
-                                                                            $stmt->execute([':class_id' => $class_id]);
-                                                                            $rubricTitles = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-                                                                            if (!empty($rubricTitles)) {
-                                                                                foreach ($rubricTitles as $title) {
-                                                                                    echo "<option value=\"" . htmlspecialchars($title) . "\">" . htmlspecialchars($title) . "</option>";
-                                                                                }
-                                                                            } else {
-                                                                                echo "<option value=\"\">No rubric types available</option>";
-                                                                            }
-                                                                            ?>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="activityTerm" class="form-label">Term</label>
-                                                                        <select class="form-select" id="activityTerm" name="term" required>
-                                                                            <option value="midterm" selected>Midterms</option>
-                                                                            <option value="final">Finals</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="activityMessage" class="form-label">Message</label>
-                                                                        <textarea class="form-control" id="activityMessage" name="message" rows="3" required></textarea>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="activityAttachment" class="form-label">File Attachment</label>
-                                                                        <input type="file" class="form-control" id="activityAttachment" name="attachment">
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="dueDate" class="form-label">Due Date</label>
-                                                                        <input type="date" class="form-control" id="dueDate" name="due_date" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="dueTime" class="form-label">Due Time</label>
-                                                                        <input type="time" class="form-control" id="dueTime" name="due_time" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="minPoints" class="form-label">Minimum Points</label>
-                                                                        <input type="number" class="form-control" id="minPoints" name="min_points" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="maxPoints" class="form-label">Maximum Points</label>
-                                                                        <input type="number" class="form-control" id="maxPoints" name="max_points" required>
-                                                                    </div>
-                                                                </div>
-                                                                <input type="hidden" name="class_id" value="<?php echo $_GET['class_id']; ?>">
-                                                                <input type="hidden" name="subject_id" value="<?php echo $_GET['subject_id']; ?>">
-
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                                    <button type="submit" class="btn btn-primary" <?php echo empty($rubricTitles) ? 'disabled' : ''; ?>>Create</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-                                                <!-- Edit Activity Modal -->
-                                                <div class="modal fade" id="editActivityModal" tabindex="-1"
-                                                    aria-labelledby="editActivityModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <form id="editActivityForm" enctype="multipart/form-data">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="editActivityModalLabel">Edit
-                                                                        Activity</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                                        aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <input type="hidden" id="editActivityId" name="id">
-                                                                    <!-- Hidden field for the activity ID -->
-                                                                    <div class="mb-3">
-                                                                        <label for="editActivityTitle"
-                                                                            class="form-label">Title</label>
-                                                                        <input type="text" class="form-control"
-                                                                            id="editActivityTitle" name="title" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="editActivityType"
-                                                                            class="form-label">Type</label>
-                                                                        <select class="form-select" id="editActivityType"
-                                                                            name="type" required>
-                                                                            <?php
-                                                                            // Fetch rubric titles for this class, excluding "Attendance"
-                                                                            $class_id = $_GET['class_id'];
-                                                                            $stmt = $pdo->prepare("SELECT DISTINCT title FROM rubrics WHERE class_id = :class_id AND LOWER(title) != 'attendance'");
-                                                                            $stmt->execute([':class_id' => $class_id]);
-                                                                            $rubricTitles = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-                                                                            if (!empty($rubricTitles)) {
-                                                                                foreach ($rubricTitles as $title) {
-                                                                                    echo "<option value=\"" . htmlspecialchars($title) . "\">" . htmlspecialchars($title) . "</option>";
-                                                                                }
-                                                                            } else {
-                                                                                echo "<option value=\"\">No rubric types available</option>";
-                                                                            }
-                                                                            ?>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="editActivityMessage"
-                                                                            class="form-label">Message</label>
-                                                                        <textarea class="form-control" id="editActivityMessage"
-                                                                            name="message" rows="3" required></textarea>
-                                                                    </div>
-                                                                    <div id="attachmentContainer" class="mb-3">
-                                                                        <label class="form-label">File Attachments</label>
-                                                                        <input type="file" class="form-control mb-2"
-                                                                            name="attachment[]">
-                                                                    </div>
-                                                                    <button type="button" class="btn btn-secondary"
-                                                                        id="addAttachmentButton">Add Another Attachment</button>
-                                                                    <div class="mb-3">
-                                                                        <label for="editDueDate" class="form-label">Due Date</label>
-                                                                        <input type="date" class="form-control" id="editDueDate"
-                                                                            name="due_date" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="editDueTime" class="form-label">Due Time</label>
-                                                                        <input type="time" class="form-control" id="editDueTime"
-                                                                            name="due_time" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="editMinPoints" class="form-label">Minimum
-                                                                            Points</label>
-                                                                        <input type="number" class="form-control" id="editMinPoints"
-                                                                            name="min_points" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="editMaxPoints" class="form-label">Maximum
-                                                                            Points</label>
-                                                                        <input type="number" class="form-control" id="editMaxPoints"
-                                                                            name="max_points" required>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary"
-                                                                        data-bs-dismiss="modal">Close</button>
-                                                                    <button type="submit" class="btn btn-primary">Update</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-
-                                                <script>
-                                                    function editActivity(activityId) {
-                                                        $.ajax({
-                                                            type: 'GET',
-                                                            url: 'fetch_activity_details.php?id=' + activityId,
-                                                            dataType: 'json',
-                                                            success: function(response) {
-                                                                if (response.error) {
-                                                                    console.error(response.error);
-                                                                    return; // Handle error if activity not found
-                                                                }
-
-                                                                $('#editActivityId').val(activityId);
-                                                                $('#editActivityTitle').val(response.title);
-                                                                $('#editActivityType').val(response.type);
-                                                                $('#editActivityMessage').val(response.message);
-                                                                $('#editDueDate').val(response.due_date);
-                                                                $('#editDueTime').val(response.due_time);
-                                                                $('#editMinPoints').val(response.min_points);
-                                                                $('#editMaxPoints').val(response.max_points);
-
-                                                                // Clear existing file inputs (if any) before adding new ones
-                                                                $('#attachmentContainer').find('input[type="file"]').not(
-                                                                    ':first').remove();
-
-                                                                response.attachments.forEach(function(attachment) {
-                                                                    $('#attachmentContainer').append(
-                                                                        `
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <div class="mb-2">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <a href="${attachment.url}" target="_blank">${attachment.file_name}</a>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <button type="button" class="btn btn-danger btn-sm remove-attachment" data-id="${attachment.id}">Remove</button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    `
-                                                                    );
-                                                                });
-
-                                                                $('#editActivityModal').modal('show');
-                                                            },
-                                                            error: function(xhr, status, error) {
-                                                                console.error('Error fetching activity details:', error);
-                                                            }
-                                                        });
-                                                    }
-
-                                                    // Event delegation to handle removal of attachments
-                                                    $(document).on('click', '.remove-attachment', function() {
-                                                        const attachmentId = $(this).data(
-                                                            'id'); // Get the attachment ID from a data attribute
-
-                                                        if (confirm('Are you sure you want to remove this attachment?')) {
-                                                            $.ajax({
-                                                                type: 'POST',
-                                                                url: 'remove_attachment.php',
-                                                                data: {
-                                                                    attachment_id: attachmentId
-                                                                },
-                                                                success: function(response) {
-                                                                    const data = JSON.parse(response);
-                                                                    if (data.success) {
-                                                                        // Display success message using SweetAlert
-                                                                        Swal.fire({
-                                                                            icon: 'success',
-                                                                            title: 'Success',
-                                                                            text: data.success,
-                                                                            confirmButtonText: 'Okay'
-                                                                        });
-                                                                        $(this).parent()
-                                                                            .remove(); // Remove the attachment link and button
-                                                                    } else {
-                                                                        // Display error message using SweetAlert
-                                                                        Swal.fire({
-                                                                            icon: 'error',
-                                                                            title: 'Error',
-                                                                            text: data.error,
-                                                                            confirmButtonText: 'Okay'
-                                                                        });
-                                                                    }
-                                                                }.bind(
-                                                                    this
-                                                                ), // Use .bind(this) to maintain context for $(this)
-                                                                error: function(xhr, status, error) {
-                                                                    console.error('Error removing attachment:',
-                                                                        error);
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-
-                                                    // Handle form submission
-                                                    $('#editActivityForm').on('submit', function(event) {
-                                                        event.preventDefault();
-                                                        const formData = new FormData(this);
-
-                                                        $.ajax({
-                                                            type: 'POST',
-                                                            url: 'update_activity.php',
-                                                            data: formData,
-                                                            contentType: false,
-                                                            processData: false,
-                                                            success: function(response) {
-                                                                const data = JSON.parse(response);
-                                                                if (data.success) {
-                                                                    // Display success message using SweetAlert
-                                                                    Swal.fire({
-                                                                        icon: 'success',
-                                                                        title: 'Success',
-                                                                        text: data.success,
-                                                                        confirmButtonText: 'Okay'
-                                                                    });
-                                                                    $('#editActivityModal').modal('hide');
-                                                                    window.location.reload();
-                                                                } else {
-                                                                    // Display error message using SweetAlert
-                                                                    Swal.fire({
-                                                                        icon: 'error',
-                                                                        title: 'Error',
-                                                                        text: data.error,
-                                                                        confirmButtonText: 'Okay'
-                                                                    });
-                                                                }
-                                                            },
-                                                            error: function(xhr, status, error) {
-                                                                console.error('Error updating activity:', error);
-                                                                Swal.fire({
-                                                                    icon: 'error',
-                                                                    title: 'Error',
-                                                                    text: 'An unexpected error occurred. Please try again later.',
-                                                                    confirmButtonText: 'Okay'
-                                                                });
-                                                            }
-                                                        });
-                                                    });
-                                                </script>
-
-
-
-                                                <!-- View Activity Modal -->
-                                                <div class="modal fade" id="viewActivityModal" tabindex="-1"
-                                                    aria-labelledby="viewActivityModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="viewActivityModalLabel">View Activity
-                                                                </h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                                    aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <h5 id="activityTitle" class="text-primary mb-3"></h5>
-                                                                <p id="activityType" class="mb-1"><strong>Type:</strong> <span
-                                                                        class="badge bg-info"></span></p>
-                                                                <p id="activityMessage" class="mb-4"></p>
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Due Date:</strong> <span
-                                                                                id="activityDueDate"></span>
-                                                                        </p>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Due Time:</strong> <span
-                                                                                id="activityDueTime"></span>
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Minimum Points:</strong> <span
-                                                                                id="activityMinPoints"></span></p>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Maximum Points:</strong> <span
-                                                                                id="activityMaxPoints"></span></p>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Class ID:</strong> <span
-                                                                                id="activityClassId"></span>
-                                                                        </p>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Subject ID:</strong> <span
-                                                                                id="activitySubjectId"></span></p>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Created At:</strong> <span
-                                                                                id="activityCreatedAt"></span></p>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <p><strong>Updated At:</strong> <span
-                                                                                id="activityUpdatedAt"></span></p>
-                                                                    </div>
-                                                                </div>
-
-                                                                <h6 class="bold">Message:</h6>
-                                                                <div class="mt-3">
-                                                                    <div class="card">
-                                                                        <div class="card-body">
-                                                                            <p id="message">No message available.</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <!-- Attachments Section -->
-                                                                <h6 class="bold">Attachments:</h6>
-                                                                <div id="activityAttachments" class="mt-3">
-                                                                    <!-- Attachments will be dynamically added here -->
-                                                                    <div class="card">
-                                                                        <div class="card-body">
-                                                                            <p>No attachments available.</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-
-
-
-                                                <script>
-                                                    function deleteActivity(activityId) {
-                                                        Swal.fire({
-                                                            title: 'Are you sure?',
-                                                            text: "You won't be able to revert this!",
-                                                            icon: 'warning',
-                                                            showCancelButton: true,
-                                                            confirmButtonColor: '#3085d6',
-                                                            cancelButtonColor: '#d33',
-                                                            confirmButtonText: 'Yes, delete it!'
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
-                                                                // Redirect to the delete link with the activityId in the query string
-                                                                window.location.href =
-                                                                    `processes/teachers/assessments/delete.php?activityId=${activityId}`;
-                                                            }
-                                                        });
-                                                    }
-                                                </script>
-
-
-
-
-                                                <script>
-                                                    function viewActivity(activityId) {
-                                                        // Make an AJAX request to fetch activity details
-                                                        $.ajax({
-                                                            type: 'GET',
-                                                            url: 'fetch_activity_details.php?id=' +
-                                                                activityId, // Replace with your PHP script URL
-                                                            dataType: 'json', // Ensure response is parsed as JSON
-                                                            success: function(response) {
-                                                                if (response) {
-                                                                    // Populate modal with the activity details
-                                                                    $('#activityId').text(response.id || 'N/A');
-                                                                    $('#activityTitle').text(response.title ||
-                                                                        'No title available');
-                                                                    $('#activityType .badge').text(response.type ? response
-                                                                        .type.charAt(0).toUpperCase() + response.type
-                                                                        .slice(1) : 'N/A');
-                                                                    $('#message').text(response.message ||
-                                                                        'No message available');
-                                                                    $('#activityDueDate').text(response.due_date || 'N/A');
-                                                                    $('#activityDueTime').text(response.due_time || 'N/A');
-                                                                    $('#activityMinPoints').text(response.min_points ||
-                                                                        'N/A');
-                                                                    $('#activityMaxPoints').text(response.max_points ||
-                                                                        'N/A');
-                                                                    $('#activityClassId').text(response.class_id || 'N/A');
-                                                                    $('#activitySubjectId').text(response.subject_id ||
-                                                                        'N/A');
-                                                                    $('#activityCreatedAt').text(response.created_at ||
-                                                                        'N/A');
-                                                                    $('#activityUpdatedAt').text(response.updated_at ||
-                                                                        'N/A');
-
-                                                                    // Handle attachments
-                                                                    let attachmentList = '';
-                                                                    if (response.attachments && response.attachments
-                                                                        .length > 0) {
-                                                                        attachmentList = response.attachments.map(function(
-                                                                            attachment) {
-                                                                            return '<p><a href="' + attachment
-                                                                                .file_path + '" target="_blank">' +
-                                                                                attachment.file_name + '</a></p>';
-                                                                        }).join('');
-                                                                    } else {
-                                                                        attachmentList = '<p>No attachments available.</p>';
-                                                                    }
-                                                                    $('#activityAttachments').html(attachmentList);
-
-                                                                    // Show the modal
-                                                                    $('#viewActivityModal').modal('show');
-                                                                } else {
-                                                                    console.error('Invalid response data');
-                                                                }
-                                                            },
-                                                            error: function(xhr, status, error) {
-                                                                console.error('Error fetching activity details:', error);
-                                                                alert(
-                                                                    'Failed to fetch activity details. Please try again.'
-                                                                );
-                                                            }
-                                                        });
-                                                    }
-                                                </script>
-                                            <?php
-                                        } else { ?>
 
                                                 <div class="container-fluid">
                                                     <div class="d-flex align-items-center">
@@ -2021,7 +867,7 @@ include __DIR__ . '/../database/connection.php';
                                                                 ?>
 
                                                                 <div class="container-fluid mt-2">
-                                                                    <h3 class="bold">Midterms</h3>
+                                                                    <h3 class="bold">1st Quarter</h3>
                                                                     <?php if (empty($rubricTitles)): ?>
                                                                         <p>No rubrics or activities uploaded yet for Midterms.</p>
                                                                     <?php else: ?>
@@ -2066,7 +912,7 @@ include __DIR__ . '/../database/connection.php';
                                                                 ?>
 
                                                                 <div class="container-fluid mt-2">
-                                                                    <h3 class="bold">Finals</h3>
+                                                                    <h3 class="bold">2nd Quarter</h3>
                                                                     <?php if (empty($rubricTitles)): ?>
                                                                         <p>No rubrics or activities uploaded yet for Finals.</p>
                                                                     <?php else: ?>
@@ -2329,8 +1175,8 @@ include __DIR__ . '/../database/connection.php';
                                                                                     <div class="mb-3">
                                                                                         <label for="activityTerm" class="form-label">Term</label>
                                                                                         <select class="form-select" id="activityTerm" name="term" required>
-                                                                                            <option value="midterm" selected>Midterms</option>
-                                                                                            <option value="final">Finals</option>
+                                                                                            <option value="midterm" selected>1st Quarter</option>
+                                                                                            <option value="final">2nd Quarter</option>
                                                                                         </select>
                                                                                     </div>
                                                                                     <div class="mb-3">
@@ -2754,7 +1600,7 @@ include __DIR__ . '/../database/connection.php';
                                                                                                 attachment.file_name + '</a></p>';
                                                                                         }).join('');
                                                                                     } else {
-                                                                                        attachmentList = '<p>No attachmentsif  available.</p>';
+                                                                                        attachmentList = '<p>No attachments available.</p>';
                                                                                     }
                                                                                     $('#activityAttachments').html(attachmentList);
 
@@ -2773,9 +1619,12 @@ include __DIR__ . '/../database/connection.php';
                                                                         });
                                                                     }
                                                                 </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                             <?php
-                                                        }
                                                     } else if ($url == 'scores') { ?>
                                                             <div class="container-fluid">
                                                                 <h1 class="mb-4 bold">Scores</h1>
@@ -3017,7 +1866,7 @@ include __DIR__ . '/../database/connection.php';
                                                                                         submission_id: submissionId,
                                                                                         score: score,
                                                                                         status: 'graded', // Automatically set to graded on score change
-                                                                                        class_id: '<?php echo $id; ?>' // Ensure $id is available from PHP
+                                                                                        class_id: '<?php echo $class_id; ?>'
                                                                                     };
 
                                                                                     fetch('update_grade.php', {
@@ -3384,14 +2233,14 @@ include __DIR__ . '/../database/connection.php';
                                                                                     echo "<tr>
                     <td>$fullName</td>
                     <td>
-                        Midterm:
+                        Q1:
                         <select name='grades[$studentId][midterm]' class='grade-select' " . ($isEditable ? "" : "disabled") . ">
                             " . renderGradeOptions($midtermGrade, $gradeOptions) . "
                         </select>
                         " . (!$isEditable ? "<input type='hidden' name='grades[$studentId][midterm]' value='$midtermGrade'>" : "") . "
                     </td>
                     <td>
-                        Final:
+                        Q2:
                         <select name='grades[$studentId][final]' class='grade-select' " . ($isEditable ? "" : "disabled") . ">
                             " . renderGradeOptions($finalGrade, $gradeOptions) . "
                         </select>
@@ -3418,6 +2267,22 @@ include __DIR__ . '/../database/connection.php';
 
                                                                             // Begin rendering students
                                                                             if (!empty($maleStudents) || !empty($femaleStudents)) {
+                                                                                // Where the grades stand, and the last review note (e.g. why they were returned)
+                                                                                $gradeState = grades_class_state($pdo, (int) $class_id);
+                                                                                $lastReview = grades_history($pdo, (int) $class_id)[0] ?? null;
+                                                                                $stateNotes = [
+                                                                                    'locked'    => ['success', 'Accepted and locked. These grades are final; ask an admin or the registrar to unlock them if a correction is needed.'],
+                                                                                    'submitted' => ['warning', 'Submitted and waiting for review by an admin or the registrar. Revert them if you need to make changes.'],
+                                                                                    'draft'     => ['info', 'Saved as a draft. Submit the grades when they are complete.'],
+                                                                                ];
+                                                                                if (isset($stateNotes[$gradeState])) {
+                                                                                    [$tone, $note] = $stateNotes[$gradeState];
+                                                                                    if ($gradeState === 'draft' && $lastReview && in_array($lastReview['action'], ['return', 'unlock'], true)) {
+                                                                                        $note = 'Returned by ' . $lastReview['actor_name'] . ': ' . $lastReview['reason'] . '. Correct the grades and submit them again.';
+                                                                                    }
+                                                                                    echo "<div class='alert alert-$tone text-center'>" . htmlspecialchars($note) . "</div>";
+                                                                                }
+                                                                                echo "<p class='text-center text-muted small'>DepEd quarterly grades (60–100); the final grade is the average of both quarters and 75 passes. Choose DRP for a learner who dropped.</p>";
                                                                                 echo "<form method='POST' action='save_grades.php?class_id=$class_id&subject_id=$subject_id'>";
 
                                                                                 if (!empty($maleStudents)) {
@@ -3426,12 +2291,12 @@ include __DIR__ . '/../database/connection.php';
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Midterm Grade</th>
-                            <th>Final Grade</th>
+                            <th>1st Quarter</th>
+                            <th>2nd Quarter</th>
                         </tr>
                     </thead>
                     <tbody>";
-                                                                                    renderStudentsWithGrades($maleStudents, ['3.0', 'N/A', 'INC', 'AW', 'UW']);
+                                                                                    renderStudentsWithGrades($maleStudents, ['N/A', 'DRP']);
                                                                                     echo "</tbody></table>";
                                                                                 } else {
                                                                                     echo "<p class='no-students text-center'>No male students are enrolled in this class.</p>";
@@ -3443,12 +2308,12 @@ include __DIR__ . '/../database/connection.php';
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Midterm Grade</th>
-                            <th>Final Grade</th>
+                            <th>1st Quarter</th>
+                            <th>2nd Quarter</th>
                         </tr>
                     </thead>
                     <tbody>";
-                                                                                    renderStudentsWithGrades($femaleStudents, ['3.0', 'N/A', 'INC', 'AW', 'UW']);
+                                                                                    renderStudentsWithGrades($femaleStudents, ['N/A', 'DRP']);
                                                                                     echo "</tbody></table>";
                                                                                 } else {
                                                                                     echo "<p class='no-students text-center'>No female students are enrolled in this class.</p>";
@@ -3461,7 +2326,7 @@ include __DIR__ . '/../database/connection.php';
                                                                                 if ($hasForApproval) {
                                                                                     echo "<button type='submit' name='action' value='submit' class='btn btn-warning' disabled>Submit Grades</button>";
                                                                                 } else {
-                                                                                    echo "<button type='submit' name='action' value='submit' class='btn btn-warning' " . ($allAccepted ? "disabled" : "") . ">Submit Grades to Principal</button>";
+                                                                                    echo "<button type='submit' name='action' value='submit' class='btn btn-warning' " . ($allAccepted ? "disabled" : "") . ">Submit Grades for Review</button>";
                                                                                 }
                                                                                 echo "</div>";
 
@@ -3805,9 +2670,6 @@ include __DIR__ . '/../database/connection.php';
                                                                 filterResources();
                                                             </script>
 
-
-                                                            </div>
-
                                                             <!-- Upload Resource Modal -->
                                                             <div class="modal fade" id="uploadResourceModal" tabindex="-1"
                                                                 aria-labelledby="uploadResourceModalLabel" aria-hidden="true">
@@ -4044,20 +2906,13 @@ include __DIR__ . '/../database/connection.php';
 
                                                         <?php } ?>
 
-                                                        </div>
-                                                    </div>
-
-
-                                                </div>
-                                            </div>
-                                        </div>
-                        </main>
-                    </div>
+                                </div>
+                            </div>
                 </div>
-            </div>
+            </main>
         </div>
     </div>
-</body>
+
 <div class="modal fade" id="createAnnouncementModal" tabindex="-1"
     aria-labelledby="createAnnouncementLabel" aria-hidden="true">
 
@@ -4077,7 +2932,7 @@ include __DIR__ . '/../database/connection.php';
 
             <!-- Form -->
             <form id="announcementForm"
-                action="processes/teachers/subject_posts/create.php"
+                action="processes/subject_posts/create.php"
                 method="POST">
 
                 <div class="modal-body">
@@ -4129,7 +2984,7 @@ include __DIR__ . '/../database/connection.php';
         Swal.fire({
             icon: '<?= $_SESSION['STATUS'] === 'SUCCESS' ? 'success' : 'error' ?>',
             title: '<?= $_SESSION['STATUS'] === 'SUCCESS' ? 'Success' : 'Error' ?>',
-            text: '<?= $_SESSION['STATUS_MSG'] ?>',
+            text: <?= json_encode((string) ($_SESSION['STATUS_MSG'] ?? '')) ?>,
             confirmButtonColor: '#0d6efd'
         });
     </script>
@@ -4148,10 +3003,9 @@ include('processes/server/modals.php');
     function getTime() {
         const now = new Date();
         const newTime = now.toLocaleString();
-        console.log(newTime);
         document.querySelector("#currentTime").textContent = "The current date and time is: " + newTime;
     }
-    setInterval(getTime, 100);
+    setInterval(getTime, 1000);
 </script>
 
 <script>
@@ -4199,13 +3053,13 @@ include('processes/server/modals.php');
         }).then((result) => {
             if (result.isConfirmed) {
                 window.location.href =
-                    'processes/teachers/subject_posts/delete.php?id=' + id;
+                    'processes/subject_posts/delete.php?id=' + id;
             }
         });
     }
 </script>
 
-
+</body>
 </html>
 
 <?php

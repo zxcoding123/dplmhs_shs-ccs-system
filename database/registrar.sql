@@ -51,3 +51,26 @@ CREATE TABLE IF NOT EXISTS `enrollment_records` (
   KEY `idx_term` (`school_year`, `term`),
   KEY `idx_section` (`section_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 5. Documents students ask the registrar for (certificates, SF9, SF10)
+CREATE TABLE IF NOT EXISTS `document_requests` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `student_row_id` INT(11) NOT NULL,
+  `document` ENUM('coe','good_moral','sf9','sf10') NOT NULL,
+  `school_year` VARCHAR(9) NULL DEFAULT NULL,
+  `purpose` VARCHAR(100) NOT NULL,
+  `copies` TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  `notes` VARCHAR(500) NOT NULL DEFAULT '',
+  `status` ENUM('pending','processing','ready','released','declined') NOT NULL DEFAULT 'pending',
+  `registrar_note` VARCHAR(500) NOT NULL DEFAULT '',
+  `handled_by` VARCHAR(255) NOT NULL DEFAULT '',
+  `requested_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_student` (`student_row_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 6. Student IDs are assigned by the system (S.Y. start year + 5-digit sequence,
+--    e.g. 202600001) and must never repeat: chat, attendance and grades key on them.
+CREATE UNIQUE INDEX IF NOT EXISTS `uniq_students_number` ON `students` (`student_id`);

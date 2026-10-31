@@ -210,10 +210,6 @@ include __DIR__ . '/includes/site-header.php';
                     <h2>Suggest an improvement</h2>
                     <p class="au-ideas-hint">A missing feature, something that could work better, or a problem you keep running into.</p>
 
-                    <?php if ($flash): ?>
-                        <div class="alert alert-<?= au_e($flash[0]) ?> py-2" role="alert"><?= au_e($flash[1]) ?></div>
-                    <?php endif; ?>
-
                     <?php if ($viewer): ?>
                         <form method="POST" action="processes/ideas/submit.php">
                             <input type="hidden" name="csrf" value="<?= au_e(ideas_csrf_token()) ?>">
@@ -259,6 +255,7 @@ include __DIR__ . '/includes/site-header.php';
 </section>
 
 <?php
+$page_snackbar = $flash;
 $page_scripts = <<<'JS'
 <script>
 (function () {
@@ -275,19 +272,30 @@ $page_scripts = <<<'JS'
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     if (!res.success) {
-                        if (res.login) { window.location.href = 'login/index.php'; return; }
-                        alert(res.message);
+                        auSnackbar(res.message, 'warning');
+                        if (res.login) setTimeout(function () { window.location.href = 'login/index.php'; }, 1500);
                         return;
                     }
                     btn.classList.toggle('is-voted', res.voted);
                     btn.setAttribute('aria-pressed', res.voted ? 'true' : 'false');
                     btn.setAttribute('aria-label', btn.getAttribute('aria-label').replace(/^[^:]+/, res.voted ? 'Remove your vote' : 'Upvote'));
                     btn.querySelector('b').textContent = res.count;
+                    auSnackbar(res.voted ? 'Vote added. Thanks for helping us decide what to build next!' : 'Your vote was removed.', res.voted ? 'success' : 'info');
                 })
-                .catch(function () { form.submit(); })
+                .catch(function () { auSnackbar('Your vote could not be saved. Check your connection and try again.', 'danger'); })
                 .finally(function () { btn.disabled = false; });
         });
     });
+
+    // Block double posts while the idea is being sent
+    var suggest = document.querySelector('form[action="processes/ideas/submit.php"]');
+    if (suggest) {
+        suggest.addEventListener('submit', function () {
+            var btn = suggest.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Posting…';
+        });
+    }
 
     // "Show more" for long descriptions
     document.querySelectorAll('.au-idea-text.is-clamped').forEach(function (p) {

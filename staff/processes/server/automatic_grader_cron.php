@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../../includes/grading.php';
                                 // Assuming PDO connection is already established
                                 $class_id = $_GET['class_id'] ?? null;
 
@@ -8,17 +9,8 @@
 
                                 function calculateGrade($percentage)
                                 {
-
-                                    if ($percentage >= 0.96) return "1.00"; // 96-100%
-                                    if ($percentage >= 0.91) return "1.25"; // 91-95%
-                                    if ($percentage >= 0.86) return "1.50"; // 86-90%
-                                    if ($percentage >= 0.81) return "1.75"; // 81-85%
-                                    if ($percentage >= 0.76) return "2.00"; // 76-80%
-                                    if ($percentage >= 0.71) return "2.25"; // 71-75%
-                                    if ($percentage >= 0.66) return "2.50"; // 66-70%
-                                    if ($percentage >= 0.61) return "2.75"; // 61-65%
-                                    if ($percentage >= 0.45) return "3.00"; // 50-60% (Passing)
-                                    return "5.00"; // Below 50% (Failing)
+                                    // DepEd transmutation (includes/grading.php)
+                                    return deped_quarter_grade($percentage);
                                 }
 
                                 function roundToNearestGrade($value, $grades)
@@ -217,6 +209,9 @@
                                             if ($existingMidtermGrade === 'AW' || $existingFinalGrade === 'AW') {
                                                 $midtermGrade = $finalGrade = $overallGrade = 'AW';
                                                 $status = $existingStatus;
+                                            } elseif ($existingMidtermGrade === 'DRP' || $existingFinalGrade === 'DRP') {
+                                                $midtermGrade = $finalGrade = $overallGrade = 'DRP';
+                                                $status = $existingStatus;
                                             } elseif ($existingMidtermGrade === 'UW' || $existingFinalGrade === 'UW') {
                                                 $midtermGrade = $finalGrade = $overallGrade = 'UW';
                                                 $status = $existingStatus;
@@ -251,8 +246,8 @@
                                 
                                                             foreach ($attendanceTypes as $attendanceType) {
                                                                 if (isset($percentiles[$attendanceType])) {
-                                                                    $grades['midterm'] += $attendancePercentage * ($percentiles[$attendanceType] / 100) / 2;
-                                                                    $grades['final'] += $attendancePercentage * ($percentiles[$attendanceType] / 100) / 2;
+                                                                    $grades['midterm'] += $attendancePercentage * ($percentiles[$attendanceType] / 100);
+                                                                    $grades['final'] += $attendancePercentage * ($percentiles[$attendanceType] / 100);
                                                                 }
                                                             }
                                                         }
@@ -262,27 +257,10 @@
                                                         $missedFinalExam = checkMissingRequirements($studentId, $finalExamActivityIds, $studentScores);
                                 
                                                         // Calculate grades only if there are activities
-                                                        if ($grades['midterm'] > 0 || $grades['final'] > 0) {
-                                                            $midtermGrade = calculateGrade($grades['midterm']);
-                                                            $finalGrade = calculateGrade($grades['final']);
-                                
-                                                            $midtermNumeric = floatval($midtermGrade);
-                                                            $finalNumeric = floatval($finalGrade);
-                                                            
-                                                            if ($missingRequirements || $missedFinalExam) {
-                                                                $midtermGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : $midtermGrade;
-                                                                $finalGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : $finalGrade;
-                                                                $overallGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : "INC";
-                                                                $status = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : "INC";
-                                                            } else {
-                                                                $rawAverage = ($midtermNumeric + $finalNumeric) / 2;
-                                                                $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00];
-                                                                $overallGrade = number_format(roundToNearestGrade($rawAverage, $validGrades), 2);
-                                                            }
-                                                        } else {
-                                                            $midtermGrade = $finalGrade = $overallGrade = "N/A";
-                                                            $status = "N/A";
-                                                        }
+                                                        // DepEd: each quarter is transmuted on its own, the final grade is their average (includes/grading.php)
+                                                        $midtermGrade = deped_term_has_work($activities, 'midterm') ? calculateGrade($grades['midterm']) : 'N/A';
+                                                        $finalGrade = deped_term_has_work($activities, 'final') ? calculateGrade($grades['final']) : 'N/A';
+                                                        $overallGrade = deped_final_grade($midtermGrade, $finalGrade);
                                                     }
                                                 }
                                 
@@ -413,7 +391,7 @@
                                         $weightedAverage = ($lecNumeric * 0.6) + ($labNumeric * 0.4); // 60% Lecture, 40% Lab
 
                                         // Define valid grades and find the nearest one
-                                        $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00, 25];
+                                        $validGrades = range(60, 100); // DepEd whole-number grades
                                         return findNearestGrade($weightedAverage, $validGrades);
                                     }
                                 }

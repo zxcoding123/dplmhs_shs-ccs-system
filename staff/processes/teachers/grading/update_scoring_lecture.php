@@ -1,4 +1,11 @@
 <?php
+// Switched off: only the unlinked lecture_class_grades_tabular_newest.php called this, and it
+// changed grades and scores without checking who was signed in or whether grades were locked.
+// Grades are saved through staff/save_grades.php.
+http_response_code(410);
+header("Content-Type: application/json");
+echo json_encode(["success" => false, "message" => "This endpoint is no longer used."]);
+exit;
 header('Content-Type: application/json');
 require __DIR__ . '/../../../../database/connection.php';
 

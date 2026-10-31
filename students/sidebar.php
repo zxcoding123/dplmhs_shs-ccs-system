@@ -61,6 +61,12 @@ if (isset($_SESSION['student_id'])) {
                 </a>
             </li>
 
+            <li class="sidebar-item <?php echo ($current_page == 'document_requests.php') ? 'active' : ''; ?>">
+                <a class="sidebar-link" href="document_requests.php">
+                    <i class="bi bi-file-earmark-text align-middle"></i> <span class="align-middle">Document Requests</span>
+                </a>
+            </li>
+
             <li class="sidebar-header">Account</li>
             <li class="sidebar-item">
                 <a class="sidebar-link" href="#" data-bs-toggle="modal" data-bs-target="#updateProfileModal">

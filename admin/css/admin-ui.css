@@ -101,7 +101,27 @@ html body .ui-page-title p {
 html body .ui-page-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
+}
+
+/* Icon, label and dropdown caret sit on one centred line */
+html body .ui-page-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    line-height: 1.25;
+}
+
+html body .ui-page-actions .btn > .bi {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+html body .ui-page-actions .dropdown-toggle::after {
+    margin-left: 0.1rem;
+    vertical-align: middle;
 }
 
 /* ---------- Stat tiles ---------- */
@@ -320,17 +340,33 @@ html body .btn-ui-gold:focus {
     color: var(--ui-navy);
 }
 
+/* Light secondary button. Bootstrap's variables are set too, and the hover rule matches
+   AdminKit's ".btn-secondary:hover:not(:disabled):not(.disabled) { color: #fff }" in app.css,
+   which otherwise wins and turns the text white on a light background. */
 html body .btn-ui-ghost,
 html body .btn-secondary {
+    --bs-btn-color: var(--ui-ink);
+    --bs-btn-bg: #fff;
+    --bs-btn-border-color: #d5d9e2;
+    --bs-btn-hover-color: var(--ui-navy);
+    --bs-btn-hover-bg: var(--ui-soft);
+    --bs-btn-hover-border-color: #c3c8d4;
+    --bs-btn-active-color: var(--ui-navy);
+    --bs-btn-active-bg: #e9ebf0;
+    --bs-btn-active-border-color: #b9bfcc;
+    --bs-btn-disabled-color: var(--ui-muted);
+    --bs-btn-disabled-bg: #fff;
+    --bs-btn-disabled-border-color: #e1e4ea;
     background-color: #fff;
     border: 1px solid #d5d9e2;
     color: var(--ui-ink);
 }
 
-html body .btn-ui-ghost:hover,
-html body .btn-ui-ghost:focus,
-html body .btn-secondary:hover,
-html body .btn-secondary:focus {
+html body .btn-ui-ghost:hover:not(:disabled):not(.disabled),
+html body .btn-ui-ghost:focus:not(:disabled):not(.disabled),
+html body .btn-secondary:hover:not(:disabled):not(.disabled),
+html body .btn-secondary:focus:not(:disabled):not(.disabled),
+html body .btn-secondary:active:not(:disabled):not(.disabled) {
     background-color: var(--ui-soft);
     border-color: #c3c8d4;
     color: var(--ui-navy);
@@ -949,6 +985,7 @@ html body .swal2-styled:focus {
     }
 
     html body .ui-page-actions,
+    html body .ui-page-actions > .dropdown,
     html body .ui-page-actions .btn {
         width: 100%;
     }

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/grading.php';
 session_start();
 if (!isset($_SESSION['student_id'])) {
     $_SESSION['STATUS'] = "TEACHER_NOT_LOGGED_IN";
@@ -1449,8 +1450,8 @@ $stmt->execute();
                                                             echo '<tr>';
                                                             echo '<th><i class="bi bi-journal"></i> Subject</th>';
                                                             echo '<th><i class="bi bi-building"></i> Class</th>';
-                                                            echo '<th><i class="bi bi-star"></i> Midterm Grade</th>';
-                                                            echo '<th><i class="bi bi-award"></i> Final Grade</th>';
+                                                            echo '<th><i class="bi bi-star"></i> 1st Quarter</th>';
+                                                            echo '<th><i class="bi bi-award"></i> 2nd Quarter</th>';
                                                             echo '</tr>';
                                                             echo '</thead>';
                                                             echo '<tbody>';

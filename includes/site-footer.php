@@ -79,6 +79,8 @@
         <i class="bi bi-arrow-up"></i>
     </button>
 
+    <div class="au-snackbars" id="auSnackbars" role="status" aria-live="polite"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
@@ -93,7 +95,45 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         })();
+
+        /**
+         * auSnackbar('Saved.', 'success') — type: success | danger | warning | info.
+         * Pages can also set $page_snackbar = [type, message] before including this footer.
+         */
+        window.auSnackbar = (function () {
+            var icons = { success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+            var box = document.getElementById('auSnackbars');
+            return function (message, type) {
+                type = icons[type] ? type : 'info';
+                var bar = document.createElement('div');
+                bar.className = 'au-snackbar is-' + type;
+                bar.innerHTML = '<i class="bi ' + icons[type] + '" aria-hidden="true"></i><span class="au-snackbar-text"></span>'
+                    + '<button type="button" class="au-snackbar-close" aria-label="Dismiss"><i class="bi bi-x-lg"></i></button>';
+                bar.querySelector('.au-snackbar-text').textContent = message;
+                // Keep at most three on screen
+                while (box.children.length >= 3) box.firstElementChild.remove();
+                box.appendChild(bar);
+
+                var timer;
+                function close() {
+                    clearTimeout(timer);
+                    bar.classList.add('is-leaving');
+                    setTimeout(function () { bar.remove(); }, 200);
+                }
+                function start() { timer = setTimeout(close, type === 'danger' || type === 'warning' ? 7000 : 4500); }
+                bar.querySelector('.au-snackbar-close').addEventListener('click', close);
+                // Pause while the reader is hovering or focused on it
+                bar.addEventListener('mouseenter', function () { clearTimeout(timer); });
+                bar.addEventListener('mouseleave', start);
+                bar.addEventListener('focusin', function () { clearTimeout(timer); });
+                bar.addEventListener('focusout', start);
+                start();
+            };
+        })();
     </script>
+    <?php if (!empty($page_snackbar)): ?>
+        <script>auSnackbar(<?= json_encode((string) $page_snackbar[1], JSON_HEX_TAG) ?>, <?= json_encode((string) $page_snackbar[0]) ?>);</script>
+    <?php endif; ?>
     <?= $page_scripts ?? '' ?>
 </body>
 

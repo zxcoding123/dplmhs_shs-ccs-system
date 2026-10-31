@@ -455,6 +455,30 @@ break;
                     ";
             break;
 
+        case 'GRADES_LOCKED':
+            echo "
+                        <script>
+                            Swal.fire({
+                                title: 'Grades are locked',
+                                text: 'These grades were accepted and are final. Ask an admin or the registrar to unlock them if a correction is needed.',
+                                icon: 'info'
+                            });
+                        </script>
+                    ";
+            break;
+
+        case 'GRADES_ALREADY_SUBMITTED':
+            echo "
+                        <script>
+                            Swal.fire({
+                                title: 'Waiting for review',
+                                text: 'These grades are already submitted. Revert them first if you need to make changes.',
+                                icon: 'info'
+                            });
+                        </script>
+                    ";
+            break;
+
 
 
 

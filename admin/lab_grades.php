@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/grading.php';
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     $_SESSION['STATUS'] = "ADMIN_NOT_LOGGED_IN";
@@ -747,17 +748,8 @@ include __DIR__ . '/../database/connection.php';
 
                                 function calculateGrade($percentage)
                                 {
-
-                                    if ($percentage >= 0.96) return "1.00"; // 96-100%
-                                    if ($percentage >= 0.91) return "1.25"; // 91-95%
-                                    if ($percentage >= 0.86) return "1.50"; // 86-90%
-                                    if ($percentage >= 0.81) return "1.75"; // 81-85%
-                                    if ($percentage >= 0.76) return "2.00"; // 76-80%
-                                    if ($percentage >= 0.71) return "2.25"; // 71-75%
-                                    if ($percentage >= 0.66) return "2.50"; // 66-70%
-                                    if ($percentage >= 0.61) return "2.75"; // 61-65%
-                                    if ($percentage >= 0.45) return "3.00"; // 50-60% (Passing)
-                                    return "5.00"; // Below 50% (Failing)
+                                    // DepEd transmutation (includes/grading.php)
+                                    return deped_quarter_grade($percentage);
                                 }
 
                                 function roundToNearestGrade($value, $grades)
@@ -956,6 +948,9 @@ include __DIR__ . '/../database/connection.php';
                                             if ($existingMidtermGrade === 'AW' || $existingFinalGrade === 'AW') {
                                                 $midtermGrade = $finalGrade = $overallGrade = 'AW';
                                                 $status = $existingStatus;
+                                            } elseif ($existingMidtermGrade === 'DRP' || $existingFinalGrade === 'DRP') {
+                                                $midtermGrade = $finalGrade = $overallGrade = 'DRP';
+                                                $status = $existingStatus;
                                             } elseif ($existingMidtermGrade === 'UW' || $existingFinalGrade === 'UW') {
                                                 $midtermGrade = $finalGrade = $overallGrade = 'UW';
                                                 $status = $existingStatus;
@@ -989,8 +984,8 @@ include __DIR__ . '/../database/connection.php';
                                                                 // Check if this specific 'Attendance' type exists in the $percentiles array
                                                                 if (isset($percentiles[$attendanceType])) {
                                                                     // Apply the attendance percentage to the grades based on the specific attendance type
-                                                                    $grades['midterm'] += $attendancePercentage * ($percentiles[$attendanceType] / 100) / 2;
-                                                                    $grades['final'] += $attendancePercentage * ($percentiles[$attendanceType] / 100) / 2;
+                                                                    $grades['midterm'] += $attendancePercentage * ($percentiles[$attendanceType] / 100);
+                                                                    $grades['final'] += $attendancePercentage * ($percentiles[$attendanceType] / 100);
                                                                 }
                                                             }
                                                         }
@@ -1000,23 +995,10 @@ include __DIR__ . '/../database/connection.php';
                                                         $missingRequirements = checkMissingRequirements($studentId, $requiredActivityIds, $studentScores);
                                                         $missedFinalExam = checkMissingRequirements($studentId, $finalExamActivityIds, $studentScores);
 
-                                                        // Calculate grades
-                                                        $midtermGrade = calculateGrade($grades['midterm']);
-                                                        $finalGrade = calculateGrade($grades['final']);
-
-
-                                                        $midtermNumeric = floatval($midtermGrade);
-                                                        $finalNumeric = floatval($finalGrade);
-                                                        if ($missingRequirements || $missedFinalExam) {
-                                                            $midtermGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : $midtermGrade;
-                                                            $finalGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : $finalGrade;
-                                                            $overallGrade = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : "INC";
-                                                            $status = $missingRequirements ? checkUngradedStatus($studentId, $requiredActivityIds) : "INC";
-                                                        } else {
-                                                            $rawAverage = ($midtermNumeric + $finalNumeric) / 2;
-                                                            $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00];
-                                                            $overallGrade = number_format(roundToNearestGrade($rawAverage, $validGrades), 2);
-                                                        }
+                                                        // DepEd: each quarter is transmuted on its own, the final grade is their average (includes/grading.php)
+                                                        $midtermGrade = deped_term_has_work($activities, 'midterm') ? calculateGrade($grades['midterm']) : 'N/A';
+                                                        $finalGrade = deped_term_has_work($activities, 'final') ? calculateGrade($grades['final']) : 'N/A';
+                                                        $overallGrade = deped_final_grade($midtermGrade, $finalGrade);
                                                     }
                                                 }
 
@@ -1140,7 +1122,7 @@ include __DIR__ . '/../database/connection.php';
                                     $labNumeric = floatval($labGrade);
                                     $weightedAverage = ($lecNumeric * 0.6) + ($labNumeric * 0.4); // 60% Lecture, 40% Lab
 
-                                    $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00];
+                                    $validGrades = range(60, 100); // DepEd whole-number grades
                                     return findNearestGrade($weightedAverage, $validGrades);
                                 }
 
@@ -1203,9 +1185,9 @@ include __DIR__ . '/../database/connection.php';
                                                                 (<?php echo number_format($percentiles[$type] ?? 0, 2); ?>%)
                                                             </th>
                                                         <?php endforeach; ?>
-                                                        <th>Midterms</th>
-                                                        <th>Finals</th>
-                                                        <th>Numerical Grade</th>
+                                                        <th>1st Quarter</th>
+                                                        <th>2nd Quarter</th>
+                                                        <th>Final Grade</th>
                                                         <?php if ($hasBothLabAndLec): ?>
                                                             <th class="text-center">Overall Grade <br><small>(Lecture and Laboratory)</small></th>
                                                         <?php endif; ?>
@@ -1226,7 +1208,7 @@ include __DIR__ . '/../database/connection.php';
                                                             $typeData = $activitiesByType[$type] ?? ['midterm' => [], 'final' => [], 'max_points' => ['midterm' => 0, 'final' => 0]];
                                                             $activities = array_merge($typeData['midterm'], $typeData['final']);
                                                             foreach ($activities as $index => $activity):
-                                                                $label = htmlspecialchars($type[0]) . ($index + 1) . " (" . htmlspecialchars($activity['max_points']) . " pts, " . ucfirst($activity['term']) . ")";
+                                                                $label = htmlspecialchars($type[0]) . ($index + 1) . " (" . htmlspecialchars($activity['max_points']) . " pts, " . deped_quarter_label($activity['term']) . ")";
                                                             ?>
                                                                 <td><?php echo $label; ?></td>
                                                             <?php endforeach; ?>
@@ -1240,11 +1222,11 @@ include __DIR__ . '/../database/connection.php';
                                                                 <td>TOTAL (No. Days)</td>
                                                             <?php endif; ?>
                                                         <?php endforeach; ?>
-                                                        <td>1-5</td>
-                                                        <td>1-5</td>
-                                                        <td>1-5</td>
+                                                        <td>60-100</td>
+                                                        <td>60-100</td>
+                                                        <td>60-100</td>
                                                         <?php if ($hasBothLabAndLec): ?>
-                                                            <td class="text-center">1-5</td>
+                                                            <td class="text-center">60-100</td>
                                                         <?php endif; ?>
                                                     </tr>
 
@@ -1285,21 +1267,21 @@ include __DIR__ . '/../database/connection.php';
                                                             <?php endforeach; ?>
 
                                                             <!-- Midterm, Finals, and Numerical Grade -->
-                                                            <td <?php echo in_array($studentGrades[$student['student_id']]['midterm'], ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
+                                                            <td <?php echo deped_flagged($studentGrades[$student['student_id']]['midterm']) ? 'style="color: crimson;"' : ''; ?>>
                                                                 <?php echo $studentGrades[$student['student_id']]['midterm']; ?>
                                                             </td>
 
-                                                            <td <?php echo in_array($studentGrades[$student['student_id']]['final'], ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
+                                                            <td <?php echo deped_flagged($studentGrades[$student['student_id']]['final']) ? 'style="color: crimson;"' : ''; ?>>
                                                                 <?php echo $studentGrades[$student['student_id']]['final']; ?>
                                                             </td>
 
-                                                            <td <?php echo in_array($studentGrades[$student['student_id']]['gpa'] ?? 'N/A', ['5.00', 'INC', 'UW', 'AW', 'N/A']) ? 'style="color: crimson;"' : ''; ?>>
+                                                            <td <?php echo deped_flagged($studentGrades[$student['student_id']]['gpa'] ?? 'N/A') ? 'style="color: crimson;"' : ''; ?>>
                                                                 <?php
                                                                 $gpa = $studentGrades[$student['student_id']]['gpa'] ?? 'N/A';
                                                                 if (in_array($gpa, ['INC', 'UW', 'AW'])) {
                                                                     echo htmlspecialchars($gpa);
                                                                 } elseif (is_numeric($gpa)) {
-                                                                    echo htmlspecialchars(number_format((float)$gpa, 2));
+                                                                    echo htmlspecialchars(deped_display($gpa));
                                                                 } else {
                                                                     echo htmlspecialchars($gpa);
                                                                 }
@@ -1307,10 +1289,10 @@ include __DIR__ . '/../database/connection.php';
                                                             </td>
 
                                                             <?php if ($hasBothLabAndLec): ?>
-                                                                <td <?php echo in_array($studentGrades[$student['student_id']]['overallGrade'], ['5.00', 'INC', 'UW', 'AW']) ? 'style="color: crimson;"' : ''; ?>>
+                                                                <td <?php echo deped_flagged($studentGrades[$student['student_id']]['overallGrade']) ? 'style="color: crimson;"' : ''; ?>>
                                                                     <?php
                                                                     $grade = $studentGrades[$student['student_id']]['overallGrade'];
-                                                                    echo in_array($grade, ['INC', 'UW', 'AW']) ? $grade : number_format((float)$grade, 2);
+                                                                    echo in_array($grade, ['INC', 'UW', 'AW']) ? $grade : deped_display($grade);
                                                                     ?>
                                                                 </td>
                                                             <?php endif; ?>
@@ -1400,31 +1382,25 @@ include __DIR__ . '/../database/connection.php';
             <i class="bi bi-printer"></i> Print
         </button>
     </div>
-    <div class="col">
-        <form action="submit_grades.php" method="POST">
-
-
-            <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>">
-            <input type="hidden" name="teacher" value="<?php echo  $adviser ?>">
-            <input type="hidden" name="subject" value="<?php echo  $subject ?>">
-            <input type="hidden" name="class" value="<?php echo   $class_name ?>">
-            <input type="hidden" name="value" value="accept">
-            <button type="submit" id="buttonism" class="btn btn-warning mb-5 p-2 w-75 m-auto">
-                <i class="bi bi-check"></i> Accept
-            </button>
-        </form>
-    </div>
-    <div class="col">
-
-        <form action="submit_grades.php" method="POST">
-            <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>">
-            <input type="hidden" name="teacher" value="<?php echo  $adviser ?>">
-            <input type="hidden" name="subject" value="<?php echo  $subject ?>">
-            <input type="hidden" name="class" value="<?php echo  $class ?>">
-            <input type="hidden" name="value" value="reject">
-            <button type="submit" id="buttonism" class="btn btn-danger mb-5 p-2 w-75 m-auto">
-                <i class="bi bi-x"></i> Reject
-            </button>
+    <?php
+$reviewClassId = (int) $_GET['id'];
+$reviewState = grades_class_state($pdo, $reviewClassId);
+[$reviewLabel] = grades_state_label($reviewState);
+?>
+    <div class="col" id="buttonism">
+        <p class="mb-2"><b>Grades:</b> <?= htmlspecialchars($reviewLabel) ?></p>
+        <?php if ($reviewState === 'submitted'): ?>
+            <button type="button" class="btn btn-warning mb-2 p-2" onclick="reviewGrades('accept')"><i class="bi bi-lock"></i> Accept and lock</button>
+            <button type="button" class="btn btn-danger mb-2 p-2" onclick="reviewGrades('return')"><i class="bi bi-arrow-return-left"></i> Return to teacher</button>
+        <?php elseif ($reviewState === 'locked'): ?>
+            <button type="button" class="btn btn-outline-danger mb-2 p-2" onclick="reviewGrades('unlock')"><i class="bi bi-unlock"></i> Unlock for corrections</button>
+        <?php else: ?>
+            <p class="text-muted small">The teacher hasn't submitted these grades yet.</p>
+        <?php endif; ?>
+        <form action="submit_grades.php" method="POST" id="reviewForm" hidden>
+            <input type="hidden" name="id" value="<?= $reviewClassId ?>">
+            <input type="hidden" name="value" id="reviewValue">
+            <input type="hidden" name="reason" id="reviewReason">
         </form>
     </div>
 </div>
@@ -1434,32 +1410,42 @@ include __DIR__ . '/../database/connection.php';
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let status = "<?php echo $_SESSION['STATUS'] ?>";
-        if (status === "GRADES_ACCEPTED") {
-            Swal.fire({
-                title: "Success!",
-                text: "Grades have been accepted.",
-                icon: "success",
-                confirmButtonText: "OK"
-            });
-        } else if (status === "GRADES_REJECTED") {
-            Swal.fire({
-                title: "Rejected",
-                text: "Grades have been rejected.",
-                icon: "warning",
-                confirmButtonText: "OK"
-            });
-        } else if (status === "NO_RECORD_FOUND") {
-            Swal.fire({
-                title: "Error",
-                text: "No record found with the provided ID.",
-                icon: "error",
-                confirmButtonText: "OK"
-            });
+    function reviewGrades(action) {
+        const form = document.getElementById('reviewForm');
+        document.getElementById('reviewValue').value = action;
+        if (action === 'accept') {
+            Swal.fire({ title: 'Accept and lock these grades?', text: 'The teacher can no longer change them unless they are unlocked.', icon: 'question', showCancelButton: true, confirmButtonText: 'Accept and lock' })
+                .then(r => { if (r.isConfirmed) form.submit(); });
+            return;
         }
+        Swal.fire({
+            title: action === 'unlock' ? 'Unlock these grades?' : 'Return these grades to the teacher?',
+            input: 'textarea',
+            inputLabel: 'Reason (sent to the teacher)',
+            inputValidator: v => !v.trim() ? 'Please give a reason.' : undefined,
+            showCancelButton: true,
+            confirmButtonText: action === 'unlock' ? 'Unlock' : 'Return'
+        }).then(r => {
+            if (!r.isConfirmed) return;
+            document.getElementById('reviewReason').value = r.value;
+            form.submit();
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const messages = {
+            GRADES_ACCEPTED: ['Grades accepted', 'The grades are final and locked. The teacher has been notified.', 'success'],
+            GRADES_REJECTED: ['Grades returned', 'The teacher has been notified and can edit and resubmit them.', 'info'],
+            GRADES_UNLOCKED: ['Grades unlocked', 'The teacher can correct and resubmit them.', 'info'],
+            GRADES_NOTHING_TO_REVIEW: ['Nothing changed', 'These grades are not in a state that allows that action. Reload the page.', 'warning'],
+            GRADES_REASON_REQUIRED: ['Reason needed', 'Give a reason when returning or unlocking grades.', 'warning']
+        };
+        const m = messages[<?= json_encode($_SESSION['STATUS'] ?? '') ?>];
+        if (m) Swal.fire(m[0], m[1], m[2]);
     });
 </script>
+<?php if (in_array($_SESSION['STATUS'] ?? '', ['GRADES_ACCEPTED', 'GRADES_REJECTED', 'GRADES_UNLOCKED', 'GRADES_NOTHING_TO_REVIEW', 'GRADES_REASON_REQUIRED'], true)) unset($_SESSION['STATUS']); ?>
+
 </main>
 
 

@@ -96,17 +96,7 @@ if (!$isNew) {
     registrar_redirect($back, ['Saved', $fullName . "'s details have been updated.", 'success']);
 }
 
-/* ---------- Create ---------- */
-$studentId = trim($_POST['student_id'] ?? '');
-if (!ctype_digit($studentId) || strlen($studentId) > 9) {
-    student_fail($back, 'The student ID must be a number of up to 9 digits.', true);
-}
-$dup = $pdo->prepare("SELECT 1 FROM students WHERE student_id = ?");
-$dup->execute([$studentId]);
-if ($dup->fetchColumn()) {
-    student_fail($back, 'Student ID ' . $studentId . ' is already registered.', true);
-}
-
+/* ---------- Create (the student ID is assigned by registrar_insert_student) ---------- */
 $term = enrollment_current_term($pdo);
 [$record, $error] = enrollment_validate([
     'school_year'    => $term['school_year'],
@@ -128,18 +118,24 @@ try {
         ->execute([$email, password_hash($password, PASSWORD_DEFAULT)]);
     $userId = (int) $pdo->lastInsertId();
 
-    $pdo->prepare("
-        INSERT INTO students (user_id, first_name, middle_name, last_name, student_id, lrn, gender, course, year_level, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
-    ")->execute([$userId, $first, $middle, $last, $studentId, $lrn !== '' ? $lrn : null, $gender, $record['strand'], $record['grade_level']]);
-    $newId = (int) $pdo->lastInsertId();
+    [$newId, $studentId] = registrar_insert_student($pdo, [
+        'user_id'     => $userId,
+        'first_name'  => $first,
+        'middle_name' => $middle,
+        'last_name'   => $last,
+        'lrn'         => $lrn !== '' ? $lrn : null,
+        'gender'      => $gender,
+        'course'      => $record['strand'],
+        'year_level'  => $record['grade_level'],
+        'status'      => 'active',
+    ]);
 
     if (!empty($_POST['enroll_now'])) {
         enrollment_save($pdo, $newId, $record, 'registrar', $registrarName);
     }
 
     $pdo->commit();
-} catch (PDOException $e) {
+} catch (PDOException | RuntimeException $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
@@ -148,5 +144,5 @@ try {
 }
 
 // Shown once on the student's page so the registrar can hand over the login
-$_SESSION['registrar_new_credentials'] = ['name' => $fullName, 'email' => $email, 'password' => $password];
+$_SESSION['registrar_new_credentials'] = ['name' => $fullName, 'email' => $email, 'password' => $password, 'student_id' => $studentId];
 registrar_redirect('../student.php?id=' . $newId);
